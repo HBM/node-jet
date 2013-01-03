@@ -4,6 +4,7 @@ var util = require('util');
 var net = require('net');
 var assert = require('assert');
 var errors = require('../lib/jet/errors');
+
 var MessageSocket = require('../lib/jet/message-socket.js').MessageSocket;
 
 var peers = {};
@@ -26,17 +27,18 @@ var routeResponse = function(peer, message) {
 /* publishes a notification to all subsbribers / fetchers */
 var publish = function(notification) {
     var path = notification.path;
-    peers.forEach(function(peer) {
+    for (var peerId in peers) {
+        var peer = peers[peerId];
         var fetchers = peer.fetchers;
         for (var fetchId in fetchers) {
-            if (fetchers[fetchId].match(path)) {
+            if (fetchers[fetchId](path)) {
                 peer.sendMessage({
                     method: fetchId,
                     params: notification
                 });
             }
         }
-    });
+    }
 };
 
 /* creates a match function from an array of match and unmatch
@@ -93,16 +95,16 @@ var post = function(peer, message) {
 
 var fetch = function(peer, message) {
     var params = message.params;
-    var id = message.id;
+    var fetchId = params.id;
     var match = params.match;
-    var unmatch = params.unmatch;
+    var unmatch = params.unmatch || [];
     var matchf = matcher(match, unmatch);
-    if (!peer.fetchers[id]) {
+    if (!peer.fetchers[fetchId]) {
         var nodeNotifications = [];
         for (var path in nodes) {
             if (matchf(path)) {
                 var notification = {
-                    method: id,
+                    method: fetchId,
                     params: {
                         path: path,
                         event: 'add',
@@ -117,14 +119,14 @@ var fetch = function(peer, message) {
         nodeNotifications.sort(function(a, b) {
             return a.length - b.length;
         });
-        nodeNotifications.forEach(function(nodeNotification) {
+        nodeNotifications.forEach(function(nodeNotification) {      
             peer.sendMessage(nodeNotification);
         });
         for (path in leaves) {
             if (matchf(path)) {
                 var leave = leaves[path];
                 peer.sendMessage({
-                    method: id,
+                    method: fetchId,
                     params: {
                         path: path,
                         event: 'add',
@@ -134,7 +136,7 @@ var fetch = function(peer, message) {
             }
         }
     }
-    peer.fetchers[id] = matchf;
+    peer.fetchers[fetchId] = matchf;
     if (message.id) {
         peer.sendMessage({
             id: message.id,
@@ -284,7 +286,7 @@ var add = function(peer, message) {
     }
     incrementNodes(path);
     var element = params.element;
-    if (element.type === 'state' || element.type === 'method') {
+    if (element.type !== 'state' && element.type !== 'method') {
         throw errors.invalidParams({
             missingParam: 'element.type',
             got: params
@@ -357,7 +359,7 @@ var safe = function(f) {
 };
 
 var safeForward = function(f) {
-    return function(peer, message) {
+    return function(peer, message) {        
         try {
             f(peer, message);
         }
@@ -474,7 +476,10 @@ var listener = net.createServer(function(peerSocket) {
             dispatchMessage(message);
         }
     });
-    peer.id = peerSocket.remoteAddress();
+    var peerId = peerSocket.remoteAddress + peerSocket.remotePort;
+    peer.id = peerId;
+    peer.fetchers = {}
+    peers[peerId] = peer;
     peerSocket.on('close', releasePeer);
     peerSocket.on('error', releasePeer);
 });
