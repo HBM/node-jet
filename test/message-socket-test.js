@@ -17,7 +17,10 @@ echoServer.listen(echoPort);
 
 vows.describe('The Message Socket internal class').addBatch({
     'A MessageSocket': {
-        topic: new MessageSocket(echoPort),
+        topic: function() {
+            var socket = net.connect(echoPort);
+            return new MessageSocket(socket);
+        },
         on: {
             'connect': {
                 'results in a MessageSocket': function(ms) {
