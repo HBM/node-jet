@@ -8,18 +8,18 @@ var MessageSocket = require('../lib/jet/message-socket.js').MessageSocket;
 
 var peers = {};
 var nodes = {};
-var states = {};
 var leaves = {};
 var routes = {};
 
-var routeMessage = function(peer,message) {
+var routeResponse = function(peer, message) {
     var route = routes[message.id];
     if (route) {
         delete routes[message.id];
         message.id = route.id;
-        route.receiver.sendMessage(message);        
-    } else {
-        console.log('cannot router message',message);
+        route.receiver.sendMessage(message);
+    }
+    else {
+        console.log('cannot router message', message);
     }
 };
 
@@ -42,14 +42,14 @@ var publish = function(notification) {
 /* creates a match function from an array of match and unmatch
    expressions.
 */
-var matcher = function(match,unmatch) {
+var matcher = function(match, unmatch) {
     return function(path) {
-        for (var i=0; i < unmatch.length; ++i) {
+        for (var i = 0; i < unmatch.length; ++i) {
             if (path.match(unmatch[i])) {
                 return false;
             }
         }
-        for (i=0; i < match.length; ++i) {
+        for (i = 0; i < match.length; ++i) {
             if (path.match(match[i])) {
                 return true;
             }
@@ -58,7 +58,7 @@ var matcher = function(match,unmatch) {
     }
 };
 
-var post = function(peer,message) {
+var post = function(peer, message) {
     var notification = message.params;
     var path = notification.path;
     var event = notification.event;
@@ -74,7 +74,8 @@ var post = function(peer,message) {
             }
         }
         publish(notification);
-    } else {
+    }
+    else {
         var error = errors.invalidParams({
             invalidPath: path
         });
@@ -83,18 +84,19 @@ var post = function(peer,message) {
                 id: message.id,
                 error: error
             });
-        } else {
-            console.log('post failed with invalid path',message);
+        }
+        else {
+            console.log('post failed with invalid path', message);
         }
     }
 };
 
-var fetch = function(peer,message) {
+var fetch = function(peer, message) {
     var params = message.params;
     var id = message.id;
     var match = params.match;
     var unmatch = params.unmatch;
-    var matchf = matcher(match,unmatch);
+    var matchf = matcher(match, unmatch);
     if (!peer.fetchers[id]) {
         var nodeNotifications = [];
         for (var path in nodes) {
@@ -112,7 +114,7 @@ var fetch = function(peer,message) {
                 nodeNotifications.push(notification);
             }
         }
-        nodeNotifications.sort(function(a,b){
+        nodeNotifications.sort(function(a, b) {
             return a.length - b.length;
         });
         nodeNotifications.forEach(function(nodeNotification) {
@@ -141,7 +143,7 @@ var fetch = function(peer,message) {
     }
 };
 
-var set = function(peer,message) {
+var set = function(peer, message) {
     var params = message.params;
     var path = params.path;
     var value = params.value;
@@ -150,7 +152,7 @@ var set = function(peer,message) {
         var id;
         if (message.id) {
             id = message.id + '_' + peer.id;
-            assert.equal(routes[id],null);
+            assert.equal(routes[id], null);
             routes[id] = {
                 receiver: peer,
                 id: message.id
@@ -163,13 +165,15 @@ var set = function(peer,message) {
                 value: value
             }
         });
-    } else {
+    }
+    else {
         var error;
         if (leave) {
             error = errors.invalidParams({
                 pathIsNotState: path
             });
-        } else {
+        }
+        else {
             error = errors.invalidParams({
                 invalidPath: path
             });
@@ -180,11 +184,11 @@ var set = function(peer,message) {
                 error: error
             });
         }
-        console.log('set failed',error);
+        console.log('set failed', error);
     }
 };
 
-var call = function(peer,message) {
+var call = function(peer, message) {
     var params = message.params;
     var path = params.path;
     var args = params.args;
@@ -193,7 +197,7 @@ var call = function(peer,message) {
         var id;
         if (message.id) {
             id = message.id + '_' + peer.id;
-            assert.equal(routes[id],null);
+            assert.equal(routes[id], null);
             routes[id] = {
                 receiver: peer,
                 id: message.id
@@ -204,13 +208,15 @@ var call = function(peer,message) {
             method: path,
             params: args
         });
-    } else {
+    }
+    else {
         var error;
         if (leave) {
             error = errors.invalidParams({
                 pathIsNotMethod: path
             });
-        } else {
+        }
+        else {
             error = errors.invalidParams({
                 invalidPath: path
             });
@@ -221,18 +227,19 @@ var call = function(peer,message) {
                 error: error
             });
         }
-        console.log('call failed',error);
+        console.log('call failed', error);
     }
 };
 
 var incrementNodes = function(path) {
     var parts = path.split('/');
-    for(var i=1; i < parts.length - 1; ++i) {
-        path = parts.splice(0,i).join('/');
+    for (var i = 1; i < parts.length - 1; ++i) {
+        path = parts.splice(0, i).join('/');
         var count = nodes[path];
         if (count) {
             ++nodes[path];
-        } else {
+        }
+        else {
             nodes[path] = 1;
             publish({
                 event: 'add',
@@ -247,13 +254,14 @@ var incrementNodes = function(path) {
 
 var decrementNodes = function(path) {
     var parts = path.split('/');
-    for(var i=1; i < parts.length - 1; ++i) {
-        path = parts.splice(0,i).join('/');
+    for (var i = 1; i < parts.length - 1; ++i) {
+        path = parts.splice(0, i).join('/');
         var count = nodes[path];
         assert.ok(count > 0);
         if (count > 1) {
             --nodes[path];
-        } else {
+        }
+        else {
             delete nodes[path];
             publish({
                 event: 'remove',
@@ -266,7 +274,7 @@ var decrementNodes = function(path) {
     }
 };
 
-var add = function(peer,message) {
+var add = function(peer, message) {
     var params = message.params;
     var path = params.path;
     if (nodes[path] || leaves[path]) {
@@ -280,7 +288,7 @@ var add = function(peer,message) {
         throw errors.invalidParams({
             missingParam: 'element.type',
             got: params
-        }); 
+        });
     }
     leaves[path] = {
         peer: peer,
@@ -293,7 +301,7 @@ var add = function(peer,message) {
     });
 };
 
-var remove = function(peer,message) {
+var remove = function(peer, message) {
     var params = message.params;
     var path = params.path;
     if (!leaves[path]) {
@@ -313,25 +321,27 @@ var remove = function(peer,message) {
 };
 
 var safe = function(f) {
-    return function(peer,message) {
+    return function(peer, message) {
         try {
-            var result = f(peer,message) || true;   
+            var result = f(peer, message) || true;
             if (message.id) {
                 peer.sendMessage({
                     id: message.id,
                     result: result
                 });
             }
-        } catch (err) {
-            console.log('jetd.safe failed',err,message);
+        }
+        catch (err) {
+            console.log('jetd.safe failed', err, message);
             if (message.id) {
                 if (typeof(err) === 'object') {
-                    assert.ok(err.code && err.message,err);
+                    assert.ok(err.code && err.message, err);
                     peer.sendMessage({
                         id: message.id,
                         error: err
                     });
-                } else {
+                }
+                else {
                     peer.sendMessage({
                         id: message.id,
                         error: {
@@ -347,19 +357,21 @@ var safe = function(f) {
 };
 
 var safeForward = function(f) {
-    return function(peer,message) {
+    return function(peer, message) {
         try {
-            f(peer,message);
-        } catch (err) {
-            console.log('jetd.safeForward failed',err,message);
+            f(peer, message);
+        }
+        catch (err) {
+            console.log('jetd.safeForward failed', err, message);
             if (message.id) {
                 if (typeof(err) === 'object') {
-                    assert.ok(err.code && err.message,err);
+                    assert.ok(err.code && err.message, err);
                     peer.sendMessage({
                         id: message.id,
                         error: err
                     });
-                } else {
+                }
+                else {
                     peer.sendMessage({
                         id: message.id,
                         error: {
@@ -381,14 +393,38 @@ var services = {
     set: safeForward(set),
     fetch: safeForward(fetch),
     post: safe(post),
-    echo: safe(function(peer,message){
+    echo: safe(function(peer, message) {
         return message.params;
     })
 };
 
-var listener = net.createServer(function(peerSocket){
+var dispatchRequest = function(peer,message) {
+    assert.ok(message.method);
+    var service = services[message.method];
+    if (service) {
+        service(peer,message);
+    }
+    else {
+        var error = errors.methodNotFound(message.method);
+        peer.sendMessage({
+            id: message.id,
+            error: error
+        });
+    }
+};
+
+var dispatchNotification = function(peer,message) {
+    assert.ok(message.method);
+    var service = services[message.method];
+    if (service) {
+        service(peer,message);
+    }
+};
+
+
+var listener = net.createServer(function(peerSocket) {
     var peer;
-    var releasePeer = function(){
+    var releasePeer = function() {
         if (peer) {
             peer.fetchers = {};
             for (var path in leaves) {
@@ -408,9 +444,39 @@ var listener = net.createServer(function(peerSocket){
         }
     };
     peer = new MessageSocket(peerSocket);
+    var dispatchMessage = function(message){
+        if (message.id) {
+            if (message.method) {
+            } else if (message.result !== null || message.error !== null) {
+                routeResponse(peer,message);
+            } else {
+                var error = errors.invalidRequest(message);
+                peer.sendMessage({
+                    id: message.id,
+                    error: error
+                });
+                console.log('invalid request',message);
+            }
+        } else if (message.method) {
+            dispatchNotification(peer,message);        
+        } else {
+            console.log('invalid message',message);
+        }
+    };
+    peer.on('message',function(message){
+        if (util.isArray(message)) {
+            var batch = message;
+            batch.forEach(function(message) {
+                dispatchMessage(message);
+            });
+        }
+        else {
+            dispatchMessage(message);
+        }
+    });
     peer.id = peerSocket.remoteAddress();
-    peerSocket.on('close',releasePeer);
-    peerSocket.on('error',releasePeer);
+    peerSocket.on('close', releasePeer);
+    peerSocket.on('error', releasePeer);
 });
 
 listener.listen(33326);
