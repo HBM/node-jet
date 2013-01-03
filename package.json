@@ -5,6 +5,9 @@
     "keywords"      : ["ipc", "bus", "message", "rpc","jet"],
     "author"        : "Gerhard Lipp <gelipp@gmail.com>",
     "contributors"  : [{ "name": "Gerhard Lipp", "email": "gelipp@gmail.com" }],
+    "devDependencies" : {
+        "vows": ">= 0.7.0"
+    },
     "dependencies"  : {},
     "bin"           : {"jetd": "./bin/jetd"},
     "directories"   : {"bin": "./bin"},
