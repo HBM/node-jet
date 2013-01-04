@@ -6,7 +6,7 @@
     "author"        : "Gerhard Lipp <gelipp@gmail.com>",
     "contributors"  : [{ "name": "Gerhard Lipp", "email": "gelipp@gmail.com" }],
     "devDependencies" : {
-        "vows": ">= 0.7.0"
+        "mocha": ">= 1.7.x"
     },
     "dependencies"  : {},
     "bin"           : {"jetd": "./bin/jetd"},
