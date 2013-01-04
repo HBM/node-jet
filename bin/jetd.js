@@ -235,8 +235,8 @@ var call = function(peer, message) {
 
 var incrementNodes = function(path) {
     var parts = path.split('/');
-    for (var i = 1; i < parts.length - 1; ++i) {
-        path = parts.splice(0, i).join('/');
+    for (var i = 1; i < parts.length; ++i) {
+        path = parts.slice(0, i).join('/');
         var count = nodes[path];
         if (count) {
             ++nodes[path];
@@ -256,8 +256,8 @@ var incrementNodes = function(path) {
 
 var decrementNodes = function(path) {
     var parts = path.split('/');
-    for (var i = 1; i < parts.length - 1; ++i) {
-        path = parts.splice(0, i).join('/');
+    for (var i = parts.length-1; i > 0; --i) {
+        path = parts.slice(0, i).join('/');
         var count = nodes[path];
         assert.ok(count > 0);
         if (count > 1) {
