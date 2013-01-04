@@ -6,7 +6,8 @@
     "author"        : "Gerhard Lipp <gelipp@gmail.com>",
     "contributors"  : [{ "name": "Gerhard Lipp", "email": "gelipp@gmail.com" }],
     "devDependencies" : {
-        "mocha": ">= 1.7.x"
+        "mocha": ">= 1.7.x",
+        "should": ">= 1.2.x"
     },
     "dependencies"  : {},
     "bin"           : {"jetd": "./bin/jetd"},
@@ -15,5 +16,8 @@
     "repository": {
         "type": "git",
         "url": "https://github.com/lipp/node-jet"
+    },
+    "scripts": {
+        "test": "mocha -R spec"
     }
 }
