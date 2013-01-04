@@ -7,7 +7,7 @@ var jet = require('../lib/jet');
 
 var testPort = 33301;
 
-describe('A Daemon', function() {    
+describe('A Daemon', function() {
     var daemon;
     before(function() {
         daemon = jet.createDaemon();
@@ -17,24 +17,24 @@ describe('A Daemon', function() {
         daemon.should.be.an.instanceof(EventEmitter);
         daemon.listen.should.be.a('function');
     });
-    it('should emit "connection" for every new Peer',function(done) {
-        daemon.once('connection',function(peerMs){
+    it('should emit "connection" for every new Peer', function(done) {
+        daemon.once('connection', function(peerMs) {
             peerMs.should.be.an.instanceof(MessageSocket);
             done();
         });
         var sock = net.connect(testPort);
     });
-    describe('when connected to a peer', function(){
-        var sender;        
+    describe('when connected to a peer', function() {
+        var sender;
         var peer;
-        before(function(done){
+        before(function(done) {
             sender = new MessageSocket(net.connect(testPort));
-            daemon.once('connection',function(peerMs){
+            daemon.once('connection', function(peerMs) {
                 peer = peerMs;
                 done();
             });
         });
-        describe('who sends "add" message',function(){
+        describe('who sends "add" message', function() {
             var addRequest = {
                 id: 1,
                 method: 'add',
@@ -44,11 +44,11 @@ describe('A Daemon', function() {
                         type: 'state',
                         value: 123
                     }
-                }            
+                }
             };
-            it('publishes the right notifications',function(done){               
-                daemon.on('publish',function(notification) {
-                    should.equal(notification.path,addRequest.params.path);
+            it('publishes the right notifications', function(done) {
+                daemon.on('publish', function(notification) {
+                    should.equal(notification.path, addRequest.params.path);
                     done();
                 });
                 sender.sendMessage(addRequest);
