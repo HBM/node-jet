@@ -34,7 +34,7 @@ describe('A Daemon', function() {
                 done();
             });
         });
-        describe('who sends "add" message', function() {
+        describe('who sends "add" request', function() {
             var addRequest = {
                 id: 1,
                 method: 'add',
@@ -46,10 +46,26 @@ describe('A Daemon', function() {
                     }
                 }
             };
-            it('publishes the right notifications', function(done) {
-                daemon.on('publish', function(notification) {
+            it('publishes the right notifications and sends back response', function(done) {
+                var publishFinished;
+                var responseFinished;
+                daemon.once('publish', function(notification) {
                     should.equal(notification.path, addRequest.params.path);
-                    done();
+                    publishFinished = true;
+                    if (responseFinished) {
+                        done();
+                    }
+                });
+                sender.once('messages',function(responses) {
+                    responses.should.have.length(1);
+                    var response = responses[0];
+                    should.equal(response.id,addRequest.id);
+                    should.ok(response.result);
+                    response.should.not.have.property('error');
+                    responseFinished = true;
+                    if (publishFinished) {
+                        done()
+                    }
                 });
                 sender.sendMessage(addRequest);
             });
