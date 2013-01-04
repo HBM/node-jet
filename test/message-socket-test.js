@@ -19,7 +19,7 @@ before(function(done) {
     done();
 });
 
-describe('A MessageSocket(socket)', function() {
+describe('A MessageSocket', function() {
     var ms;
     before(function(done) {
         var socket = net.connect(echoPort);
@@ -54,22 +54,25 @@ describe('A MessageSocket(socket)', function() {
                 ms.sendMessage(testMessageA);
             });
         });
-        describe('two messages at once', function() {
+        var checkMessagesArray = function(messages) {
+            messages.should.be.an.instanceof(Array);
+            messages.should.have.length(2);
+            should.deepEqual(messages[0], testMessageA);
+            should.deepEqual(messages[1], testMessageB);
+        };
+        describe('two messages at once', function() {            
             var sendTwoMessagesAtOnce = function() {
                 ms.sendMessage(testMessageA);
                 ms.sendMessage(testMessageB);
             };
             it('should emit "messages" array of length 2', function(done) {
                 ms.once('messages', function(messages) {
-                    messages.should.be.an.instanceof(Array);
-                    messages.should.have.length(2);
-                    should.deepEqual(messages[0], testMessageA);
-                    should.deepEqual(messages[1], testMessageB);
+                    checkMessagesArray(messages);
                     done();
                 });
                 sendTwoMessagesAtOnce();
             });
-            it('"sent" should emit the unmodified message', function(done) {
+            it('should emit "sent" with the unmodified messages', function(done) {
                 var count = 0;
                 var checkSentMessages = function(message) {
                     if (count === 0) {
@@ -79,10 +82,33 @@ describe('A MessageSocket(socket)', function() {
                         message.should.equal(testMessageB);
                         ms.removeListener('_sent', checkSentMessages);
                         done();
-                    }++count;
+                    }
+                    ++count;
                 };
                 ms.on('sent', checkSentMessages);
                 sendTwoMessagesAtOnce();
+            });
+        });
+        describe('two message in one batch',function() {
+            var sendTwoMessagesInBatch = function() {
+                ms.beginBatch();
+                ms.sendMessage(testMessageA);
+                ms.sendMessage(testMessageB);
+                ms.endBatch();
+            };
+            it('should emit "messages" array of length 2', function(done) {
+                ms.once('messages', function(messages) {
+                    checkMessagesArray(messages);
+                    done();
+                });
+                sendTwoMessagesInBatch();
+            });
+            it('should emit "sent" with the messages in array', function(done) {
+                ms.once('sent', function(messages) {
+                    checkMessagesArray(messages);
+                    done();
+                });
+                sendTwoMessagesInBatch();
             });
         });
     });
