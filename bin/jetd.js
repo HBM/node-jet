@@ -465,16 +465,11 @@ var listener = net.createServer(function(peerSocket) {
             console.log('invalid message',message);
         }
     };
-    peer.on('message',function(message){
-        if (util.isArray(message)) {
-            var batch = message;
-            batch.forEach(function(message) {
-                dispatchMessage(message);
-            });
-        }
-        else {
+    peer.on('messages',function(batch){
+        assert.equal(util.isArray(batch),true);
+        batch.forEach(function(message) {
             dispatchMessage(message);
-        }
+        });
     });
     var peerId = peerSocket.remoteAddress + peerSocket.remotePort;
     peer.id = peerId;
