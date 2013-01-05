@@ -27,14 +27,49 @@ describe('A Daemon', function() {
     describe('when connected to a peer', function() {
         var sender;
         var peer;
-        before(function(done) {
+        before(function(done) { 
             sender = new MessageSocket(net.connect(testPort));
             daemon.once('connection', function(peerMs) {
                 peer = peerMs;
                 done();
             });
         });
-        describe('who sends "add" request', function() {
+        var commandRequestTest = function(command,params) {
+            describe('who sends"' + command + '" as request', function() {
+                var id = Math.random();
+                var request = {
+                    id: id,
+                    method: command,
+                    params: params
+                };
+                it('sends back a result response', function(done) {
+                    sender.once('messages',function(responses) {
+                        responses.should.have.length(1);
+                        var response = responses[0];
+                        should.equal(response.id, request.id);
+                        should.ok(response.result);
+                        response.should.not.have.property('error');
+                        done();
+                    });
+                    sender.sendMessage(request);
+                });
+            });
+        };
+        commandRequestTest('add',{
+            path: 'test',
+            element: {
+                type: 'state',
+                value: 123
+            }
+        });
+        commandRequestTest('remove',{
+            path: 'test',
+            element: {
+                type: 'state',
+                value: 123
+            }
+        });
+        describe.skip('who sends "add" request', function() {
             var addRequest = {
                 id: 1,
                 method: 'add',
