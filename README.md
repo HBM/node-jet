@@ -8,3 +8,5 @@ audience. The
 same and the daemon and / or peers may be used interchangeably.
 
 node-jet has NO dependencies other than node.
+
+[![Build Status](https://secure.travis-ci.org/lipp/node-jet?branch=master)](http://travis-ci.org/lipp/node-jet)
