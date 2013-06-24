@@ -9,7 +9,9 @@
         "mocha": ">= 1.7.x",
         "should": ">= 1.2.x"
     },
-    "dependencies"  : {},
+    "dependencies"  : {
+	"websocket": "1.0.x"
+    },
     "bin"           : {"jetd": "./bin/jetd"},
     "directories"   : {"bin": "./bin"},
     "version"       : "0.0.1",
