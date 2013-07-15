@@ -11,7 +11,9 @@ describe('A Daemon', function() {
     var daemon;
     before(function() {
         daemon = jet.createDaemon();
-        daemon.listen(testPort);
+        daemon.listen({
+            tcpPort: testPort
+        });
     });
     it('should be instance of EventEmitter', function() {
         daemon.should.be.an.instanceof(EventEmitter);
@@ -57,17 +59,11 @@ describe('A Daemon', function() {
         };
         commandRequestTest('add',{
             path: 'test',
-            element: {
-                type: 'state',
-                value: 123
-            }
+            value: 123       
         });
         commandRequestTest('remove',{
             path: 'test',
-            element: {
-                type: 'state',
-                value: 123
-            }
+            value: 123           
         });
         describe.skip('who sends "add" request', function() {
             var addRequest = {
@@ -75,10 +71,7 @@ describe('A Daemon', function() {
                 method: 'add',
                 params: {
                     path: 'test',
-                    element: {
-                        type: 'state',
-                        value: 123
-                    }
+                    value: 123                   
                 }
             };
             it('publishes the right notifications and sends back response', function(done) {
