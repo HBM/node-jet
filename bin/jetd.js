@@ -14,7 +14,9 @@ var mime = {
     '.css': 'text/css'
 }
 
-jet.createDaemon().listen({
+var daemon = new jet.Daemon();
+
+daemon.listen({
     tcpPort: 11122,
     wsPort: 11123
 });
