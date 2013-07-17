@@ -32,8 +32,6 @@ describe('A MessageSocket', function() {
         ms.should.be.an.instanceof(MessageSocket);
         ms.should.be.an.instanceof(EventEmitter);
         ms.sendMessage.should.be.a('function');
-        ms.beginBatch.should.be.a('function');
-        ms.endBatch.should.be.a('function');
     });
     describe('sending to the echo server', function() {
         describe('a single message', function() {
@@ -87,28 +85,6 @@ describe('A MessageSocket', function() {
                 };
                 ms.on('sent', checkSentMessages);
                 sendTwoMessagesAtOnce();
-            });
-        });
-        describe('two message in one batch',function() {
-            var sendTwoMessagesInBatch = function() {
-                ms.beginBatch();
-                ms.sendMessage(testMessageA);
-                ms.sendMessage(testMessageB);
-                ms.endBatch();
-            };
-            it('should emit "messages" array of length 2', function(done) {
-                ms.once('messages', function(messages) {
-                    checkMessagesArray(messages);
-                    done();
-                });
-                sendTwoMessagesInBatch();
-            });
-            it('should emit "sent" with the messages in array', function(done) {
-                ms.once('sent', function(messages) {
-                    checkMessagesArray(messages);
-                    done();
-                });
-                sendTwoMessagesInBatch();
             });
         });
     });
