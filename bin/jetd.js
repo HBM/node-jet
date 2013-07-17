@@ -21,11 +21,11 @@ daemon.listen({
     wsPort: 11123
 });
 
-http.createServer(function(req, res) {
+http.createServer(function (req, res) {
     if (req.url === '/') {
         req.url = '/radar.html';
     }
-    fs.readFile(radarDir + req.url, function(err, data) {
+    fs.readFile(radarDir + req.url, function (err, data) {
         if (err) {
             res.writeHead(404);
             res.end(JSON.stringify(err));

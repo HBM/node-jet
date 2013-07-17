@@ -7,45 +7,45 @@ var jet = require('../lib/jet');
 
 var testPort = 33301;
 
-describe('A Daemon', function() {
+describe('A Daemon', function () {
     var daemon;
-    before(function() {
+    before(function () {
         daemon = jet.createDaemon();
         daemon.listen({
             tcpPort: testPort
         });
     });
-    it('should be instance of EventEmitter', function() {
+    it('should be instance of EventEmitter', function () {
         daemon.should.be.an.instanceof(EventEmitter);
         daemon.listen.should.be.a('function');
     });
-    it('should emit "connection" for every new Peer', function(done) {
-        daemon.once('connection', function(peerMs) {
+    it('should emit "connection" for every new Peer', function (done) {
+        daemon.once('connection', function (peerMs) {
             peerMs.should.be.an.instanceof(MessageSocket);
             done();
         });
         var sock = net.connect(testPort);
     });
-    describe('when connected to a peer', function() {
+    describe('when connected to a peer', function () {
         var sender;
         var peer;
-        before(function(done) { 
+        before(function (done) {
             sender = new MessageSocket(net.connect(testPort));
-            daemon.once('connection', function(peerMs) {
+            daemon.once('connection', function (peerMs) {
                 peer = peerMs;
                 done();
             });
         });
-        var commandRequestTest = function(command,params) {
-            describe('who sends"' + command + '" as request', function() {
+        var commandRequestTest = function (command, params) {
+            describe('who sends"' + command + '" as request', function () {
                 var id = Math.random();
                 var request = {
                     id: id,
                     method: command,
                     params: params
                 };
-                it('sends back a result response', function(done) {
-                    sender.once('messages',function(responses) {
+                it('sends back a result response', function (done) {
+                    sender.once('messages', function (responses) {
                         responses.should.have.length(1);
                         var response = responses[0];
                         should.equal(response.id, request.id);
@@ -57,37 +57,37 @@ describe('A Daemon', function() {
                 });
             });
         };
-        commandRequestTest('add',{
+        commandRequestTest('add', {
             path: 'test',
-            value: 123       
+            value: 123
         });
-        commandRequestTest('remove',{
+        commandRequestTest('remove', {
             path: 'test',
-            value: 123           
+            value: 123
         });
-        describe.skip('who sends "add" request', function() {
+        describe.skip('who sends "add" request', function () {
             var addRequest = {
                 id: 1,
                 method: 'add',
                 params: {
                     path: 'test',
-                    value: 123                   
+                    value: 123
                 }
             };
-            it('publishes the right notifications and sends back response', function(done) {
+            it('publishes the right notifications and sends back response', function (done) {
                 var publishFinished;
                 var responseFinished;
-                daemon.once('publish', function(notification) {
+                daemon.once('publish', function (notification) {
                     should.equal(notification.path, addRequest.params.path);
                     publishFinished = true;
                     if (responseFinished) {
                         done();
                     }
                 });
-                sender.once('messages',function(responses) {
+                sender.once('messages', function (responses) {
                     responses.should.have.length(1);
                     var response = responses[0];
-                    should.equal(response.id,addRequest.id);
+                    should.equal(response.id, addRequest.id);
                     should.ok(response.result);
                     response.should.not.have.property('error');
                     responseFinished = true;
