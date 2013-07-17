@@ -1,5 +1,5 @@
 {
-    "name"          : "node-jet",
+    "name"          : "jet",
     "description"   : "The JSON Bus. Daemon and Peer implementation.",
     "url"           : "https://github.com/lipp/node-jet",
     "keywords"      : ["ipc", "bus", "message", "rpc","jet","json"],
