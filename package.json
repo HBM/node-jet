@@ -1,10 +1,10 @@
 {
     "name"          : "node-jet",
-    "description"   : "A server-side message bus for hierarchic states and methods based on JSON-RPC protocol.",
+    "description"   : "The JSON Bus. Daemon and Peer implementation.",
     "url"           : "https://github.com/lipp/node-jet",
-    "keywords"      : ["ipc", "bus", "message", "rpc","jet"],
-    "author"        : "Gerhard Lipp <gelipp@gmail.com>",
-    "contributors"  : [{ "name": "Gerhard Lipp", "email": "gelipp@gmail.com" }],
+    "keywords"      : ["ipc", "bus", "message", "rpc","jet","json"],
+    "author"        : "Gerhard Preuss <gelipp@gmail.com>",
+    "contributors"  : [{ "name": "Gerhard Preuss", "email": "gelipp@gmail.com" }],
     "devDependencies" : {
         "mocha": ">= 1.7.x",
         "should": ">= 1.2.x"
@@ -12,13 +12,17 @@
     "dependencies"  : {
 	"websocket": "1.0.x"
     },
-    "bin"           : {"jetd": "./bin/jetd"},
-    "directories"   : {"bin": "./bin"},
+    "main"          : "./lib/jet.js",
+    "bin"           : {
+      "jetd.js": "./bin/jetd.js",
+      "fetch.js": "./bin/fetch.js"
+    },
     "version"       : "0.0.1",
     "repository": {
         "type": "git",
         "url": "https://github.com/lipp/node-jet"
     },
+    "license": "MIT",
     "scripts": {
         "test": "mocha -R spec"
     }
