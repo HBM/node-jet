@@ -1,12 +1,32 @@
-node-jet
-========
+# About
 
-This is a node port of the original
-[(Lua-)jet](https://github.com/lipp/jet), which aimes at a bigger
-audience. The
-[protocol](https://github.com/lipp/jet/blob/master/PROTOCOL.md) is the
-same and the daemon and / or peers may be used interchangeably.
+This is [Jet](http://lipp.github.io/jet) daemon and peer
+implementation. 
 
-node-jet has NO dependencies other than node.
+# Install
 
-[![Build Status](https://travis-ci.org/lipp/node-jet.png?branch=master)](https://travis-ci.org/lipp/node-jet)
+     $ npm install node-jet
+
+# Start the daemon
+
+     $ jetd.js
+
+# Start some example peer
+
+     $ some-service.js
+
+# Radar
+
+To use the Radar web interface to Jet:
+
+    $ git clone https://github.com/lipp/radar
+    $ jetd.js <path-to-radar>
+
+Visit [Your Radar](http://localhost:8080).
+
+# Doc
+
+There is no doc yet. Have a look at
+[lua-jet](https://github.com/lipp/lua-jet), which has a very similar API.
+
+
