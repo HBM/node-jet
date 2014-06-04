@@ -15,11 +15,43 @@ peer.state({
 peer.state({
     path: 'acceptAllButSlow',
     value: 123,
-    set: function (val, done) {
+    set: function (reply, val) {
         setTimeout(function () {
             console.log('acceptAllButSlow is now', val);
             done();
         }, 1000);
+    }
+});
+
+peer.method({
+    path: 'syncHello',
+    call: function(args) {
+	return 'Hello' + args[0];
+    }
+});
+
+peer.method({
+    path: 'asyncHello',
+    call: function(done, args) {
+	setTimeout(function() {		
+	    done('Hello' + args[0]);
+	}, 1000);
+    }
+});
+
+peer.method({
+    path: 'letsFailAsync',
+    call: function(done, args) {
+	setTimeout(function() {		
+	    done(null,'I always fail');
+	}, 1000);
+    }
+});
+
+peer.method({
+    path: 'letsFailSync',
+    call: function(done, args) {
+	throw 'I always fail';
     }
 });
 
