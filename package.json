@@ -1,30 +1,53 @@
 {
-    "name"          : "node-jet",
-    "description"   : "The JSON Bus. Daemon and Peer implementation.",
-    "url"           : "https://github.com/lipp/node-jet",
-    "keywords"      : ["ipc", "bus", "message", "rpc","jet","json"],
-    "author"        : "Gerhard Preuss <gelipp@gmail.com>",
-    "contributors"  : [{ "name": "Gerhard Preuss", "email": "gelipp@gmail.com" }],
-    "devDependencies" : {
-        "mocha": ">= 1.7.x",
-        "should": ">= 1.2.x"
-    },
-    "dependencies"  : {
-	"websocket": "1.0.x"
-    },
-    "main"          : "./lib/jet.js",
-    "bin"           : {
-      "jetd.js": "./bin/jetd.js",
-      "fetch.js": "./bin/fetch.js",
-      "some-service.js": "./bin/some-service.js"
-    },
-    "version"       : "0.0.6",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/lipp/node-jet"
-    },
-    "license": "MIT",
-    "scripts": {
-        "test": "mocha -R spec"
+  "name": "node-jet",
+  "subdomain": "jet",
+  "description": "The JSON Bus. Daemon and Peer implementation.",
+  "url": "https://github.com/lipp/node-jet",
+  "keywords": [
+    "ipc",
+    "bus",
+    "message",
+    "rpc",
+    "jet",
+    "json"
+  ],
+  "author": "Gerhard Preuss <gelipp@gmail.com>",
+  "contributors": [
+    {
+      "name": "Gerhard Preuss",
+      "email": "gelipp@gmail.com"
     }
+  ],
+  "devDependencies": {
+    "mocha": ">1.7.0",
+    "should": ">1.2.0",
+    "jsbeautify": "~0.3.6"
+  },
+  "dependencies": {
+    "websocket": "1.0.x"
+  },
+  "main": "./lib/jet.js",
+  "bin": {
+    "jetd.js": "./bin/jetd.js",
+    "fetch.js": "./bin/fetch.js",
+    "some-service.js": "./bin/some-service.js"
+  },
+  "version": "0.0.7-2",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lipp/node-jet"
+  },
+  "license": "MIT",
+  "scripts": {
+    "test": "mocha -R spec",
+    "start": "node ./bin/jetdws.js"
+  },
+  "engines": {
+    "node": ">0.8.0"
+  },
+  "homepage": "http://jetbus.io",
+  "bugs": {
+    "url" : "http://github.com/lipp/node-jet/issues",
+    "email" : "gelipp@gmail.com"
+  }
 }
