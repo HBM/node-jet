@@ -1,6 +1,6 @@
 # About
 
-This is [Jet](http://lipp.github.io/jet) daemon and peer
+This is [Jet](http://jetbus.io/) daemon and peer
 implementation. 
 
 # Install
