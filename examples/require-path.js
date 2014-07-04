@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-var jet = require('node-jet');
+var jet = require('../lib/jet');
 
 var peer = new jet.Peer({
   ip: 'hbm-000a40'
