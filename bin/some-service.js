@@ -15,25 +15,41 @@ peer.state({
 peer.state({
     path: 'acceptAllButSlow',
     value: 123,
-    set: function (reply, val) {
-        setTimeout(function () {
-            console.log('acceptAllButSlow is now', val);
-            done();
-        }, 1000);
+    set: function (val, reply) {
+      console.log(reply,val);
+      var timeout = 1;
+      if (typeof(val) === 'object' && typeof(val.timeout) === 'number') {
+        timeout = val.timeout
+      }
+      setTimeout(function () {
+        console.log('acceptAllButSlow is now', val);
+        reply();
+      }, timeout * 1000);
     }
 });
+
+peer.state({
+    path: 'acceptOnlyNumbers',
+    value: 4112,
+    set: function (val, reply) {
+      if (typeof(val) !== 'number') {
+        throw new Error('only numbers supported');
+      }
+    }
+});
+
 
 peer.method({
     path: 'syncHello',
     call: function(args) {
-	return 'Hello' + args[0];
+	     return 'Hello' + args[0];
     }
 });
 
 peer.method({
     path: 'asyncHello',
     call: function(done, args) {
-	setTimeout(function() {		
+	setTimeout(function() {
 	    done('Hello' + args[0]);
 	}, 1000);
     }
@@ -42,7 +58,7 @@ peer.method({
 peer.method({
     path: 'letsFailAsync',
     call: function(done, args) {
-	setTimeout(function() {		
+	setTimeout(function() {
 	    done(null,'I always fail');
 	}, 1000);
     }
