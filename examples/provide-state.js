@@ -2,7 +2,7 @@
 var jet = require('../lib/jet');
 
 var peer = new jet.Peer({
-  ip: 'hbm-000a40'
+//  ip: 'hbm-000a40'
 });
 
 peer.state({
