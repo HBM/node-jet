@@ -1,5 +1,5 @@
 var net = require('net');
-var should = require('should');
+var expect = require('chai').expect;
 var EventEmitter = require('events').EventEmitter;
 /* this is a private module, so load directly */
 var MessageSocket = require('../lib/jet/message-socket.js').MessageSocket;
@@ -11,12 +11,11 @@ var testMessageA = {
 };
 var testMessageB = 71117;
 
-before(function (done) {
+before(function () {
     var echoServer = net.createServer(function (socket) {
         socket.pipe(socket);
     });
     echoServer.listen(echoPort);
-    done();
 });
 
 describe('A MessageSocket', function () {
@@ -29,34 +28,34 @@ describe('A MessageSocket', function () {
         });
     });
     it('should provide the essential interface', function () {
-        ms.should.be.an.instanceof(MessageSocket);
-        ms.should.be.an.instanceof(EventEmitter);
-        ms.sendMessage.should.be.a('function');
+        expect(ms).to.be.an.instanceof(MessageSocket);
+        expect(ms).to.be.an.instanceof(EventEmitter);
+        expect(ms.sendMessage).to.be.a('function');
     });
     describe('sending to the echo server', function () {
         describe('a single message', function () {
             it('should emit "messages" array of length 1', function (done) {
                 ms.once('messages', function (messages) {
-                    messages.should.be.an.instanceof(Array);
-                    messages.should.have.length(1);
-                    should.deepEqual(messages[0], testMessageA);
+                    expect(messages).to.be.an.instanceof(Array);
+                    expect(messages).be.have.length.of(1);
+                    expect(messages[0]).to.deep.equal(testMessageA);
                     done();
                 });
                 ms.sendMessage(testMessageA);
             });
             it('should emit "sent" with the unmodified message', function (done) {
                 ms.once('sent', function (message) {
-                    should.deepEqual(message, testMessageA);
+                    expect(message).to.deep.equal(testMessageA);
                     done();
                 });
                 ms.sendMessage(testMessageA);
             });
         });
         var checkMessagesArray = function (messages) {
-            messages.should.be.an.instanceof(Array);
-            messages.should.have.length(2);
-            should.deepEqual(messages[0], testMessageA);
-            should.deepEqual(messages[1], testMessageB);
+            expect(messages).to.be.an.instanceof(Array);
+            expect(messages).to.have.length.of(2);
+            expect(messages[0]).to.deep.equal(testMessageA);
+            expect(messages[1]).to.deep.equal(testMessageB);
         };
         describe('two messages at once', function () {
             var sendTwoMessagesAtOnce = function () {
@@ -74,9 +73,9 @@ describe('A MessageSocket', function () {
                 var count = 0;
                 var checkSentMessages = function (message) {
                     if (count === 0) {
-                        message.should.equal(testMessageA);
+                        expect(message).to.deep.equal(testMessageA);
                     } else if (count == 1) {
-                        message.should.equal(testMessageB);
+                        expect(message).to.deep.equal(testMessageB);
                         ms.removeListener('_sent', checkSentMessages);
                         done();
                     }

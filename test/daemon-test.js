@@ -1,4 +1,4 @@
-var should = require('should');
+var expect = require('chai').expect;
 var net = require('net');
 var EventEmitter = require('events').EventEmitter;
 /* this is a private module, so load directly */
@@ -10,18 +10,18 @@ var testPort = 33301;
 describe('A Daemon', function () {
     var daemon;
     before(function () {
-        daemon = jet.createDaemon();
+        daemon = new jet.Daemon();
         daemon.listen({
             tcpPort: testPort
         });
     });
     it('should be instance of EventEmitter', function () {
-        daemon.should.be.an.instanceof(EventEmitter);
-        daemon.listen.should.be.a('function');
+        expect(daemon).to.be.an.instanceof(EventEmitter);
+        expect(daemon.listen).to.be.a('function');
     });
     it('should emit "connection" for every new Peer', function (done) {
         daemon.once('connection', function (peerMs) {
-            peerMs.should.be.an.instanceof(MessageSocket);
+            expect(peerMs).to.be.an.instanceof(MessageSocket);
             done();
         });
         var sock = net.connect(testPort);
@@ -46,11 +46,11 @@ describe('A Daemon', function () {
                 };
                 it('sends back a result response', function (done) {
                     sender.once('messages', function (responses) {
-                        responses.should.have.length(1);
+                        expect(responses).to.have.length.of(1);
                         var response = responses[0];
-                        should.equal(response.id, request.id);
-                        should.ok(response.result);
-                        response.should.not.have.property('error');
+                        expect(response.id).to.equal(request.id);
+                        expect(response.result).to.be.true;
+                        expect(response).to.not.have.property('error');
                         done();
                     });
                     sender.sendMessage(request);
@@ -78,7 +78,7 @@ describe('A Daemon', function () {
                 var publishFinished;
                 var responseFinished;
                 daemon.once('publish', function (notification) {
-                    should.equal(notification.path, addRequest.params.path);
+                    expect(notification.path).to.equal(addRequest.params.path);
                     publishFinished = true;
                     if (responseFinished) {
                         done();
@@ -87,9 +87,9 @@ describe('A Daemon', function () {
                 sender.once('messages', function (responses) {
                     responses.should.have.length(1);
                     var response = responses[0];
-                    should.equal(response.id, addRequest.id);
-                    should.ok(response.result);
-                    response.should.not.have.property('error');
+                    expect(response.id).to.equal(addRequest.id);
+                    expect(response.result).to.be.true;
+                    expect(response).to.not.have.property('error');
                     responseFinished = true;
                     if (publishFinished) {
                         done()
