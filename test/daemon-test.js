@@ -15,9 +15,14 @@ describe('A Daemon', function () {
             tcpPort: testPort
         });
     });
-    it('should be instance of EventEmitter', function () {
+    it('should be instance of EventEmitter', function (done) {
         expect(daemon).to.be.an.instanceof(EventEmitter);
         expect(daemon.listen).to.be.a('function');
+        daemon.on('test', function(a,b) {
+          expect(a).to.equal(1);
+          done();
+        });
+        daemon.emit('test',1,2);
     });
     it('should emit "connection" for every new Peer', function (done) {
         daemon.once('connection', function (peerMs) {
@@ -37,7 +42,7 @@ describe('A Daemon', function () {
             });
         });
         var commandRequestTest = function (command, params) {
-            describe('who sends"' + command + '" as request', function () {
+            describe('who sends "' + command + '" as request', function () {
                 var id = Math.random();
                 var request = {
                     id: id,
@@ -65,27 +70,30 @@ describe('A Daemon', function () {
             path: 'test',
             value: 123
         });
-        describe.skip('who sends "add" request', function () {
+        describe('who sends "add" request', function () {
             var addRequest = {
                 id: 1,
                 method: 'add',
                 params: {
                     path: 'test',
-                    value: 123
+                    value: 12377
                 }
             };
             it('publishes the right notifications and sends back response', function (done) {
                 var publishFinished;
                 var responseFinished;
-                daemon.once('publish', function (notification) {
-                    expect(notification.path).to.equal(addRequest.params.path);
+                daemon.on('publish', function (path, event, value, element) {
+                    expect(path).to.equal(addRequest.params.path);
+                    expect(event).to.equal('add');
+                    expect(value).to.equal(addRequest.params.value);
+                    expect(element).to.have.a.property('fetchers');
                     publishFinished = true;
                     if (responseFinished) {
-                        done();
+                      done();
                     }
                 });
                 sender.once('messages', function (responses) {
-                    responses.should.have.length(1);
+                    expect(responses).to.have.length.of(1);
                     var response = responses[0];
                     expect(response.id).to.equal(addRequest.id);
                     expect(response.result).to.be.true;
