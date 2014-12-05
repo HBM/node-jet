@@ -20,6 +20,7 @@
   ],
   "devDependencies": {
     "chai": "^1.10.0",
+    "coveralls": "^2.11.2",
     "istanbul": "^0.3.4",
     "js-beautify": "^1.5.4",
     "mocha": "^2.0.1"
