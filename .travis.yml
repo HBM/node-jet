@@ -3,5 +3,6 @@ language: node_js
 after_success: ./node_modules/coveralls/bin/coveralls.js < coverage/lcov.info
 
 node_js:
-   - 0.8
-   - 0.10
+   - "0.11"
+   - "0.10"
+   - "0.8"
