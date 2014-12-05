@@ -1,7 +1,7 @@
 {
   "name": "node-jet",
   "subdomain": "jet",
-  "description": "The JSON Bus. Daemon and Peer implementation.",
+  "description": "Realtime Message Bus for the Web. Daemon and Peer implementation.",
   "url": "https://github.com/lipp/node-jet",
   "keywords": [
     "ipc",
@@ -19,9 +19,11 @@
     }
   ],
   "devDependencies": {
-    "mocha": ">1.7.0",
-    "should": ">1.2.0",
-    "jsbeautify": "~0.3.6"
+    "chai": "^1.10.0",
+    "coveralls": "^2.11.2",
+    "istanbul": "^0.3.4",
+    "js-beautify": "^1.5.4",
+    "mocha": "^2.0.1"
   },
   "dependencies": {
     "websocket": "1.0.x"
@@ -39,7 +41,7 @@
   },
   "license": "MIT",
   "scripts": {
-    "test": "mocha -R spec",
+    "test": "istanbul cover _mocha -- --recursive test",
     "start": "node ./bin/jetdws.js"
   },
   "engines": {
@@ -47,7 +49,7 @@
   },
   "homepage": "http://jetbus.io",
   "bugs": {
-    "url" : "http://github.com/lipp/node-jet/issues",
-    "email" : "gelipp@gmail.com"
+    "url": "http://github.com/lipp/node-jet/issues",
+    "email": "gelipp@gmail.com"
   }
 }
