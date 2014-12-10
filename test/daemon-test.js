@@ -26,16 +26,19 @@ describe('A Daemon', function () {
     });
     it('should emit "connection" for every new Peer', function (done) {
         daemon.once('connection', function (peerMs) {
-            expect(peerMs).to.be.an.instanceof(MessageSocket);
+            expect(peerMs).to.be.an('object');
             done();
         });
         var sock = net.connect(testPort);
     });
-    describe('when connected to a peer', function () {
+    describe('when connected to a peer sending "handmade" message', function () {
         var sender;
         var peer;
         before(function (done) {
-            sender = new MessageSocket(net.connect(testPort));
+            sender = new MessageSocket(testPort);
+            sender.sendMessage = function(message) {
+              sender.send(JSON.stringify(message));
+            };
             daemon.once('connection', function (peerMs) {
                 peer = peerMs;
                 done();
@@ -50,9 +53,8 @@ describe('A Daemon', function () {
                     params: params
                 };
                 it('sends back a result response', function (done) {
-                    sender.once('messages', function (responses) {
-                        expect(responses).to.have.length.of(1);
-                        var response = responses[0];
+                    sender.once('message', function (response) {
+                        response = JSON.parse(response);
                         expect(response.id).to.equal(request.id);
                         expect(response.result).to.be.true;
                         expect(response).to.not.have.property('error');
@@ -79,7 +81,7 @@ describe('A Daemon', function () {
                     value: 12377
                 }
             };
-            it('publishes the right notifications and sends back response', function (done) {
+            it('emits "publish" sends back response', function (done) {
                 var publishFinished;
                 var responseFinished;
                 daemon.on('publish', function (path, event, value, element) {
@@ -92,9 +94,8 @@ describe('A Daemon', function () {
                       done();
                     }
                 });
-                sender.once('messages', function (responses) {
-                    expect(responses).to.have.length.of(1);
-                    var response = responses[0];
+                sender.once('message', function (response) {
+                    response = JSON.parse(response);
                     expect(response.id).to.equal(addRequest.id);
                     expect(response.result).to.be.true;
                     expect(response).to.not.have.property('error');

@@ -26,7 +26,7 @@
     "mocha": "^2.0.1"
   },
   "dependencies": {
-    "websocket": "1.0.x"
+    "ws": "^0.6.3"
   },
   "main": "./lib/jet.js",
   "bin": {
@@ -42,6 +42,7 @@
   "license": "MIT",
   "scripts": {
     "test": "istanbul cover _mocha -- --recursive test",
+    "test_nocover": "mocha  test",
     "start": "node ./bin/jetdws.js"
   },
   "engines": {
