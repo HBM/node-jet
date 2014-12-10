@@ -26,7 +26,7 @@ describe('A Daemon', function () {
     });
     it('should emit "connection" for every new Peer', function (done) {
         daemon.once('connection', function (peerMs) {
-            expect(peerMs).to.be.an.instanceof(MessageSocket);
+            expect(peerMs).to.be.an('object');
             done();
         });
         var sock = net.connect(testPort);
