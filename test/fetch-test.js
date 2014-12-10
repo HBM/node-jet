@@ -75,7 +75,7 @@ describe('Fetch tests with daemon and peer', function() {
         expect(fetchSpy.calledWith('aXXX','add',3,fetcher)).to.be.true;
         expect(fetchSpy.calledWith('aXXX','remove',3,fetcher)).to.be.true;
         done();
-      },10);
+      },30);
     });
 
     it('startsWith case insensitive', function(done) {
@@ -116,7 +116,7 @@ describe('Fetch tests with daemon and peer', function() {
         expect(fetchSpy.calledWith('aXXX','add',3,fetcher)).to.be.true;
         expect(fetchSpy.calledWith('aXXX','remove',3,fetcher)).to.be.true;
         done();
-      },10);
+      },30);
     });
 
     it('contains (implicit)', function(done) {
@@ -142,7 +142,7 @@ describe('Fetch tests with daemon and peer', function() {
         expect(fetchSpy.calledWith('Abcd','add',2,fetcher)).to.be.true;
         expect(fetchSpy.calledWith('abc','add',1,fetcher)).to.be.true;
         done();
-      },10);
+      },30);
     });
 
     it('contains (explicit)', function(done) {
@@ -172,7 +172,7 @@ describe('Fetch tests with daemon and peer', function() {
         expect(fetchSpy.calledWith('Abcd','add',2,fetcher)).to.be.true;
         expect(fetchSpy.calledWith('abc','add',1,fetcher)).to.be.true;
         done();
-      },10);
+      },30);
     });
 
     it('equals', function(done) {
@@ -196,7 +196,7 @@ describe('Fetch tests with daemon and peer', function() {
         expect(fetchSpy.callCount).to.equal(1);
         expect(fetchSpy.calledWith('abc','add',1,fetcher)).to.be.true;
         done();
-      },10);
+      },30);
     });
 
     it('equalsNot', function(done) {
@@ -220,7 +220,7 @@ describe('Fetch tests with daemon and peer', function() {
         expect(fetchSpy.callCount).to.equal(1);
         expect(fetchSpy.calledWith('Abcd','add',2,fetcher)).to.be.true;
         done();
-      },10);
+      },30);
     });
 
     it('containsOneOf', function(done) {
@@ -251,7 +251,7 @@ describe('Fetch tests with daemon and peer', function() {
         expect(fetchSpy.calledWith('Abcd','add',2,fetcher)).to.be.true;
         expect(fetchSpy.calledWith('abc','add',1,fetcher)).to.be.true;
         done();
-      },10);
+      },30);
     });
 
     it('containsAllOf and startsWith', function(done) {
@@ -288,7 +288,7 @@ describe('Fetch tests with daemon and peer', function() {
         expect(fetchSpy.calledWith('1Abcd','add',2,fetcher)).to.be.true;
         expect(fetchSpy.calledWith('1abc','add',1,fetcher)).to.be.true;
         done();
-      },10);
+      },30);
     });
 
   });
@@ -335,7 +335,7 @@ describe('Fetch tests with daemon and peer', function() {
         expect(fetchSpy.callCount).to.equal(1);
         expect(fetchSpy.calledWith('a','add',1,fetcher)).to.be.true;
         done();
-      },10);
+      },30);
 
     });
 
@@ -363,7 +363,7 @@ describe('Fetch tests with daemon and peer', function() {
         expect(fetchSpy.callCount).to.equal(1);
         expect(fetchSpy.calledWith('a','add',3,fetcher)).to.be.true;
         done();
-      },10);
+      },30);
 
     });
 
@@ -391,7 +391,7 @@ describe('Fetch tests with daemon and peer', function() {
         expect(fetchSpy.callCount).to.equal(1);
         expect(fetchSpy.calledWith('b','add',2,fetcher)).to.be.true;
         done();
-      },10);
+      },30);
 
     });
 
@@ -419,7 +419,7 @@ describe('Fetch tests with daemon and peer', function() {
         expect(fetchSpy.callCount).to.equal(1);
         expect(fetchSpy.calledWith('b','add','1',fetcher)).to.be.true;
         done();
-      },10);
+      },30);
 
     });
 
