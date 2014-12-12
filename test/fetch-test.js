@@ -598,139 +598,138 @@ describe('Fetch tests with daemon and peer', function () {
 
 		});
 
-		describe('sorting', function () {
-			var states = autoRemovedStates();
+	});
 
-			it('sort as empty object defaults to byPath=true,from=1,to=10', function (done) {
-				var path;
-				for (var i = 10; i < 30; ++i) {
-					states.push(peer.state({
+	describe('sorting', function () {
+		var states = autoRemovedStates();
+
+		it('sort as empty object defaults to byPath=true,from=1,to=10', function (done) {
+			var path;
+			for (var i = 10; i < 30; ++i) {
+				states.push(peer.state({
+					path: i.toString(),
+					value: i
+				}));
+			}
+
+			var fetchSpy = sinon.spy();
+
+			var fetcher = peer.fetch({
+				sort: {
+					byPath: true,
+					from: 1,
+					to: 10
+				}
+			}, fetchSpy);
+
+			setTimeout(function () {
+				var expectedChanges = [];
+				for (var i = 10; i < 20; ++i) {
+					expectedChanges.push({
 						path: i.toString(),
-						value: i
-					}));
+						value: i,
+						index: i - 9
+					});
+				}
+				expect(fetchSpy.callCount).to.equal(1);
+				expect(fetchSpy.calledWith(expectedChanges, 10, fetcher)).to.be.true;
+				done();
+			}, 30);
+
+		});
+
+		it('from / to works', function (done) {
+			var path;
+			for (var i = 10; i < 30; ++i) {
+				states.push(peer.state({
+					path: i.toString(),
+					value: i
+				}));
+			}
+
+			var fetchSpy = sinon.spy();
+
+			var fetcher = peer.fetch({
+				sort: {
+					byPath: true,
+					from: 11,
+					to: 13
+				}
+			}, fetchSpy);
+
+			setTimeout(function () {
+				var expectedChanges = [];
+				for (var i = 20; i < 23; ++i) {
+					expectedChanges.push({
+						path: i.toString(),
+						value: i,
+						index: i - 9
+					});
+				}
+				expect(fetchSpy.callCount).to.equal(1);
+				expect(fetchSpy.calledWith(expectedChanges, 3)).to.be.true;
+				done();
+			}, 60);
+
+		});
+
+		it('n callback param indicates number of matches within from/to', function (done) {
+			var path;
+			for (var i = 10; i < 13; ++i) {
+				states.push(peer.state({
+					path: i.toString(),
+					value: i
+				}));
+			}
+
+			var fetchSpy = sinon.spy();
+
+			var fetcher = peer.fetch({
+				sort: {
+					byPath: true,
+					from: 2,
+					to: 5
+				}
+			}, fetchSpy);
+
+			setTimeout(function () {
+				var expectedChanges = [];
+				for (var i = 11; i < 13; ++i) {
+					expectedChanges.push({
+						path: i.toString(),
+						value: i,
+						index: i - 9
+					});
 				}
 
-				var fetchSpy = sinon.spy();
+				expect(fetchSpy.callCount).to.equal(1);
+				expect(fetchSpy.calledWith(expectedChanges, 2)).to.be.true;
 
-				var fetcher = peer.fetch({
-					sort: {
-						byPath: true,
-						from: 1,
-						to: 10
-					}
-				}, fetchSpy);
-
-				setTimeout(function () {
-					var expectedChanges = [];
-					for (var i = 10; i < 20; ++i) {
-						expectedChanges.push({
-							path: i.toString(),
-							value: i,
-							index: i - 9
-						});
-					}
-					expect(fetchSpy.callCount).to.equal(1);
-					expect(fetchSpy.calledWith(expectedChanges, 10, fetcher)).to.be.true;
-					done();
-				}, 30);
-
-			});
-
-			it('from / to works', function (done) {
-				var path;
-				for (var i = 10; i < 30; ++i) {
-					states.push(peer.state({
-						path: i.toString(),
-						value: i
-					}));
-				}
-
-				var fetchSpy = sinon.spy();
-
-				var fetcher = peer.fetch({
-					sort: {
-						byPath: true,
-						from: 11,
-						to: 13
-					}
-				}, fetchSpy);
+				// insert path between '11' and '12'
+				states.push(peer.state({
+					path: '112',
+					value: 123
+				}));
 
 				setTimeout(function () {
-					var expectedChanges = [];
-					for (var i = 20; i < 23; ++i) {
-						expectedChanges.push({
-							path: i.toString(),
-							value: i,
-							index: i - 9
-						});
-					}
-					expect(fetchSpy.callCount).to.equal(1);
-					expect(fetchSpy.calledWith(expectedChanges, 3)).to.be.true;
-					done();
-				}, 30);
-
-			});
-
-			it('n callback param indicates number of matches within from/to', function (done) {
-				var path;
-				for (var i = 10; i < 13; ++i) {
-					states.push(peer.state({
-						path: i.toString(),
-						value: i
-					}));
-				}
-
-				var fetchSpy = sinon.spy();
-
-				var fetcher = peer.fetch({
-					sort: {
-						byPath: true,
-						from: 2,
-						to: 5
-					}
-				}, fetchSpy);
-
-				setTimeout(function () {
-					var expectedChanges = [];
-					for (var i = 11; i < 13; ++i) {
-						expectedChanges.push({
-							path: i.toString(),
-							value: i,
-							index: i - 9
-						});
-					}
-
-					expect(fetchSpy.callCount).to.equal(1);
-					expect(fetchSpy.calledWith(expectedChanges, 2)).to.be.true;
-
-					// insert path between '11' and '12'
-					states.push(peer.state({
-						path: '112',
-						value: 123
-					}));
-
-					setTimeout(function () {
-						expectedChanges = [
-							{
-								path: '112',
-								value: 123,
-								index: 3
+					expectedChanges = [
+						{
+							path: '112',
+							value: 123,
+							index: 3
               },
-							{
-								path: '12',
-								value: 12,
-								index: 4
+						{
+							path: '12',
+							value: 12,
+							index: 4
               }
             ];
-						expect(fetchSpy.callCount).to.equal(2);
-						expect(fetchSpy.calledWith(expectedChanges, 3)).to.be.true;
-						done();
-					}, 30);
+					expect(fetchSpy.callCount).to.equal(2);
+					expect(fetchSpy.calledWith(expectedChanges, 3)).to.be.true;
+					done();
+				}, 60);
 
-				}, 30);
-
-			});
-
+			}, 60);
 
 		});
 
