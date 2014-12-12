@@ -2,6 +2,8 @@ var jet = require('../lib/jet');
 var sinon = require('sinon');
 var expect = require('chai').expect;
 
+var waitTime = process.env.TRAVIS && 100 || 30;
+
 var autoRemovedStates = function () {
 	var states = [];
 
@@ -81,7 +83,7 @@ describe('Fetch tests with daemon and peer', function () {
 				expect(fetchSpy.calledWith('aXXX', 'add', 3, fetcher)).to.be.true;
 				expect(fetchSpy.calledWith('aXXX', 'remove', 3, fetcher)).to.be.true;
 				done();
-			}, 30);
+			}, waitTime);
 		});
 
 		it('startsWith case insensitive', function (done) {
@@ -122,7 +124,7 @@ describe('Fetch tests with daemon and peer', function () {
 				expect(fetchSpy.calledWith('aXXX', 'add', 3, fetcher)).to.be.true;
 				expect(fetchSpy.calledWith('aXXX', 'remove', 3, fetcher)).to.be.true;
 				done();
-			}, 30);
+			}, waitTime);
 		});
 
 		it('contains (implicit)', function (done) {
@@ -148,7 +150,7 @@ describe('Fetch tests with daemon and peer', function () {
 				expect(fetchSpy.calledWith('Abcd', 'add', 2, fetcher)).to.be.true;
 				expect(fetchSpy.calledWith('abc', 'add', 1, fetcher)).to.be.true;
 				done();
-			}, 30);
+			}, waitTime);
 		});
 
 		it('contains (explicit)', function (done) {
@@ -178,7 +180,7 @@ describe('Fetch tests with daemon and peer', function () {
 				expect(fetchSpy.calledWith('Abcd', 'add', 2, fetcher)).to.be.true;
 				expect(fetchSpy.calledWith('abc', 'add', 1, fetcher)).to.be.true;
 				done();
-			}, 30);
+			}, waitTime);
 		});
 
 		it('equals', function (done) {
@@ -202,7 +204,7 @@ describe('Fetch tests with daemon and peer', function () {
 				expect(fetchSpy.callCount).to.equal(1);
 				expect(fetchSpy.calledWith('abc', 'add', 1, fetcher)).to.be.true;
 				done();
-			}, 30);
+			}, waitTime);
 		});
 
 		it('equalsNot', function (done) {
@@ -226,7 +228,7 @@ describe('Fetch tests with daemon and peer', function () {
 				expect(fetchSpy.callCount).to.equal(1);
 				expect(fetchSpy.calledWith('Abcd', 'add', 2, fetcher)).to.be.true;
 				done();
-			}, 30);
+			}, waitTime);
 		});
 
 		it('containsOneOf', function (done) {
@@ -257,7 +259,7 @@ describe('Fetch tests with daemon and peer', function () {
 				expect(fetchSpy.calledWith('Abcd', 'add', 2, fetcher)).to.be.true;
 				expect(fetchSpy.calledWith('abc', 'add', 1, fetcher)).to.be.true;
 				done();
-			}, 30);
+			}, waitTime);
 		});
 
 		it('containsAllOf and startsWith', function (done) {
@@ -294,7 +296,7 @@ describe('Fetch tests with daemon and peer', function () {
 				expect(fetchSpy.calledWith('1Abcd', 'add', 2, fetcher)).to.be.true;
 				expect(fetchSpy.calledWith('1abc', 'add', 1, fetcher)).to.be.true;
 				done();
-			}, 30);
+			}, waitTime);
 		});
 
 	});
@@ -326,7 +328,7 @@ describe('Fetch tests with daemon and peer', function () {
 				expect(fetchSpy.callCount).to.equal(1);
 				expect(fetchSpy.calledWith('a', 'add', 1, fetcher)).to.be.true;
 				done();
-			}, 30);
+			}, waitTime);
 
 		});
 
@@ -354,7 +356,7 @@ describe('Fetch tests with daemon and peer', function () {
 				expect(fetchSpy.callCount).to.equal(1);
 				expect(fetchSpy.calledWith('a', 'add', 3, fetcher)).to.be.true;
 				done();
-			}, 30);
+			}, waitTime);
 
 		});
 
@@ -382,7 +384,7 @@ describe('Fetch tests with daemon and peer', function () {
 				expect(fetchSpy.callCount).to.equal(1);
 				expect(fetchSpy.calledWith('b', 'add', 2, fetcher)).to.be.true;
 				done();
-			}, 30);
+			}, waitTime);
 
 		});
 
@@ -410,7 +412,7 @@ describe('Fetch tests with daemon and peer', function () {
 				expect(fetchSpy.callCount).to.equal(1);
 				expect(fetchSpy.calledWith('b', 'add', '1', fetcher)).to.be.true;
 				done();
-			}, 30);
+			}, waitTime);
 
 		});
 
@@ -465,7 +467,7 @@ describe('Fetch tests with daemon and peer', function () {
 				expect(fetchSpy.callCount).to.equal(1);
 				expect(fetchSpy.calledWith('a', 'add')).to.be.true;
 				done();
-			}, 30);
+			}, waitTime);
 
 		});
 
@@ -528,8 +530,8 @@ describe('Fetch tests with daemon and peer', function () {
 					expect(fetchSpy.calledWith('b', 'add')).to.be.true;
 					done();
 
-				}, 30);
-			}, 30);
+				}, waitTime);
+			}, waitTime);
 
 		});
 
@@ -594,7 +596,7 @@ describe('Fetch tests with daemon and peer', function () {
 				expect(fetchSpy.callCount).to.equal(1);
 				expect(fetchSpy.calledWith('a', 'add')).to.be.true;
 				done();
-			}, 30);
+			}, waitTime);
 
 		});
 
@@ -634,7 +636,7 @@ describe('Fetch tests with daemon and peer', function () {
 				expect(fetchSpy.callCount).to.equal(1);
 				expect(fetchSpy.calledWith(expectedChanges, 10, fetcher)).to.be.true;
 				done();
-			}, 60);
+			}, waitTime);
 
 		});
 
@@ -669,7 +671,7 @@ describe('Fetch tests with daemon and peer', function () {
 				expect(fetchSpy.callCount).to.equal(1);
 				expect(fetchSpy.calledWith(expectedChanges, 3)).to.be.true;
 				done();
-			}, 60);
+			}, waitTime);
 
 		});
 
@@ -727,9 +729,9 @@ describe('Fetch tests with daemon and peer', function () {
 					expect(fetchSpy.callCount).to.equal(2);
 					expect(fetchSpy.calledWith(expectedChanges, 3)).to.be.true;
 					done();
-				}, 60);
+				}, waitTime);
 
-			}, 60);
+			}, waitTime);
 
 		});
 
