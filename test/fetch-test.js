@@ -86,6 +86,38 @@ describe('Fetch tests with daemon and peer', function () {
 			}, waitTime);
 		});
 
+		it('equalsOneOf', function (done) {
+			states.push(peer.state({
+				path: 'abc',
+				value: 1
+			}));
+
+			states.push(peer.state({
+				path: 'Aa',
+				value: 2
+			}));
+
+			states.push(peer.state({
+				path: 'Aaa',
+				value: 3
+			}));
+
+			var fetchSpy = sinon.spy();
+
+			var fetcher = peer.fetch({
+				path: {
+					equalsOneOf: ['abc', 'Aa']
+				}
+			}, fetchSpy);
+
+			setTimeout(function () {
+				expect(fetchSpy.callCount).to.equal(2);
+				expect(fetchSpy.calledWith('abc', 'add', 1, fetcher)).to.be.true;
+				expect(fetchSpy.calledWith('Aa', 'add', 2, fetcher)).to.be.true;
+				done();
+			}, waitTime);
+		});
+
 		it('startsWith case insensitive', function (done) {
 			states.push(peer.state({
 				path: 'abc',
@@ -871,7 +903,42 @@ describe('Fetch tests with daemon and peer', function () {
 
 		});
 
+	});
 
+	describe('byPath and byValue', function () {
+		var states = autoRemovedStates();
+
+		it('startsWith and lessThan', function (done) {
+			states.push(peer.state({
+				path: 'abc',
+				value: 1
+			}));
+			states.push(peer.state({
+				path: 'abde',
+				value: 3
+			}));
+			states.push(peer.state({
+				path: 'aca',
+				value: 1
+			}));
+
+			var fetchSpy = sinon.spy();
+
+			var fetcher = peer.fetch({
+				path: {
+					startsWith: 'ab'
+				},
+				value: {
+					lessThan: 3
+				}
+			}, fetchSpy);
+
+			setTimeout(function () {
+				expect(fetchSpy.callCount).to.equal(1);
+				expect(fetchSpy.calledWith('abc', 'add', 1)).to.be.true;
+				done();
+			}, waitTime);
+		});
 	});
 
 });

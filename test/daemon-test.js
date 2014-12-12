@@ -108,4 +108,49 @@ describe('A Daemon', function () {
 			});
 		});
 	});
+
+	it('releasing a peer (with fetchers and elements) does not brake', function (done) {
+		var peer = new jet.Peer({
+			port: testPort,
+			onClose: function () {
+				done();
+			}
+		});
+
+		peer.fetch('something', function () {});
+		peer.state({
+			path: 'pathdoesnotmatter',
+			value: 32
+		}, {
+			success: function () {
+				peer.close();
+			}
+		});
+	});
+
+	it('timeout response is generated', function (done) {
+		var peer = new jet.Peer({
+			port: testPort
+		});
+
+		peer.method({
+			path: 'alwaysTooLate',
+			callAsync: function (arg1, arg2, reply) {
+				setTimeout(function () {
+					reply({
+						result: 123
+					});
+				}, 100);
+			}
+		});
+
+		peer.call('alwaysTooLate', [1, 2], {
+			timeout: 0.001,
+			error: function (err) {
+				expect(err.message).to.equal('Response Timeout');
+				expect(err.code).to.equal(-32001);
+				done();
+			}
+		});
+	});
 })
