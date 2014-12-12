@@ -733,6 +733,143 @@ describe('Fetch tests with daemon and peer', function () {
 
 		});
 
+		it('byValue works', function (done) {
+			var path;
+			for (var i = 10; i < 30; ++i) {
+				states.push(peer.state({
+					path: i.toString(),
+					value: i * i
+				}));
+			}
+
+			states.push(peer.state({
+				path: '50',
+				value: 'asd'
+			}));
+
+			var fetchSpy = sinon.spy();
+
+			var fetcher = peer.fetch({
+				sort: {
+					byValue: 'number',
+					from: 11,
+					to: 13
+				}
+			}, fetchSpy);
+
+			setTimeout(function () {
+				var expectedChanges = [];
+				for (var i = 20; i < 23; ++i) {
+					expectedChanges.push({
+						path: i.toString(),
+						value: i * i,
+						index: i - 9
+					});
+				}
+				expect(fetchSpy.callCount).to.equal(1);
+				expect(fetchSpy.calledWith(expectedChanges, 3)).to.be.true;
+				done();
+			}, 100);
+
+		});
+
+		it('byValueField works', function (done) {
+			var path;
+			for (var i = 10; i < 30; ++i) {
+				states.push(peer.state({
+					path: i.toString(),
+					value: {
+						age: i * i
+					}
+				}));
+			}
+
+			states.push(peer.state({
+				path: '50',
+				value: 'asd'
+			}));
+
+			var fetchSpy = sinon.spy();
+
+			var fetcher = peer.fetch({
+				sort: {
+					byValueField: {
+						age: 'number'
+					},
+					from: 11,
+					to: 13
+				}
+			}, fetchSpy);
+
+			setTimeout(function () {
+				var expectedChanges = [];
+				for (var i = 20; i < 23; ++i) {
+					expectedChanges.push({
+						path: i.toString(),
+						value: {
+							age: i * i
+						},
+						index: i - 9
+					});
+				}
+				expect(fetchSpy.callCount).to.equal(1);
+				expect(fetchSpy.calledWith(expectedChanges, 3)).to.be.true;
+				done();
+			}, 100);
+
+		});
+
+		it('byValueField nested works', function (done) {
+			var path;
+			for (var i = 10; i < 30; ++i) {
+				states.push(peer.state({
+					path: i.toString(),
+					value: {
+						deep: {
+							age: i * i
+						}
+					}
+				}));
+			}
+
+			states.push(peer.state({
+				path: '50',
+				value: 'asd'
+			}));
+
+			var fetchSpy = sinon.spy();
+
+			var fetcher = peer.fetch({
+				sort: {
+					byValueField: {
+						'deep.age': 'number'
+					},
+					from: 11,
+					to: 13
+				}
+			}, fetchSpy);
+
+			setTimeout(function () {
+				var expectedChanges = [];
+				for (var i = 20; i < 23; ++i) {
+					expectedChanges.push({
+						path: i.toString(),
+						value: {
+							deep: {
+								age: i * i
+							}
+						},
+						index: i - 9
+					});
+				}
+				expect(fetchSpy.callCount).to.equal(1);
+				expect(fetchSpy.calledWith(expectedChanges, 3)).to.be.true;
+				done();
+			}, 100);
+
+		});
+
+
 	});
 
 });
