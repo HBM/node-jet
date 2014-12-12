@@ -710,7 +710,6 @@ describe('Fetch tests with daemon and peer', function () {
 					}));
 
 					setTimeout(function () {
-						console.log(fetchSpy.args[1]);
 						expectedChanges = [
 							{
 								path: '112',
