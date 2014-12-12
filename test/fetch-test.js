@@ -647,6 +647,7 @@ describe('Fetch tests with daemon and peer', function () {
 			}
 
 			var fetchSpy = sinon.spy();
+			var fetchOK;
 
 			var fetcher = peer.fetch({
 				sort: {
@@ -654,7 +655,11 @@ describe('Fetch tests with daemon and peer', function () {
 					from: 1,
 					to: 10
 				}
-			}, fetchSpy);
+			}, fetchSpy, {
+				success: function () {
+					fetchOK = true;
+				}
+			});
 
 			setTimeout(function () {
 				var expectedChanges = [];
@@ -667,6 +672,7 @@ describe('Fetch tests with daemon and peer', function () {
 				}
 				expect(fetchSpy.callCount).to.equal(1);
 				expect(fetchSpy.calledWith(expectedChanges, 10, fetcher)).to.be.true;
+				expect(fetchOK).to.be.true;
 				done();
 			}, waitTime);
 
