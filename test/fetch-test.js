@@ -634,7 +634,7 @@ describe('Fetch tests with daemon and peer', function () {
 				expect(fetchSpy.callCount).to.equal(1);
 				expect(fetchSpy.calledWith(expectedChanges, 10, fetcher)).to.be.true;
 				done();
-			}, 30);
+			}, 60);
 
 		});
 
