@@ -2,6 +2,26 @@ var jet = require('../lib/jet');
 var sinon = require('sinon');
 var expect = require('chai').expect;
 
+var autoRemovedStates = function () {
+	var states = [];
+
+	afterEach(function (done) {
+		var last = states.pop();
+		states.forEach(function (state) {
+			state.remove();
+		});
+		last.remove({
+			success: function () {
+				done();
+			},
+			error: function () {
+				done();
+			}
+		});
+	});
+	return states;
+};
+
 describe('Fetch tests with daemon and peer', function () {
 	var daemon;
 	var peer;
@@ -21,22 +41,8 @@ describe('Fetch tests with daemon and peer', function () {
 	});
 
 	describe('fetch by path', function () {
-		var states = [];
 
-		afterEach(function (done) {
-			var last = states.pop();
-			states.forEach(function (state) {
-				state.remove();
-			});
-			last.remove({
-				success: function () {
-					done()
-				},
-				error: function () {
-					done()
-				}
-			});
-		});
+		var states = autoRemovedStates();
 
 		it('startsWith', function (done) {
 			states.push(peer.state({
@@ -294,22 +300,7 @@ describe('Fetch tests with daemon and peer', function () {
 	});
 
 	describe('by value', function () {
-		var states = [];
-
-		afterEach(function (done) {
-			var last = states.pop();
-			states.forEach(function (state) {
-				state.remove();
-			});
-			last.remove({
-				success: function () {
-					done()
-				},
-				error: function () {
-					done()
-				}
-			});
-		});
+		var states = autoRemovedStates();
 
 		it('equals', function (done) {
 
@@ -423,6 +414,190 @@ describe('Fetch tests with daemon and peer', function () {
 
 		});
 
+
 	});
 
-})
+	describe('by valueField', function () {
+		var states = autoRemovedStates();
+
+		it('equals', function (done) {
+
+			states.push(peer.state({
+				path: 'a',
+				value: {
+					age: 35,
+					name: 'John',
+					parents: {
+						mom: 'Liz',
+						dad: 'Paul'
+					}
+				}
+			}));
+
+			states.push(peer.state({
+				path: 'b',
+				value: {
+					age: 31,
+					name: 'Nick',
+					parents: {
+						mom: 'Liz',
+						dad: 'Paul'
+					}
+				}
+			}));
+
+			states.push(peer.state({
+				path: 'g',
+				value: '1'
+			}));
+
+			var fetchSpy = sinon.spy();
+
+			var fetcher = peer.fetch({
+				valueField: {
+					age: {
+						equals: 35
+					}
+				}
+			}, fetchSpy);
+
+			setTimeout(function () {
+				expect(fetchSpy.callCount).to.equal(1);
+				expect(fetchSpy.calledWith('a', 'add')).to.be.true;
+				done();
+			}, 30);
+
+		});
+
+		it('greaterThan', function (done) {
+
+			states.push(peer.state({
+				path: 'a',
+				value: {
+					age: 35,
+					name: 'John',
+					parents: {
+						mom: 'Liz',
+						dad: 'Paul'
+					}
+				}
+			}));
+
+			var nick = peer.state({
+				path: 'b',
+				value: {
+					age: 31,
+					name: 'Nick',
+					parents: {
+						mom: 'Liz',
+						dad: 'Paul'
+					}
+				}
+			});
+
+			states.push(nick);
+
+			states.push(peer.state({
+				path: 'g',
+				value: '1'
+			}));
+
+			var fetchSpy = sinon.spy();
+
+			var fetcher = peer.fetch({
+				valueField: {
+					age: {
+						greaterThan: 31
+					}
+				}
+			}, fetchSpy);
+
+			setTimeout(function () {
+				expect(fetchSpy.callCount).to.equal(1);
+				expect(fetchSpy.calledWith('a', 'add')).to.be.true;
+				nick.value({
+					name: 'Nick',
+					age: 32,
+					parents: {
+						mom: 'Liz',
+						dad: 'Paul'
+					}
+				});
+				setTimeout(function () {
+					expect(fetchSpy.callCount).to.equal(2);
+					expect(fetchSpy.calledWith('b', 'add')).to.be.true;
+					done();
+
+				}, 30);
+			}, 30);
+
+		});
+
+		it('equals and lessThan', function (done) {
+
+			states.push(peer.state({
+				path: 'a',
+				value: {
+					age: 35,
+					name: 'John',
+					parents: {
+						mom: 'Liz',
+						dad: 'Paul'
+					}
+				}
+			}));
+
+			states.push(peer.state({
+				path: 'a',
+				value: {
+					age: 40,
+					name: 'John',
+					parents: {
+						mom: 'Anna',
+						dad: 'Paul'
+					}
+				}
+			}));
+
+
+			states.push(peer.state({
+				path: 'b',
+				value: {
+					age: 31,
+					name: 'Nick',
+					parents: {
+						mom: 'Liz',
+						dad: 'Paul'
+					}
+				}
+			}));
+
+			states.push(peer.state({
+				path: 'g',
+				value: '1'
+			}));
+
+			var fetchSpy = sinon.spy();
+
+			var fetcher = peer.fetch({
+				valueField: {
+					age: {
+						lessThan: 40
+					},
+					name: {
+						equals: 'John'
+					}
+				}
+			}, fetchSpy);
+
+			setTimeout(function () {
+				expect(fetchSpy.callCount).to.equal(1);
+				expect(fetchSpy.calledWith('a', 'add')).to.be.true;
+				done();
+			}, 30);
+
+		});
+
+	});
+
+});
