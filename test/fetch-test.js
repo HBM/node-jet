@@ -42,6 +42,10 @@ describe('Fetch tests with daemon and peer', function () {
 
 	});
 
+	after(function() {
+		peer.close();
+	});
+
 	describe('fetch by path', function () {
 
 		var states = autoRemovedStates();

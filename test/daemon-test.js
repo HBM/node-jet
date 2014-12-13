@@ -1,4 +1,5 @@
 var expect = require('chai').expect;
+var uuid = require('uuid');
 var net = require('net');
 var EventEmitter = require('events').EventEmitter;
 /* this is a private module, so load directly */
