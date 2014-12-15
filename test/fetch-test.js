@@ -42,7 +42,7 @@ describe('Fetch tests with daemon and peer', function () {
 
 	});
 
-	after(function() {
+	after(function () {
 		peer.close();
 	});
 

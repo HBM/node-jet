@@ -18,10 +18,6 @@ before(function () {
 
 describe('Jet module', function () {
 
-	afterEach(function(done) {
-		setTimeout(function() {console.log(1);done();},1);
-	});
-
 	it('jet is an Object', function () {
 		expect(jet).to.be.an('object')
 	});
@@ -85,7 +81,7 @@ describe('Jet module', function () {
 			});
 		});
 
-		after(function() {
+		after(function () {
 			peer.close();
 		});
 
@@ -315,10 +311,9 @@ describe('Jet module', function () {
 
 
 		it('can add a state and post a state change', function (done) {
-			var random = 'PPPPXXXX';//randomPath();
+			var random = randomPath();
 			var state;
 			peer.fetch(random, function (path, event, value) {
-				//console.log('asd',event,value);
 				if (event === 'change') {
 					expect(value).to.equal('foobarX');
 					expect(state.value()).to.equal('foobarX');
