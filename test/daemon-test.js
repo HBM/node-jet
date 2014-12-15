@@ -73,41 +73,41 @@ describe('A Daemon', function () {
 			path: 'test',
 			value: 123
 		});
-		describe('who sends "add" request', function () {
-			var addRequest = {
-				id: 1,
-				method: 'add',
-				params: {
-					path: 'test',
-					value: 12377
-				}
-			};
-			it('emits "publish" sends back response', function (done) {
-				var publishFinished;
-				var responseFinished;
-				daemon.on('publish', function (path, event, value, element) {
-					expect(path).to.equal(addRequest.params.path);
-					expect(event).to.equal('add');
-					expect(value).to.equal(addRequest.params.value);
-					expect(element).to.have.a.property('fetchers');
-					publishFinished = true;
-					if (responseFinished) {
-						done();
-					}
-				});
-				sender.once('message', function (response) {
-					response = JSON.parse(response);
-					expect(response.id).to.equal(addRequest.id);
-					expect(response.result).to.be.true;
-					expect(response).to.not.have.property('error');
-					responseFinished = true;
-					if (publishFinished) {
-						done()
-					}
-				});
-				sender.sendMessage(addRequest);
-			});
-		});
+		// describe('who sends "add" request', function () {
+		// 	var addRequest = {
+		// 		id: 1,
+		// 		method: 'add',
+		// 		params: {
+		// 			path: 'test',
+		// 			value: 12377
+		// 		}
+		// 	};
+		// 	it('emits "publish" sends back response', function (done) {
+		// 		var publishFinished;
+		// 		var responseFinished;
+		// 		daemon.on('publish', function (path, event, value, element) {
+		// 			expect(path).to.equal(addRequest.params.path);
+		// 			expect(event).to.equal('add');
+		// 			expect(value).to.equal(addRequest.params.value);
+		// 			expect(element).to.have.a.property('fetchers');
+		// 			publishFinished = true;
+		// 			if (responseFinished) {
+		// 				done();
+		// 			}
+		// 		});
+		// 		sender.once('message', function (response) {
+		// 			response = JSON.parse(response);
+		// 			expect(response.id).to.equal(addRequest.id);
+		// 			expect(response.result).to.be.true;
+		// 			expect(response).to.not.have.property('error');
+		// 			responseFinished = true;
+		// 			if (publishFinished) {
+		// 				done()
+		// 			}
+		// 		});
+		// 		sender.sendMessage(addRequest);
+		// 	});
+		// });
 	});
 
 	it('releasing a peer (with fetchers and elements) does not brake', function (done) {
