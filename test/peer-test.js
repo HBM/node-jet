@@ -1,4 +1,5 @@
 var expect = require('chai').expect;
+var uuid = require('uuid');
 var jet = require('../lib/jet');
 
 var testPort = 2314;
@@ -66,7 +67,7 @@ describe('Jet module', function () {
 		var peer;
 
 		var randomPath = function () {
-			return 'jet-js/' + Math.random() + '' + new Date();
+			return 'jet-js/' + uuid.v1();
 		};
 
 		before(function (done) {
@@ -78,6 +79,10 @@ describe('Jet module', function () {
 					done();
 				}
 			});
+		});
+
+		after(function () {
+			peer.close();
 		});
 
 
@@ -310,8 +315,8 @@ describe('Jet module', function () {
 			var state;
 			peer.fetch(random, function (path, event, value) {
 				if (event === 'change') {
-					expect(value).to.equal('foobar');
-					expect(state.value()).to.equal('foobar');
+					expect(value).to.equal('foobarX');
+					expect(state.value()).to.equal('foobarX');
 					done();
 				}
 			});
@@ -321,8 +326,8 @@ describe('Jet module', function () {
 			});
 			setTimeout(function () {
 				expect(state.value()).to.equal(675);
-				state.value('foobar');
-			}, 10);
+				state.value('foobarX');
+			}, 100);
 		});
 
 		it('can batch', function (done) {

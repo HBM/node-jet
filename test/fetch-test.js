@@ -42,6 +42,10 @@ describe('Fetch tests with daemon and peer', function () {
 
 	});
 
+	after(function () {
+		peer.close();
+	});
+
 	describe('fetch by path', function () {
 
 		var states = autoRemovedStates();
@@ -674,7 +678,7 @@ describe('Fetch tests with daemon and peer', function () {
 				expect(fetchSpy.calledWith(expectedChanges, 10, fetcher)).to.be.true;
 				expect(fetchOK).to.be.true;
 				done();
-			}, waitTime);
+			}, waitTime * 2);
 
 		});
 
@@ -709,7 +713,7 @@ describe('Fetch tests with daemon and peer', function () {
 				expect(fetchSpy.callCount).to.equal(1);
 				expect(fetchSpy.calledWith(expectedChanges, 3)).to.be.true;
 				done();
-			}, waitTime);
+			}, waitTime * 2);
 
 		});
 
@@ -769,7 +773,7 @@ describe('Fetch tests with daemon and peer', function () {
 					done();
 				}, waitTime);
 
-			}, waitTime);
+			}, waitTime * 2);
 
 		});
 
