@@ -5,6 +5,7 @@ var EventEmitter = require('events').EventEmitter;
 /* this is a private module, so load directly */
 var MessageSocket = require('../lib/jet/message-socket.js').MessageSocket;
 var jet = require('../lib/jet');
+var http = require('http');
 
 var testPort = 33301;
 
@@ -73,41 +74,6 @@ describe('A Daemon', function () {
 			path: 'test',
 			value: 123
 		});
-		// describe('who sends "add" request', function () {
-		// 	var addRequest = {
-		// 		id: 1,
-		// 		method: 'add',
-		// 		params: {
-		// 			path: 'test',
-		// 			value: 12377
-		// 		}
-		// 	};
-		// 	it('emits "publish" sends back response', function (done) {
-		// 		var publishFinished;
-		// 		var responseFinished;
-		// 		daemon.on('publish', function (path, event, value, element) {
-		// 			expect(path).to.equal(addRequest.params.path);
-		// 			expect(event).to.equal('add');
-		// 			expect(value).to.equal(addRequest.params.value);
-		// 			expect(element).to.have.a.property('fetchers');
-		// 			publishFinished = true;
-		// 			if (responseFinished) {
-		// 				done();
-		// 			}
-		// 		});
-		// 		sender.once('message', function (response) {
-		// 			response = JSON.parse(response);
-		// 			expect(response.id).to.equal(addRequest.id);
-		// 			expect(response.result).to.be.true;
-		// 			expect(response).to.not.have.property('error');
-		// 			responseFinished = true;
-		// 			if (publishFinished) {
-		// 				done()
-		// 			}
-		// 		});
-		// 		sender.sendMessage(addRequest);
-		// 	});
-		// });
 	});
 
 	it('releasing a peer (with fetchers and elements) does not brake', function (done) {
@@ -154,4 +120,48 @@ describe('A Daemon', function () {
 			}
 		});
 	});
+
+	describe('hooking to a (http) server', function () {
+		var server;
+		var daemon;
+
+		before(function () {
+			server = http.createServer(function (req, res) {
+				res.writeHead(200, {
+					'Content-Type': 'text/plain'
+				});
+				res.end('Hello World\n');
+			});
+			server.listen(23456);
+			daemon = new jet.Daemon();
+			daemon.listen({
+				server: server
+			});
+		});
+
+		it('http get works', function (done) {
+			http.get({
+				hostname: 'localhost',
+				port: 23456
+			}, function (res) {
+				res.on('data', function (data) {
+					expect(data.toString()).to.equal('Hello World\n');
+					done();
+				})
+			});
+		});
+
+		it('peer can connect via websockets on same port', function (done) {
+			var peer = new jet.Peer({
+				url: 'ws://localhost:23456',
+				name: 'blabla',
+				onOpen: function () {
+					peer.close();
+					done();
+				}
+			});
+		});
+
+	});
+
 })
