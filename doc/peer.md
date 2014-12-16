@@ -1,5 +1,11 @@
 # jet.Peer API
 
+Note that the module is called "node-jet":
+
+```javascript
+var jet = require('node-jet');
+```
+
 ## `peer = new jet.Peer(config)`
 
 Creates and returns a new Jet Peer instance with the specified config.
@@ -11,6 +17,7 @@ The supported config fields are:
 - `onClose`: {Function, Optional} Called whenever the connection has been closed
 
 ```javascript
+var jet = require('node-jet');
 var peer = new jet.Peer({
   url: 'ws://jet.nodejitsu.com:80',
   onOpen: function() {

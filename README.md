@@ -14,11 +14,24 @@ implementation.
 
      $ npm install node-jet
 
-# Start the daemon
+# Stand-alone daemon
+
+The package provides a stand-alone Jet Daemon which listens on ports
+11122 (trivial protocol) and 11123 (WebSockets). The daemon can optionally serve
+the debug interface Radar (see below).
 
      $ jetd.js
 
+# Daemon Integration
+
+If you want the Daemon to listen for WebSockets on the same port as your existing
+(node.js) HTTP server, use the [daemon.listen({server:httpServer})](https://github.com/lipp/node-jet/blob/master/doc/daemon.md#daemonlistentcpport1234wsport4321)
+method.
+
 # Start some example peer
+
+The packege provides an example peer, which adds some States and Methods to play
+with.
 
      $ some-service.js
 
@@ -33,5 +46,5 @@ Visit [Your Radar](http://localhost:8080).
 
 # Doc
 
-There is no doc yet. Have a look at
-[lua-jet](https://github.com/lipp/lua-jet), which has a very similar API.
+For documentation refer to the [API docs](https://github.com/lipp/node-jet/tree/master/doc)
+and the [Jet Homepage](http://jetbus.io).
