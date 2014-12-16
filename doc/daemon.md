@@ -1,0 +1,57 @@
+# Daemon API
+
+## new jet.Daemon
+
+Creates a new Jet daemon instance.
+
+```javascript
+var jet = require('node-jet');
+var daemon = new jet.Daemon();
+```
+
+## daemon.listen(options);
+
+Starts listening on the specified ports (on all interfaces). `options` must be
+an object. The following entries are allowed/supported:
+
+-  `options.tcpPort`: The listening port for the "trivial" message protocol
+-  `options.wsPort`: The listening port for WebSocket protocol
+-  `options.server`: An existing (http) server to hook onto providing WebSocket protocol
+
+`options.wsPort` and `options.server` must not be used simultaneously.
+`options.tcpPort` and `options.wsPort`/`options.server` can both be defined to
+support the "trivial" and the WebSocket protocol at the same time.
+
+### daemon.listen({tcpPort:1234,wsPort:4321})
+
+This example demonstrates how to listen for "trivial" peers on port 1234 and
+for WebSocket peers on port 4321.
+
+```javascript
+var jet = require('node-jet');
+var daemon = new jet.Daemon();
+daemon.listen({
+  tcpPort: 1234,
+  wsPort: 1234
+});
+```
+
+### daemon.listen({server: httpServer})
+
+This example demonstrates how to hook the Jet daemon to an existing httpServer
+to run the "ordinary" webserver on the same port as the Jet WebSocket service.
+
+```javascript
+var http = require('http');
+var jet = require('node-jet');
+
+var httpServer = http.createServer(function(req, res) {
+  // serve your stuff
+});
+httpServer.listen(80);
+
+var daemon = new jet.Daemon();
+daemon.listen({
+  server: httpServer
+});
+```
