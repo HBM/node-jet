@@ -853,7 +853,7 @@ describe('Fetch tests with daemon and peer', function () {
 				expect(fetchSpy.callCount).to.equal(1);
 				expect(fetchSpy.calledWith(expectedChanges, 3)).to.be.true;
 				done();
-			}, 100);
+			}, waitTime);
 
 		});
 
@@ -974,11 +974,11 @@ describe('Fetch tests with daemon and peer', function () {
 							index: 4
 					}], 3, fetcher)).to.be.true;
 						done();
-					}, 100);
+					}, waitTime);
 
-				}, 100);
+				}, waitTime);
 
-			}, 100);
+			}, waitTime);
 
 		});
 
@@ -1028,7 +1028,7 @@ describe('Fetch tests with daemon and peer', function () {
 				expect(fetchSpy.callCount).to.equal(1);
 				expect(fetchSpy.calledWith(expectedChanges, 3)).to.be.true;
 				done();
-			}, 100);
+			}, waitTime);
 
 		});
 
