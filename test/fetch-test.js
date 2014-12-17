@@ -1,27 +1,29 @@
 var jet = require('../lib/jet');
 var sinon = require('sinon');
 var expect = require('chai').expect;
+var util = require('util');
 
-var waitTime = process.env.TRAVIS && 100 || 30;
+var waitTime = process.env.TRAVIS && 100 || 40;
 
-var autoRemovedStates = function () {
-	var states = [];
+var StateArray = function () {
 
-	afterEach(function (done) {
-		var last = states.pop();
-		states.forEach(function (state) {
-			state.remove();
-		});
-		last.remove({
-			success: function () {
-				done();
-			},
-			error: function () {
-				done();
-			}
-		});
+};
+
+util.inherits(StateArray, Array);
+
+StateArray.prototype.removeAll = function (done) {
+	var last = this.pop();
+	this.forEach(function (state) {
+		state.remove();
 	});
-	return states;
+	last.remove({
+		success: function () {
+			done();
+		},
+		error: function () {
+			done();
+		}
+	});
 };
 
 describe('Fetch tests with daemon and peer', function () {
@@ -48,7 +50,15 @@ describe('Fetch tests with daemon and peer', function () {
 
 	describe('fetch by path', function () {
 
-		var states = autoRemovedStates();
+		var states;
+
+		beforeEach(function () {
+			states = new StateArray();
+		})
+
+		afterEach(function (done) {
+			states.removeAll(done);
+		});
 
 		it('startsWith', function (done) {
 			states.push(peer.state({
@@ -338,7 +348,17 @@ describe('Fetch tests with daemon and peer', function () {
 	});
 
 	describe('by value', function () {
-		var states = autoRemovedStates();
+
+		var states;
+
+		beforeEach(function () {
+			states = new StateArray();
+		})
+
+		afterEach(function (done) {
+			states.removeAll(done);
+		});
+
 
 		it('equals', function (done) {
 
@@ -456,7 +476,17 @@ describe('Fetch tests with daemon and peer', function () {
 	});
 
 	describe('by valueField', function () {
-		var states = autoRemovedStates();
+
+		var states;
+
+		beforeEach(function () {
+			states = new StateArray();
+		})
+
+		afterEach(function (done) {
+			states.removeAll(done);
+		});
+
 
 		it('equals', function (done) {
 
@@ -639,7 +669,17 @@ describe('Fetch tests with daemon and peer', function () {
 	});
 
 	describe('sorting', function () {
-		var states = autoRemovedStates();
+
+		var states;
+
+		beforeEach(function () {
+			states = new StateArray();
+		})
+
+		afterEach(function (done) {
+			states.removeAll(done);
+		});
+
 
 		it('sort as empty object defaults to byPath=true,from=1,to=10', function (done) {
 			var path;
@@ -813,20 +853,99 @@ describe('Fetch tests with daemon and peer', function () {
 				expect(fetchSpy.callCount).to.equal(1);
 				expect(fetchSpy.calledWith(expectedChanges, 3)).to.be.true;
 				done();
-			}, 100);
+			}, waitTime);
 
 		});
 
-		it('byValueField works', function (done) {
+		it('byValue works when state is removed', function (done) {
 			var path;
 			for (var i = 10; i < 30; ++i) {
 				states.push(peer.state({
 					path: i.toString(),
-					value: {
-						age: i * i
-					}
+					value: i * i
 				}));
 			}
+
+			states.push(peer.state({
+				path: '50',
+				value: 'asd'
+			}));
+
+			var fetchSpy = sinon.spy();
+
+			var fetcher = peer.fetch({
+				sort: {
+					byValue: 'number',
+					from: 11,
+					to: 13
+				}
+			}, fetchSpy);
+
+			// change value type --> type mismatch --> element removed
+			states[10].value('asd');
+
+			setTimeout(function () {
+				var expectedChanges = [];
+				for (var i = 20; i < 23; ++i) {
+					expectedChanges.push({
+						path: i.toString(),
+						value: i * i,
+						index: i - 9
+					});
+				}
+				expect(fetchSpy.callCount).to.equal(2);
+				expect(fetchSpy.calledWith(expectedChanges, 3)).to.be.true;
+				expectedChanges = [];
+				for (var i = 21; i < 24; ++i) {
+					expectedChanges.push({
+						path: i.toString(),
+						value: i * i,
+						index: i - 10
+					});
+				}
+				expect(fetchSpy.calledWith(expectedChanges, 3)).to.be.true;
+				done();
+			}, waitTime);
+
+		});
+
+
+		it('byValueField works', function (done) {
+
+			states.push(peer.state({
+				path: 'aaa',
+				value: {
+					age: 3
+				}
+			}));
+
+			states.push(peer.state({
+				path: 'b',
+				value: {
+					age: 2
+				}
+			}));
+
+			states.push(peer.state({
+				path: 'c',
+				value: {
+					age: 10
+				}
+			}));
+
+			states.push(peer.state({
+				path: 'ddd',
+				value: {
+					age: 11
+				}
+			}));
+
+			states.push(peer.state({
+				path: 'e',
+				value: {
+					age: 1
+				}
+			}));
 
 			states.push(peer.state({
 				path: '50',
@@ -840,26 +959,79 @@ describe('Fetch tests with daemon and peer', function () {
 					byValueField: {
 						age: 'number'
 					},
-					from: 11,
-					to: 13
+					from: 2,
+					to: 4
 				}
 			}, fetchSpy);
 
 			setTimeout(function () {
 				var expectedChanges = [];
-				for (var i = 20; i < 23; ++i) {
-					expectedChanges.push({
-						path: i.toString(),
-						value: {
-							age: i * i
-						},
-						index: i - 9
-					});
-				}
+				expectedChanges.push({
+					path: 'b',
+					value: {
+						age: 2
+					},
+					index: 2
+				});
+				expectedChanges.push({
+					path: 'aaa',
+					value: {
+						age: 3
+					},
+					index: 3
+				});
+
+				expectedChanges.push({
+					path: 'c',
+					value: {
+						age: 10
+					},
+					index: 4
+				});
 				expect(fetchSpy.callCount).to.equal(1);
-				expect(fetchSpy.calledWith(expectedChanges, 3)).to.be.true;
-				done();
-			}, 100);
+				expect(fetchSpy.calledWith(expectedChanges, 3, fetcher)).to.be.true;
+
+				// change value, order stays same
+				states[0].value({
+					age: 4
+				});
+
+				setTimeout(function () {
+					expect(fetchSpy.callCount).to.equal(2);
+					expect(fetchSpy.calledWith([{
+						path: 'aaa',
+						value: {
+							age: 4
+						},
+						index: 3
+					}], 3, fetcher)).to.be.true;
+
+					// change value -> change order
+					states[2].value({
+						age: 3
+					});
+
+					setTimeout(function () {
+						expect(fetchSpy.callCount).to.equal(3);
+						expect(fetchSpy.calledWith([{
+							path: 'c',
+							value: {
+								age: 3
+							},
+							index: 3
+          }, {
+							path: 'aaa',
+							value: {
+								age: 4
+							},
+							index: 4
+					}], 3, fetcher)).to.be.true;
+						done();
+					}, waitTime);
+
+				}, waitTime);
+
+			}, waitTime);
 
 		});
 
@@ -909,14 +1081,24 @@ describe('Fetch tests with daemon and peer', function () {
 				expect(fetchSpy.callCount).to.equal(1);
 				expect(fetchSpy.calledWith(expectedChanges, 3)).to.be.true;
 				done();
-			}, 100);
+			}, waitTime);
 
 		});
 
 	});
 
 	describe('byPath and byValue', function () {
-		var states = autoRemovedStates();
+
+		var states;
+
+		beforeEach(function () {
+			states = new StateArray();
+		})
+
+		afterEach(function (done) {
+			states.removeAll(done);
+		});
+
 
 		it('startsWith and lessThan', function (done) {
 			states.push(peer.state({
