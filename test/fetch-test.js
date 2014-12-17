@@ -3,7 +3,7 @@ var sinon = require('sinon');
 var expect = require('chai').expect;
 var util = require('util');
 
-var waitTime = process.env.TRAVIS && 100 || 30;
+var waitTime = process.env.TRAVIS && 100 || 40;
 
 var StateArray = function () {
 
@@ -857,7 +857,60 @@ describe('Fetch tests with daemon and peer', function () {
 
 		});
 
-		it('byValueField works XXX', function (done) {
+		it('byValue works when state is removed', function (done) {
+			var path;
+			for (var i = 10; i < 30; ++i) {
+				states.push(peer.state({
+					path: i.toString(),
+					value: i * i
+				}));
+			}
+
+			states.push(peer.state({
+				path: '50',
+				value: 'asd'
+			}));
+
+			var fetchSpy = sinon.spy();
+
+			var fetcher = peer.fetch({
+				sort: {
+					byValue: 'number',
+					from: 11,
+					to: 13
+				}
+			}, fetchSpy);
+
+			// change value type --> type mismatch --> element removed
+			states[10].value('asd');
+
+			setTimeout(function () {
+				var expectedChanges = [];
+				for (var i = 20; i < 23; ++i) {
+					expectedChanges.push({
+						path: i.toString(),
+						value: i * i,
+						index: i - 9
+					});
+				}
+				expect(fetchSpy.callCount).to.equal(2);
+				expect(fetchSpy.calledWith(expectedChanges, 3)).to.be.true;
+				expectedChanges = [];
+				for (var i = 21; i < 24; ++i) {
+					expectedChanges.push({
+						path: i.toString(),
+						value: i * i,
+						index: i - 10
+					});
+				}
+				expect(fetchSpy.calledWith(expectedChanges, 3)).to.be.true;
+				done();
+			}, waitTime);
+
+		});
+
+
+		it('byValueField works', function (done) {
 
 			states.push(peer.state({
 				path: 'aaa',
