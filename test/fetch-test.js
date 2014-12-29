@@ -787,7 +787,7 @@ describe('Fetch tests with daemon and peer', function () {
 				}
 
 				expect(fetchSpy.callCount).to.equal(1);
-				expect(fetchSpy.calledWith(expectedChanges, 2)).to.be.true;
+				expect(fetchSpy.calledWith(expectedChanges, 2, fetcher)).to.be.true;
 
 				// insert path between '11' and '12'
 				states.push(peer.state({
@@ -816,6 +816,66 @@ describe('Fetch tests with daemon and peer', function () {
 			}, waitTime * 2);
 
 		});
+
+		it('sort.asArray feeds callback with complete array', function (done) {
+			var path;
+			for (var i = 10; i < 13; ++i) {
+				states.push(peer.state({
+					path: i.toString(),
+					value: i
+				}));
+			}
+
+			var fetchSpy = sinon.spy();
+
+			var fetcher = peer.fetch({
+				sort: {
+					asArray: true,
+					byPath: true,
+					from: 2,
+					to: 5
+				}
+			}, fetchSpy);
+
+			setTimeout(function () {
+				var expectedArray = [];
+				for (var i = 11; i < 13; ++i) {
+					expectedArray.push({
+						path: i.toString(),
+						value: i,
+						index: i - 9
+					});
+				}
+
+				expect(fetchSpy.callCount).to.equal(1);
+				expect(fetchSpy.calledWith(expectedArray, fetcher)).to.be.true;
+
+				// insert path between '11' and '12'
+				states.push(peer.state({
+					path: '112',
+					value: 123
+				}));
+
+				setTimeout(function () {
+					expectedArray[1] = {
+						path: '112',
+						value: 123,
+						index: 3
+					};
+					expectedArray[2] = {
+						path: '12',
+						value: 12,
+						index: 4
+					};
+					expect(fetchSpy.callCount).to.equal(2);
+					expect(fetchSpy.calledWith(expectedArray)).to.be.true;
+					done();
+				}, waitTime);
+
+			}, waitTime * 2);
+
+		});
+
 
 		it('byValue works', function (done) {
 			var path;
