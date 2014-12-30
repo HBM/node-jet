@@ -45,7 +45,7 @@
   "scripts": {
     "test": "istanbul cover _mocha -- --recursive test",
     "test_nocover": "mocha  test",
-    "start": "node ./bin/jetdws.js"
+    "start": "./nodejitsu-demo.sh"
   },
   "engines": {
     "node": ">0.8.0"
