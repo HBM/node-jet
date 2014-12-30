@@ -106,3 +106,42 @@ persons.forEach(function (person, index) {
 		set: assign(person)
 	});
 });
+
+var todos = {};
+var tid = 0;
+
+peer.method({
+  path: 'todo/add',
+  call: function(todo) {
+    var todoId = ++tid;
+    var todo = peer.state({
+      path: 'todo/#' + todoId,
+      value: {
+        completed: todo.completed,
+        title: todo.title,
+        id: todoId
+      },
+      set: function(todo) {
+        return {
+          value: {
+            completed: todo.completed,
+            title: todo.title,
+            id: todo.id
+          }
+        };
+      }
+    });
+
+    todos[todoId] = todo;
+  }
+});
+
+peer.method({
+  path: 'todo/remove',
+  call: function() {
+    var args = Array.prototype.slice.call(arguments);
+    args.forEach(function (todo) {
+      todos[todo.id].remove();
+    });
+  }
+});
