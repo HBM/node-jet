@@ -1,4 +1,4 @@
 #!/usr/bin/env sh
-node bin/jetdws.js &
+./bin/jetdws.js &
 sleep 2
-node examples/todo-server.js
+./examples/todo-server.js
