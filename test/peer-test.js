@@ -510,6 +510,52 @@ describe('Jet module', function () {
 			});
 		});
 
+		it('can set with valueAsResult to get the "new" value', function (done) {
+			var path = randomPath();
+			var state = peer.state({
+				path: path,
+				value: true,
+				set: function () {
+					return {
+						value: false
+					};
+				}
+			});
+
+			peer.set(path, 123, {
+				valueAsResult: true,
+				success: function (result) {
+					state.remove();
+					expect(result).to.be.false;
+					done();
+				}
+			});
+		});
+
+		it('can set with valueAsResult to get the "new" value with setAsync', function (done) {
+			var path = randomPath();
+			var state = peer.state({
+				path: path,
+				value: true,
+				setAsync: function (value, reply) {
+					setTimeout(function () {
+						reply({
+							value: false
+						});
+					}, 1);
+				}
+			});
+
+			peer.set(path, 123, {
+				valueAsResult: true,
+				success: function (result) {
+					state.remove();
+					expect(result).to.be.false;
+					done();
+				}
+			});
+		});
+
 		it('can fetch and unfetch', function (done) {
 			var setupOK;
 			var fetcher = peer.fetch('bla', function () {}, {
