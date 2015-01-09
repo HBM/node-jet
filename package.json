@@ -1,12 +1,13 @@
 {
   "name": "node-jet",
   "subdomain": "jet",
-  "description": "Realtime Message Bus for the Web. Daemon and Peer implementation.",
+  "description": "Jet Realtime Message Bus for the Web. Daemon and Peer implementation.",
   "url": "https://github.com/lipp/node-jet",
   "keywords": [
     "ipc",
     "bus",
     "message",
+    "realtime",
     "rpc",
     "jet",
     "json"
