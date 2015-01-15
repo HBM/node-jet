@@ -38,7 +38,7 @@
     "fetch.js": "./bin/fetch.js",
     "some-service.js": "./bin/some-service.js"
   },
-  "version": "0.1.2-5",
+  "version": "0.1.3",
   "repository": {
     "type": "git",
     "url": "https://github.com/lipp/node-jet"
