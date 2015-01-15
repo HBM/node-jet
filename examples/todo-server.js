@@ -7,7 +7,8 @@ var app = express();
 app.use(express.static('./'));
 
 var server = http.createServer(app);
-server.listen(80);
+var port = parseInt(process.argv[2]) || 80;
+server.listen(port);
 
 var daemon = new jet.Daemon();
 daemon.listen({
@@ -59,5 +60,14 @@ peer.method({
     args.forEach(function (todo) {
       todos[todo.id].remove();
     });
+  }
+});
+
+peer.method({
+  path: 'todo/removeAll',
+  call: function() {
+    for(var id in todos) {
+      todos[id].remove();
+    }
   }
 });
