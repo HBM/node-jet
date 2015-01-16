@@ -47,7 +47,7 @@ peer.method({
 
 peer.method({
 	path: 'asyncHello',
-	callAsync: function (who, reply) {
+	callAsync: function (reply, who) {
 		setTimeout(function () {
 			reply({
 				result: 'Hello ' + who
@@ -58,7 +58,7 @@ peer.method({
 
 peer.method({
 	path: 'letsFailAsync',
-	callAsync: function (args, reply) {
+	callAsync: function (reply) {
 		setTimeout(function () {
 			reply({
 				error: 'I always fail'
