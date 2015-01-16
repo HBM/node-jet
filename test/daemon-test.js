@@ -102,7 +102,7 @@ describe('A Daemon', function () {
 
 		peer.method({
 			path: 'alwaysTooLate',
-			callAsync: function (arg1, arg2, reply) {
+			callAsync: function (reply, arg1, arg2) {
 				setTimeout(function () {
 					reply({
 						result: 123
