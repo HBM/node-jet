@@ -195,8 +195,8 @@ var sum = peer.method({
 The arguments to the `callAsync` Function are:
 
 - `reply`: {Function} Method for sending the result/error.
-- An Object with the forwarded "args" field from of original "call" Request
-- An unpacked Array, if the forwarded "args" of the original "call" Request
+- __Either__ An Object with the forwarded "args" field from of original "call" Request
+- __Or__ An unpacked Array, if the forwarded "args" of the original "call" Request
   field was an Array
 
 The `callAsync` method can return anything or throw an Error (String/JSON-RPC error)

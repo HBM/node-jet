@@ -345,7 +345,7 @@ describe('Jet module', function () {
 			});
 		});
 
-		it('can add and call a method', function (done) {
+		it('can add and call a method with array args', function (done) {
 			var path = randomPath();
 			var m = peer.method({
 				path: path,
@@ -358,6 +358,28 @@ describe('Jet module', function () {
 			});
 
 			peer.call(path, [1, 2, false], {
+				success: function (result) {
+					expect(result).to.equal(3);
+					done();
+				}
+			});
+		});
+
+		it('can add and call a method with object arg', function (done) {
+			var path = randomPath();
+			var m = peer.method({
+				path: path,
+				call: function (arg) {
+					expect(arg.x).to.equal(1);
+					expect(arg.y).to.equal(2);
+					return arg.x + arg.y;
+				}
+			});
+
+			peer.call(path, {
+				x: 1,
+				y: 2
+			}, {
 				success: function (result) {
 					expect(result).to.equal(3);
 					done();
@@ -384,11 +406,11 @@ describe('Jet module', function () {
 		});
 
 
-		it('can add and call a method with callAsync', function (done) {
+		it('can add and call a method with callAsync and array args', function (done) {
 			var path = randomPath();
 			var m = peer.method({
 				path: path,
-				callAsync: function (arg1, arg2, arg3, reply) {
+				callAsync: function (reply, arg1, arg2, arg3) {
 					expect(arg1).to.equal(1);
 					expect(arg2).to.equal(2);
 					expect(arg3).to.be.false;
@@ -408,11 +430,38 @@ describe('Jet module', function () {
 			});
 		});
 
+		it('can add and call a method with callAsync and object args', function (done) {
+			var path = randomPath();
+			var m = peer.method({
+				path: path,
+				callAsync: function (reply, arg) {
+					expect(arg.x).to.equal(1);
+					expect(arg.y).to.equal(2);
+					setTimeout(function () {
+						reply({
+							result: arg.x + arg.y
+						});
+					}, 10);
+				}
+			});
+
+			peer.call(path, {
+				x: 1,
+				y: 2
+			}, {
+				success: function (result) {
+					expect(result).to.equal(3);
+					done();
+				}
+			});
+		});
+
+
 		it('can add and call a method with callAsync which fails', function (done) {
 			var path = randomPath();
 			var m = peer.method({
 				path: path,
-				callAsync: function (arg1, arg2, arg3, reply) {
+				callAsync: function (reply, arg1, arg2, arg3) {
 					expect(arg1).to.equal(1);
 					expect(arg2).to.equal(2);
 					expect(arg3).to.be.false;
@@ -438,7 +487,7 @@ describe('Jet module', function () {
 			var path = randomPath();
 			var m = peer.method({
 				path: path,
-				callAsync: function (arg1, arg2, arg3, reply) {
+				callAsync: function (reply, arg1, arg2, arg3) {
 					expect(arg1).to.equal(1);
 					expect(arg2).to.equal(2);
 					expect(arg3).to.be.false;
@@ -462,7 +511,7 @@ describe('Jet module', function () {
 			var path = randomPath();
 			var m = peer.method({
 				path: path,
-				callAsync: function (arg1, arg2, arg3, reply) {
+				callAsync: function (reply, arg1, arg2, arg3) {
 					throw new Error('argh');
 				}
 			});
