@@ -16,7 +16,6 @@ peer.state({
 	path: 'acceptAllButSlow',
 	value: 123,
 	set: function (val, reply) {
-		console.log(reply, val);
 		var timeout = 1;
 		if (typeof (val) === 'object' && typeof (val.timeout) === 'number') {
 			timeout = val.timeout;
@@ -41,25 +40,29 @@ peer.state({
 
 peer.method({
 	path: 'syncHello',
-	call: function (args) {
-		return 'Hello' + args[0];
+	call: function (who) {
+		return 'Hello ' + who;
 	}
 });
 
 peer.method({
 	path: 'asyncHello',
-	call: function (done, args) {
+	callAsync: function (who, reply) {
 		setTimeout(function () {
-			done('Hello' + args[0]);
+			reply({
+				result: 'Hello ' + who
+			});
 		}, 1000);
 	}
 });
 
 peer.method({
 	path: 'letsFailAsync',
-	call: function (done) {
+	callAsync: function (args, reply) {
 		setTimeout(function () {
-			done(null, 'I always fail');
+			reply({
+				error: 'I always fail'
+			});
 		}, 1000);
 	}
 });
