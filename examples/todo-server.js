@@ -1,18 +1,10 @@
 #!/usr/bin/env node
 var jet = require('../lib/jet');
-var express = require('express');
-var http = require('http');
-
-var app = express();
-app.use(express.static('./'));
-
-var server = http.createServer(app);
 var port = parseInt(process.argv[2]) || 80;
-server.listen(port);
 
 var daemon = new jet.Daemon();
 daemon.listen({
-  server: server,
+  wsPort: port,
   tcpPort: 11123
 });
 
@@ -34,16 +26,19 @@ peer.method({
     var todo = peer.state({
       path: 'todo/#' + todoId,
       value: {
-        completed: todo.completed,
-        title: todo.title,
+        completed: todo.completed === true || false,
+        title: todo.title.substring(0,30) || '',
         id: todoId
       },
       set: function(todo) {
+        if (todo.title.length > 30) {
+          throw new Error('title too long');
+        }
         return {
           value: {
-            completed: todo.completed,
-            title: todo.title,
-            id: todo.id
+            completed: todo.completed === true || false,
+            title: todo.title || '',
+            id: todoId
           }
         };
       }
