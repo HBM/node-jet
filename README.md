@@ -30,7 +30,7 @@ method.
 
 # Start some example peer
 
-The packege provides an example peer, which adds some States and Methods to play
+The package provides an example peer, which adds some States and Methods to play
 with.
 
      $ some-service.js
