@@ -5,7 +5,7 @@ var sinon = require('sinon');
 
 describe('The (daemon) jsonrpc module', function () {
 	it('provides jsonrpc.JsonRPC ctor', function () {
-		expect(jsonrpc.JsonRPC).to.be.a('function');
+		expect(jsonrpc).to.be.a('function');
 	});
 
 	describe('a JsonRPC instance ji.dispatch', function () {
@@ -19,7 +19,7 @@ describe('The (daemon) jsonrpc module', function () {
 			router.response = sinon.spy();
 			log = sinon.spy();
 			peer.sendMessage = sinon.spy();
-			ji = new jsonrpc.JsonRPC(services, router);
+			ji = new jsonrpc(services, router);
 		});
 
 		it('valid request known method/service gets called', function () {

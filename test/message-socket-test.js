@@ -2,7 +2,7 @@ var net = require('net');
 var expect = require('chai').expect;
 var EventEmitter = require('events').EventEmitter;
 /* this is a private module, so load directly */
-var MessageSocket = require('../lib/jet/message-socket.js').MessageSocket;
+var MessageSocket = require('../lib/jet/message-socket').MessageSocket;
 
 var echoPort = 1389;
 var byteEchoPort = 1312;
