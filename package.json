@@ -56,5 +56,6 @@
   "bugs": {
     "url": "http://github.com/lipp/node-jet/issues",
     "email": "gelipp@gmail.com"
-  }
+  },
+  "browser": "./lib/browser.js"
 }
