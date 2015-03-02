@@ -95,6 +95,17 @@ describe('A Daemon', function () {
 		});
 	});
 
+	it('daemon emits disconnect event when peer disconnects', function (done) {
+		var peer = new jet.Peer({
+			port: testPort
+		});
+		daemon.on('disconnect', function (peerMS) {
+			expect(peerMS).to.be.an('object');
+			done();
+		});
+		peer.close();
+	});
+
 	it('timeout response is generated', function (done) {
 		var peer = new jet.Peer({
 			port: testPort
