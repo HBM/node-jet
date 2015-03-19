@@ -7,6 +7,40 @@ var MessageSocket = require('../lib/jet/message-socket').MessageSocket;
 var jet = require('../lib/jet');
 var http = require('http');
 
+var commandRequestTest = function (port, command, params, checkResult) {
+	describe('who sends "' + command + '" as request', function () {
+		var sender;
+		before(function () {
+			sender = new MessageSocket(port);
+			sender.sendMessage = function (message) {
+				sender.send(JSON.stringify(message));
+			};
+		});
+
+		var id = Math.random();
+		var request = {
+			id: id,
+			method: command,
+			params: params
+		};
+
+		it('sends back the correct result', function (done) {
+			sender.once('message', function (response) {
+				response = JSON.parse(response);
+				expect(response.id).to.equal(request.id);
+				if (checkResult) {
+					checkResult(response.result);
+				} else {
+					expect(response.result).to.be.true;
+				}
+				expect(response).to.not.have.property('error');
+				done();
+			});
+			sender.sendMessage(request);
+		});
+	});
+};
+
 var testPort = 33301;
 
 describe('A Daemon', function () {
@@ -17,6 +51,7 @@ describe('A Daemon', function () {
 			tcpPort: testPort
 		});
 	});
+
 	it('should be instance of EventEmitter', function (done) {
 		expect(daemon).to.be.an.instanceof(EventEmitter);
 		expect(daemon.listen).to.be.a('function');
@@ -26,6 +61,7 @@ describe('A Daemon', function () {
 		});
 		daemon.emit('test', 1, 2);
 	});
+
 	it('should emit "connection" for every new Peer', function (done) {
 		daemon.once('connection', function (peerMs) {
 			expect(peerMs).to.be.an('object');
@@ -33,46 +69,21 @@ describe('A Daemon', function () {
 		});
 		var sock = net.connect(testPort);
 	});
+
 	describe('when connected to a peer sending "handmade" message', function () {
-		var sender;
-		var peer;
-		before(function (done) {
-			sender = new MessageSocket(testPort);
-			sender.sendMessage = function (message) {
-				sender.send(JSON.stringify(message));
-			};
-			daemon.once('connection', function (peerMs) {
-				peer = peerMs;
-				done();
-			});
-		});
-		var commandRequestTest = function (command, params) {
-			describe('who sends "' + command + '" as request', function () {
-				var id = Math.random();
-				var request = {
-					id: id,
-					method: command,
-					params: params
-				};
-				it('sends back a result response', function (done) {
-					sender.once('message', function (response) {
-						response = JSON.parse(response);
-						expect(response.id).to.equal(request.id);
-						expect(response.result).to.be.true;
-						expect(response).to.not.have.property('error');
-						done();
-					});
-					sender.sendMessage(request);
-				});
-			});
-		};
-		commandRequestTest('add', {
+
+		commandRequestTest(testPort, 'add', {
 			path: 'test',
 			value: 123
 		});
-		commandRequestTest('remove', {
-			path: 'test',
-			value: 123
+
+		commandRequestTest(testPort, 'info', {}, function (result) {
+			expect(result.name).to.equal('node-jet');
+			expect(result.version).to.equal('0.2.0');
+			expect(result.protocolVersion).to.equal(2);
+			expect(result.features.fetch).to.equal('full');
+			expect(result.features.batches).to.be.true;
+			expect(result.features.authentication).to.be.false;
 		});
 	});
 
@@ -175,4 +186,32 @@ describe('A Daemon', function () {
 
 	});
 
-})
+});
+
+
+describe('A Daemon with batches disabled', function () {
+	var daemon;
+	before(function () {
+		daemon = new jet.Daemon({
+			name: 'nobatch-jet',
+			features: {
+				batches: false
+			}
+		});
+		daemon.listen({
+			tcpPort: testPort + 1
+		});
+	});
+
+	describe('when connected to a peer sending "handmade" message', function () {
+
+		commandRequestTest(testPort + 1, 'info', {}, function (result) {
+			expect(result.name).to.equal('nobatch-jet');
+			expect(result.version).to.equal('0.2.0');
+			expect(result.protocolVersion).to.equal(2);
+			expect(result.features.fetch).to.equal('full');
+			expect(result.features.batches).to.be.false;
+			expect(result.features.authentication).to.be.false;
+		});
+	});
+});
