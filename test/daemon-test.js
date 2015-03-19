@@ -189,13 +189,13 @@ describe('A Daemon', function () {
 });
 
 
-describe('A Daemon with batches disabled', function () {
+describe('A Daemon with simple fetching', function () {
 	var daemon;
 	before(function () {
 		daemon = new jet.Daemon({
-			name: 'nobatch-jet',
+			name: 'simple-jet',
 			features: {
-				batches: false
+				fetch: 'simple'
 			}
 		});
 		daemon.listen({
@@ -206,11 +206,11 @@ describe('A Daemon with batches disabled', function () {
 	describe('when connected to a peer sending "handmade" message', function () {
 
 		commandRequestTest(testPort + 1, 'info', {}, function (result) {
-			expect(result.name).to.equal('nobatch-jet');
+			expect(result.name).to.equal('simple-jet');
 			expect(result.version).to.equal('0.2.0');
 			expect(result.protocolVersion).to.equal(2);
-			expect(result.features.fetch).to.equal('full');
-			expect(result.features.batches).to.be.false;
+			expect(result.features.fetch).to.equal('simple');
+			expect(result.features.batches).to.be.true;
 			expect(result.features.authentication).to.be.false;
 		});
 	});
