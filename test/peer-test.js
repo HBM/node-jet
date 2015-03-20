@@ -98,6 +98,20 @@ describe('Jet module', function () {
 		peer.close();
 	});
 
+	it('peer.on("error") is fired and onError is executed before', function (done) {
+		var spy = sinon.spy();
+		var peer = new jet.Peer({
+			ip: 'some.notexisting.com',
+			onError: spy
+		});
+		peer.on('error', function (err) {
+			sinon.assert.calledOnce(spy);
+			expect(err.code).to.equal('ENOTFOUND');
+			peer.close();
+			done();
+		});
+	});
+
 	it('can connect via WebSocket', function (done) {
 		var peer = new jet.Peer({
 			url: 'ws://localhost:' + testWsPort,
