@@ -2,6 +2,7 @@ var jet = require('../lib/jet');
 var sinon = require('sinon');
 var expect = require('chai').expect;
 var util = require('util');
+var MessageSocket = require('../lib/jet/message-socket').MessageSocket;
 
 var waitTime = process.env.TRAVIS && 100 || 40;
 
@@ -1190,6 +1191,117 @@ describe('Fetch tests with daemon and peer', function () {
 				expect(fetchSpy.calledWith('abc', 'add', 1)).to.be.true;
 				done();
 			}, waitTime);
+		});
+	});
+
+});
+
+describe('A Daemon with features.fetch = "simple" and two states', function () {
+	var daemon;
+	var peer;
+
+	before(function (done) {
+		daemon = new jet.Daemon({
+			features: {
+				fetch: 'simple'
+			}
+		});
+
+		daemon.listen({
+			tcpPort: 4357
+		});
+
+		peer = new jet.Peer({
+			port: 4357
+		});
+
+		peer.state({
+			path: 'abc',
+			value: 123
+		});
+
+		peer.state({
+			path: 'def',
+			value: 123
+		}, {
+			success: function () {
+				done();
+			}
+		});
+	});
+
+	after(function () {
+		peer.close();
+	});
+
+	describe('raw message tests', function () {
+
+		var sock;
+
+		beforeEach(function (done) {
+			sock = new MessageSocket(4357);
+			sock.once('open', function () {
+				done();
+			});
+		});
+
+
+		it('"fetch" call returns a string and ignores fetch params and triggers fetch ALL', function (done) {
+			var cnt = 0;
+			var fetchId;
+			var request = {
+				id: 99,
+				method: 'fetch',
+				params: {
+					id: 'asd' // gets ignored for simple fetch
+				}
+			};
+
+
+			sock.on('message', function (resp) {
+				resp = JSON.parse(resp);
+				if (cnt === 0) {
+					expect(resp.result).to.be.a('string');
+					fetchId = resp.result;
+					expect(resp.id).to.equal(99);
+				} else {
+					expect(resp.method).to.equal(fetchId);
+					expect(resp.params.path).to.be.a('string');
+					expect(resp.params.value).to.equal(123);
+				}
+				++cnt;
+				if (cnt === 3) {
+					done();
+				}
+			});
+
+			sock.send(JSON.stringify(request));
+		});
+
+		it('fetching twice fails', function (done) {
+
+			var cnt = 0;
+			var request = {
+				id: 100,
+				method: 'fetch',
+				params: {}
+			};
+			sock.on('message', function (resp) {
+				resp = JSON.parse(resp);
+				if (cnt === 0) {
+					expect(resp.result).to.be.a('string');
+					fetchId = resp.result;
+					expect(resp.id).to.equal(100);
+				} else if (resp.id) {
+					expect(resp.error.code).to.equal(-32602);
+					expect(resp.error.message).to.equal('Invalid params');
+					done();
+				}
+				++cnt;
+			});
+			sock.send(JSON.stringify(request));
+			request.id = 101;
+			sock.send(JSON.stringify(request));
 		});
 	});
 
