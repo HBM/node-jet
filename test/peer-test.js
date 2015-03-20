@@ -63,9 +63,26 @@ describe('Jet module', function () {
 		});
 		peer.on('open', function () {
 			sinon.assert.calledOnce(spy);
+			peer.close();
 			done();
 		});
-		peer.close();
+	});
+
+	it('peer.on("open") is fired and provides daemon info as argument', function (done) {
+		var peer = new jet.Peer({
+			port: testPort
+		});
+		peer.on('open', function (daemonInfo) {
+			expect(daemonInfo).to.be.an('object');
+			expect(daemonInfo.name).to.equal('node-jet');
+			expect(daemonInfo.version).to.be.a('string');
+			expect(daemonInfo.protocolVersion).to.equal(2);
+			expect(daemonInfo.features.fetch).to.equal('full');
+			expect(daemonInfo.features.authentication).to.equal(false);
+			expect(daemonInfo.features.batches).to.equal(true);
+			peer.close();
+			done();
+		});
 	});
 
 	it('peer.on("close") is fired and onClose is executed before', function (done) {
