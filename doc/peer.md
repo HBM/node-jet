@@ -11,11 +11,12 @@ var jet = require('node-jet');
 Creates and returns a new Jet Peer instance with the specified config.
 The supported config fields are:
 
-- `url`: {String} The Jet Daemon Websocket URL
-- `onOpen`: {Function, Optional} Deprecated. Called when the connection to the Daemon has been established
-- `onError`: {Function, Optional} Deprecated. Called on network or other error
-- `onClose`: {Function, Optional} Deprecated. Called whenever the connection has been closed
+- `url`: {String} The Jet Daemon Websocket URL, e.g. `ws://localhost:11123`
+- `ip`: {String} The Jet Daemon TCP trivial protocol ip (default: `localhost`)
+- `port`: {String} The Jet Daemon TCP trivial protocol port (default: `11122`)
 
+The peer uses either the Websocket protocol or the TCP trivial protocol (default) as transport.
+Thus, when specifying the `url` field, the peer uses the Websocket protocol as transport.
 
 ```javascript
 var jet = require('node-jet');
@@ -24,18 +25,31 @@ var peer = new jet.Peer({
   url: 'ws://jet.nodejitsu.com:80'
 });
 
-peer.on('open', function() {
+peer.on('open', function(info) {
     console.log('connection to Daemon established');
+    console.log('Daemon Info: ', info);
 });
 ```
 
 ### Events
 
 The Jet Peer is an EventEmitter and emits the events:
- - "close"
- - "open"
- - "error" 
+ - "close" (argument: `reason` {any})
+ - "open" (argument: `daemonInfo` {Object})
+ - "error" (argument: `error` {any})
 
+The `daemonInfo` argument to the "open" event is as follows:
+
+```javascript
+peer.on('open', function(daemonInfo) {
+   console.log('name', daemonInfo.name); // string
+   console.log('version', daemonInfo.version); // string
+   console.log('protocolVersion', daemonInfo.protocolVersion); // number
+   console.log('can process JSON-RPC batches', daemonInfo.features.batches); // boolean
+   console.log('supports authentication', daemonInfo.features.authentication); // boolean
+   console.log('fetch-mode', daemonInfo.features.fetch); // string: 'full' or 'simple'
+});
+```
 
 ## `peer.close()`
 
