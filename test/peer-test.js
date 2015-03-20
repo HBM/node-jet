@@ -1,6 +1,8 @@
 var expect = require('chai').expect;
 var uuid = require('uuid');
+var EventEmitter = require('events').EventEmitter;
 var jet = require('../lib/jet');
+var sinon = require('sinon');
 
 var testPort = 2314;
 var testWsPort = 2315;
@@ -53,6 +55,32 @@ describe('Jet module', function () {
 		});
 	});
 
+	it('peer.on("open") is fired and onOpen is executed before', function (done) {
+		var spy = sinon.spy();
+		var peer = new jet.Peer({
+			port: testPort,
+			onOpen: spy
+		});
+		peer.on('open', function () {
+			sinon.assert.calledOnce(spy);
+			done();
+		});
+		peer.close();
+	});
+
+	it('peer.on("close") is fired and onClose is executed before', function (done) {
+		var spy = sinon.spy();
+		var peer = new jet.Peer({
+			port: testPort,
+			onClose: spy
+		});
+		peer.on('close', function () {
+			sinon.assert.calledOnce(spy);
+			done();
+		});
+		peer.close();
+	});
+
 	it('can connect via WebSocket', function (done) {
 		var peer = new jet.Peer({
 			url: 'ws://localhost:' + testWsPort,
@@ -85,6 +113,9 @@ describe('Jet module', function () {
 			peer.close();
 		});
 
+		it('should be an instance of EventEmitter', function () {
+			expect(peer).to.be.an.instanceof(EventEmitter);
+		});
 
 		it('can add, fetch and set a state', function (done) {
 			var random = randomPath();
