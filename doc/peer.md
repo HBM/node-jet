@@ -12,19 +12,30 @@ Creates and returns a new Jet Peer instance with the specified config.
 The supported config fields are:
 
 - `url`: {String} The Jet Daemon Websocket URL
-- `onOpen`: {Function, Optional} Called when the connection to the Daemon has been established
-- `onError`: {Function, Optional} Called on network or other error
-- `onClose`: {Function, Optional} Called whenever the connection has been closed
+- `onOpen`: {Function, Optional} Deprecated. Called when the connection to the Daemon has been established
+- `onError`: {Function, Optional} Deprecated. Called on network or other error
+- `onClose`: {Function, Optional} Deprecated. Called whenever the connection has been closed
+
 
 ```javascript
 var jet = require('node-jet');
+
 var peer = new jet.Peer({
-  url: 'ws://jet.nodejitsu.com:80',
-  onOpen: function() {
+  url: 'ws://jet.nodejitsu.com:80'
+});
+
+peer.on('open', function() {
     console.log('connection to Daemon established');
-  }
 });
 ```
+
+### Events
+
+The Jet Peer is an EventEmitter and emits the events:
+ - "close"
+ - "open"
+ - "error" 
+
 
 ## `peer.close()`
 
