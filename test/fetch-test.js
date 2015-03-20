@@ -1303,6 +1303,48 @@ describe('A Daemon with features.fetch = "simple" and two states', function () {
 			request.id = 101;
 			sock.send(JSON.stringify(request));
 		});
+
+		it('fetch/unfetch succeeds', function (done) {
+			var cnt = 0;
+			var request = {
+				id: 200,
+				method: 'fetch',
+				params: {}
+			};
+			sock.on('message', function (resp) {
+				resp = JSON.parse(resp);
+				if (cnt === 0) {
+					expect(resp.result).to.be.a('string');
+					fetchId = resp.result;
+					expect(resp.id).to.equal(200);
+				} else if (cnt === 3) {
+					expect(resp.result).to.equal(true);
+					expect(resp.id).to.equal(201);
+					done();
+				}
+				++cnt;
+			});
+			sock.send(JSON.stringify(request));
+			request.method = 'unfetch';
+			request.id = 201;
+			sock.send(JSON.stringify(request));
+		});
+
+		it('unfetch fails', function (done) {
+			var request = {
+				id: 300,
+				method: 'unfetch',
+				params: {}
+			};
+			sock.on('message', function (resp) {
+				resp = JSON.parse(resp);
+				expect(resp.error.code).to.equal(-32602);
+				expect(resp.error.message).to.equal('Invalid params');
+				done();
+			});
+			sock.send(JSON.stringify(request));
+		});
+
 	});
 
 });
