@@ -37,12 +37,14 @@ with.
 
 # Radar
 
-To use the Radar web interface to Jet:
+Open [Radar on jetbus.io](http://jetbus.io/radar.html). Your local Jet Daemon's default WebSocket address is `ws://localhost:11123`.
+
+To use the github Radar version:
 
     $ git clone https://github.com/lipp/radar
     $ jetd.js <path-to-radar>
 
-Visit [Your Radar](http://localhost:8080). Your local Jet Daemon's default WebSocket address is `ws://localhost:11123`.
+Visit [Your Radar](http://localhost:8080). 
 
 # Doc
 
