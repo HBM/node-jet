@@ -1,10 +1,15 @@
 #!/usr/bin/env node
+// nodejitsu requires embedding the daemon into a http server.
+var http = require('http');
 var jet = require('../lib/jet');
 var port = parseInt(process.argv[2]) || 80;
 
+var server = http.createServer();
+server.listen(port);
+
 var daemon = new jet.Daemon();
 daemon.listen({
-  wsPort: port,
+  server: server, // embed jet websocket upgrade handler
   tcpPort: 11123
 });
 
