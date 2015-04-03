@@ -42,7 +42,7 @@ To use the Radar web interface to Jet:
     $ git clone https://github.com/lipp/radar
     $ jetd.js <path-to-radar>
 
-Visit [Your Radar](http://localhost:8080).
+Visit [Your Radar](http://localhost:8080). Your local Jet Daemon's default WebSocket address is `ws://localhost:11123`.
 
 # Doc
 
