@@ -56,6 +56,16 @@ describe('A MessageSocket', function () {
 				ms.send(testMessageA);
 			});
 
+			it('can echo utf-16', function (done) {
+				var utf16TestMessage = 'öäü\uD83D\uDCA9';
+				ms.once('message', function (message) {
+					expect(message).to.be.a('string');
+					expect(message).to.equal(utf16TestMessage);
+					done();
+				});
+				ms.send(utf16TestMessage);
+			});
+
 			it('should emit "sent" with the unmodified message', function (done) {
 				ms.once('sent', function (message) {
 					expect(message).to.equal(testMessageA);
