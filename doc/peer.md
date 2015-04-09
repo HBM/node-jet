@@ -6,9 +6,9 @@ Load the module "node-jet":
 var jet = require('node-jet');
 ```
 
-## `peer = new jet.Peer(config)`
+## `peer = new jet.Peer([config])`
 
-Creates and returns a new Jet Peer instance with the specified config.
+Creates and returns a new Jet Peer instance with the specified connection config.
 The supported config fields are:
 
 - `url`: {String} The Jet Daemon Websocket URL, e.g. `ws://localhost:11123`
@@ -17,6 +17,8 @@ The supported config fields are:
 
 The peer uses either the Websocket protocol or the TCP trivial protocol (default) as transport.
 When specifying the `url` field, the peer uses the Websocket protocol as transport.
+If no `config` is provided, the Peer connects to the local ('localhost') Daemon using the trivial protocol.
+Browsers do only support the Websocket transport and must provided a `config` with `url` field.
 
 ```javascript
 var jet = require('node-jet');
@@ -57,7 +59,7 @@ Closes the connection to the Daemon.
 
 ## `peer.set(path, value, [callbacks])`
 
-Tries to set the Jet State specified by `path` to `value`. 
+Tries to set the Jet State specified by `path` to `value`. `callbacks` is an optional parameter of type Object, which may hold `success` and/or `error` callback functions.  
 
 ```javascript
 peer.set('foo', 123, {
@@ -73,10 +75,25 @@ peer.set('foo', 123, {
 peer.set('foo', 12341);
 ```
 
+The `callbacks` Object may also specify a `timeout` in seconds and set the `valueAsResult` flag, which causes the new "real" value to be provided as argument to `success`.
+
+```javascript
+peer.set('magic', 123, {
+  timeout: 7,
+  valueAsResult: true,
+  success: function(realNewValue) {
+    console.log('magic is now', realNewValue);
+  },
+  error: function(e) {
+    console.log('set failed', e);
+  }
+});
+```
+
 ## `peer.call(path, args, [callbacks])`
 
 Calls the Jet Method specified by `path` with `args` as arguments.
-`args` must be an Object or an Array.
+`args` must be an Object or an Array. `callbacks` is an optional parameter of type Object, which may hold `success` and/or `error` callback functions. A `timeout` can also be specified.
 
 ```javascript
 peer.call('sum', [1,2,3,4,5], {
@@ -85,7 +102,8 @@ peer.call('sum', [1,2,3,4,5], {
   },
   error: function(e) {
     console.log('could not calc the sum', e);
-  }
+  },
+  timeout: 0.5
 });
 
 // dont care about the result
@@ -100,6 +118,42 @@ Creates and returns a Fetch instance. The supported fields of `rule` are:
 - `value`: {Object, Optional} For value based fetches
 - `valueField`: {Object, Optional} For valuefield based fetches
 - `sort`: {Object, Optional} For sorted fetches
+
+Fetching all movies could look like this:
+
+```javascript
+peer.fetch({
+    path: {
+      startsWith: 'movie/'
+    }
+  }, function(path, event, value) {}
+);
+```
+
+Fetching the top ten female players could look like this:
+
+```javascript
+peer.fetch({
+    path: {
+      startsWith: 'player/'
+    },
+    valueField: {
+      gender: {
+        equals: 'female'
+      }
+    },
+    sort: {
+      byValueField: {
+        score: 'number'
+      },
+      descending: true,
+      from: 1,
+      to: 10,
+      asArray: true
+    }
+  }, function(topFemalePlayers) {}
+);
+```
 
 If `rule` is a empty Object, a "Fetch all" is set up.
 
@@ -173,7 +227,7 @@ Creates and returns a Jet Method given the information provided by `desc`.
 The supported `desc` fields are:
 
 - `path`: {String} The unique path of the Method
-- `call`: {Function, Optional} The Function which "executes" the method (synchonous)
+- `call`: {Function, Optional} The Function which "executes" the method (synchronous)
 - `callAsync`: {Function, Optional} The Function which "executes" the method
   (asychronously)
 
