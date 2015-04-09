@@ -44,9 +44,9 @@ Or - if installed locally:
      $ node_modules/.bin/jetd.js
      
 
-# Integration Daemon
+# Integrated Daemon
 
-If you want the Daemon to listen for WebSockets on the same port as your existing
+If you want the Jet Daemon to listen for WebSockets on the same port as your existing
 (node.js) HTTP server, use the [daemon.listen({server:httpServer})](https://github.com/lipp/node-jet/blob/master/doc/daemon.md#daemonlistentcpport1234wsport4321)
 method like this:
 
