@@ -115,8 +115,8 @@ peer.call('greet', {first: 'John', last: 'Mitchell'});
 Creates and returns a Fetch instance. The supported fields of `rule` are:
 
 - `path`: {Object, Optional} For path based fetches
-- `value`: {Object, Optional} For value based fetches
-- `valueField`: {Object, Optional} For valuefield based fetches
+- `value`: {Object, Optional} For value based fetches of primitive types
+- `valueField`: {Object, Optional} For valuefield based fetches of Objects
 - `sort`: {Object, Optional} For sorted fetches
 
 Fetching all movies could look like this:
