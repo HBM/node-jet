@@ -1,6 +1,6 @@
 # jet.Peer API
 
-Note that the module is called "node-jet":
+Load the module "node-jet":
 
 ```javascript
 var jet = require('node-jet');
@@ -16,7 +16,7 @@ The supported config fields are:
 - `port`: {String} The Jet Daemon TCP trivial protocol port (default: `11122`)
 
 The peer uses either the Websocket protocol or the TCP trivial protocol (default) as transport.
-Thus, when specifying the `url` field, the peer uses the Websocket protocol as transport.
+When specifying the `url` field, the peer uses the Websocket protocol as transport.
 
 ```javascript
 var jet = require('node-jet');
@@ -25,9 +25,9 @@ var peer = new jet.Peer({
   url: 'ws://jet.nodejitsu.com:80'
 });
 
-peer.on('open', function(info) {
+peer.on('open', function(daemonInfo) {
     console.log('connection to Daemon established');
-    console.log('Daemon Info: ', info);
+    console.log('Daemon Info: ', daemonInfo);
 });
 ```
 
@@ -57,7 +57,7 @@ Closes the connection to the Daemon.
 
 ## `peer.set(path, value, [callbacks])`
 
-Tries to set the Jet State specified by `path` to `value`.
+Tries to set the Jet State specified by `path` to `value`. 
 
 ```javascript
 peer.set('foo', 123, {
