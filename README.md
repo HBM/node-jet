@@ -82,7 +82,7 @@ peer.state({
   path: 'me/friends',
   value: ['John', 'Mike', 'Horst'],
   set: function(newFriends) {
-    if (likeFriends(newFriends)) {
+    if (!likeFriends(newFriends)) {
       throw new Error('sorry, don't like you guys');
     }
   }
