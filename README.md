@@ -92,14 +92,8 @@ peer.state({
 
 # Radar
 
-Open [Radar on jetbus.io](http://jetbus.io/radar.html). Your local Jet Daemon's default WebSocket address is `ws://localhost:11123`.
+Open [Radar on jetbus.io](http://jetbus.io/radar.html), which allows you to see/observe Your Jet States and Methods. Your local Jet Daemon's default WebSocket address is `ws://localhost:11123`.
 
-To use the github Radar version:
-
-    $ git clone https://github.com/lipp/radar
-    $ jetd.js <path-to-radar>
-
-Visit [Your Radar](http://localhost:8080). 
 
 # Doc
 
