@@ -119,6 +119,29 @@ Creates and returns a Fetch instance. The supported fields of `rule` are:
 - `valueField`: {Object, Optional} For valuefield based fetches of Objects
 - `sort`: {Object, Optional} For sorted fetches
 
+[Implemented](https://github.com/lipp/node-jet/blob/master/lib/jet/path_matcher.js#L6) `path` predicates are:
+
+- `startsWith` {String}
+- `startsNotWith` {String}
+- `endsWith` {String}
+- `endsNotWith` {String}
+- `contains` {String}
+- `containsNot` {String}
+- `containsOneOf` {Array of Strings}
+- `containsAllOf` {Array of Strings}
+- `containsOneOf` {Array of Strings}
+- `equals` {String}
+- `equalsOneOf` {Array of Strings}
+- `equalsNotOneOf` {Array of Strings}
+
+[Implemented](https://github.com/lipp/node-jet/blob/master/lib/jet/value_matcher.js#L7) `value` and `valueField` predicates are:
+
+- `lessThan` {any less than comparable}
+- `greaterThan` {any greater than comparable}
+- `equals` {any primitive type}
+- `equalsNot` {any primitive type}
+- `isType` {String}
+
 Fetching all movies could look like this:
 
 ```javascript
@@ -138,13 +161,13 @@ peer.fetch({
       startsWith: 'player/'
     },
     valueField: {
-      gender: {
+      gender: { // nested fields can be accessed like this: 'details.parents.name'
         equals: 'female'
       }
     },
     sort: {
       byValueField: {
-        score: 'number'
+        score: 'number' // nested fields can be accessed like this: 'details.parents.name'
       },
       descending: true,
       from: 1,
@@ -196,6 +219,10 @@ The `fetchCb` argument for sorting fetches are:
   - `value`: {Any | undefined} The current value of the State or `undefined` for Methods
 - `n`: {Number} The number of matches within the given range (from-to)
 
+These are the "differences" (changes) to the previous set of data and allows e.g. for minimal DOM manipulation.
+There is also the more convenient `sort.asArray` fetch rule option which always provides an complete sorted Array
+argument to `fetchCb`.
+
 ```javascript
 var sortedPersons = [];
 var fetchPersons = peer.fetch({
@@ -218,6 +245,23 @@ var fetchPersons = peer.fetch({
       age: change.value.age
     };
   });
+});
+```
+
+If `sort.asArray === true`, the argument provided to `fetchCb` is always the complete sorted Array:
+
+```javascript
+var fetchPersons = peer.fetch({
+  path: {
+    startsWith: 'persons/'
+  },
+  sort: {
+    asArray: true,
+    byValueField: {
+      age: 'number'
+    }
+  }
+}, function(youngPersons) {
 });
 ```
 
