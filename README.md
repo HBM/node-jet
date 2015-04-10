@@ -10,31 +10,62 @@ This is [Jet](http://jetbus.io/) for Javasript. Jet is the hybrid of an **In-Mem
 
 # Synopsis
 
+Provide Content:
+
 ```javascript
 var jet = require('node-jet');
 
+// connect to daemon
 var peer = new jet.Peer({
-  url: 'ws://localhost:11123'
+  url: 'ws://localhost:11123' 
 });
 
+// provide methods/factories/services/actions/etc
+peer.method({
+  path: 'greet', // unique path/id
+  call: function(who) { // callback/action to perform if someone "calls"
+    console.log('Hello', who);
+  }
+});
+
+// provide documents/realtime-status/configuration/etc
+peer.state({
+  path: 'person/#123', // unique path/id
+  value: getPerson('#123'), // initial value
+  set: function(changedPerson) { // callback which processes the requested new value
+    setPerson('#123', changedPerson);
+    // changes are propageted automatically
+  }
+});
+
+// provide read-only stuff
 var nowState = peer.state({
   path: 'time/now',
   value: new Date().getTime()
 });
 
+// change async
 setInterval(function() {
   nowState.value(new Date().getTime());
 }, 100);
 ```
 
+Consume Content:
+
 ```javascript
+// fetch/grab/query/get content
 otherPeer.fetch({
   path: {
-    equals: 'time/now'
+    startsWith: 'person/'
   }}, function(path, event, value) {
-  ...  
+  ...  // events can be 'add', 'change', 'remove'
 });
 
+// call methods
+otherPeer.call('greet', ['Steve']);
+
+// set states
+otherPeer.set('person/#123', {name: 'Jose', age: 33});
 ```
 
 
