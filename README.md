@@ -8,6 +8,8 @@ This is [Jet](http://jetbus.io/) for Javasript. Jet is the hybrid of an **In-Mem
 
 [![Code Climate](https://codeclimate.com/github/lipp/node-jet/badges/gpa.svg)](https://codeclimate.com/github/lipp/node-jet)
 
+# Synopsis
+
 ```javascript
 var jet = require('node-jet');
 
@@ -23,6 +25,16 @@ var nowState = peer.state({
 setInterval(function() {
   nowState.value(new Date().getTime());
 }, 100);
+```
+
+```javascript
+otherPeer.fetch({
+  path: {
+    equals: 'time/now'
+  }}, function(path, event, value) {
+  ...  
+});
+
 ```
 
 
