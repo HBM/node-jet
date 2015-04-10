@@ -1,6 +1,6 @@
 # About
 
-This is [Jet](http://jetbus.io/) for Javasript. Jet is the hybrid of a **In-Memory Database** and a **Realtime Push-Framework**. Node and Browsers are supported (using Browserify).
+This is [Jet](http://jetbus.io/) for Javasript. Jet is the hybrid of an **In-Memory Database** and a **Realtime Push-Framework**. Node and Browsers are supported (using Browserify).
 
 [![Build Status](https://travis-ci.org/lipp/node-jet.svg?branch=master)](https://travis-ci.org/lipp/node-jet)
 
