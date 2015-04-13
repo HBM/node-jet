@@ -5,7 +5,7 @@
   "url": "https://github.com/lipp/node-jet",
   "keywords": [
     "ipc",
-    "bus",
+    "push",
     "message",
     "realtime",
     "rpc",
