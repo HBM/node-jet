@@ -363,8 +363,9 @@ util.inherits(MessageSocket, events.EventEmitter);
  */
 MessageSocket.prototype.send = function (msg) {
 	var that = this;
-	var buf = new Buffer(4 + msg.length);
-	buf.writeUInt32BE(msg.length, 0);
+	var utf8Length = Buffer.byteLength(msg, 'utf8');
+	var buf = new Buffer(4 + utf8Length);
+	buf.writeUInt32BE(utf8Length, 0);
 	buf.write(msg, 4);
 	process.nextTick(function () {
 		that._socket.write(buf);
@@ -1368,8 +1369,9 @@ var addHook = function (callbacks, callbackName, hook) {
  * JsonRPC constructor.
  */
 var JsonRPC = function (config) {
-	if (config.url) {
-		this.sock = new WebSocket(config.url, 'jet');
+	if (config.url || (typeof (window) !== 'undefined')) {
+		var url = config.url || ('ws://' + window.location.host);
+		this.sock = new WebSocket(url, 'jet');
 	} else {
 		this.sock = new MessageSocket(config.port || 11122, config.ip);
 	}
