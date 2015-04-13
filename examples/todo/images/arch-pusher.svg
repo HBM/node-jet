@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="440px" height="422px" viewBox="0 0 440 422" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:sketch="http://www.bohemiancoding.com/sketch/ns">
+    <!-- Generator: Sketch 3.2.2 (9983) - http://www.bohemiancoding.com/sketch -->
+    <title>jet-blog-pattern-pusher</title>
+    <desc>Created with Sketch.</desc>
+    <defs></defs>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd" sketch:type="MSPage">
+        <g id="Database" sketch:type="MSLayerGroup" transform="translate(277.000000, 241.000000)">
+            <ellipse id="Oval-1" stroke="#979797" fill="#EAEAEA" sketch:type="MSShapeGroup" cx="46" cy="18.3391813" rx="45.2520325" ry="18.3391813"></ellipse>
+            <path d="M0.741935484,83.3333333 C0.741935484,93.6426487 20.8385732,102 45.6290323,102 C70.4194913,102 90.516129,93.6426487 90.516129,83.3333333" id="Oval-2" stroke="#979797" sketch:type="MSShapeGroup"></path>
+            <path d="M0.74796748,18.4517544 L0.74796748,82.6388889" id="Path-1" stroke="#979797" sketch:type="MSShapeGroup"></path>
+            <path d="M91.2520325,18.4517544 L91.2520325,82.6388889" id="Path-2" stroke="#979797" sketch:type="MSShapeGroup"></path>
+            <text id="DB" sketch:type="MSTextLayer" font-family="Helvetica" font-size="9.05882353" font-weight="normal" fill="#7A7A7A">
+                <tspan x="38.1463415" y="109.865497">DB</tspan>
+            </text>
+        </g>
+        <g id="Browser" sketch:type="MSLayerGroup" transform="translate(108.000000, 24.000000)">
+            <rect id="Rectangle-2" stroke="#979797" sketch:type="MSShapeGroup" x="0" y="19" width="148" height="9"></rect>
+            <rect id="Rectangle-3" stroke="#979797" sketch:type="MSShapeGroup" x="0" y="19" width="148" height="99"></rect>
+            <text sketch:type="MSTextLayer" font-family="Helvetica" font-size="14" font-weight="normal" fill="#7A7A7A">
+                <tspan x="48" y="14">Browser</tspan>
+            </text>
+            <text id="----DATA-+" sketch:type="MSTextLayer" font-family="Helvetica" font-size="14" font-weight="normal" fill="#68ACCA">
+                <tspan x="154" y="157">    DATA +</tspan>
+                <tspan x="154" y="174">Notifications</tspan>
+            </text>
+        </g>
+        <g id="Webserver-+-Webserver" sketch:type="MSLayerGroup" transform="translate(18.000000, 247.000000)">
+            <rect id="Webserver" stroke="#979797" fill="#EAEAEA" sketch:type="MSShapeGroup" x="0" y="0" width="111" height="141" rx="8"></rect>
+            <text id="Webserver" sketch:type="MSTextLayer" font-family="Helvetica" font-size="14" font-weight="normal" fill="#7A7A7A">
+                <tspan x="22" y="162">Webserver</tspan>
+            </text>
+        </g>
+        <g id="ws-browser-2" sketch:type="MSLayerGroup" transform="translate(117.022601, 194.364431) rotate(129.000000) translate(-117.022601, -194.364431) translate(48.022601, 191.364431)" stroke="#979797" stroke-linecap="square" fill="#D8D8D8">
+            <path d="M69.5670193,3.23351336 L0.584596801,3.23351336" id="Line-4" sketch:type="MSShapeGroup"></path>
+            <path id="Line-4-decoration-1" d="M1.56701932,3.23351336 C5.34701932,4.28351336 8.58701932,5.18351336 12.3670193,6.23351336 C12.3670193,4.13351336 12.3670193,2.33351336 12.3670193,0.233513364 C8.58701932,1.28351336 5.34701932,2.18351336 1.56701932,3.23351336 C1.56701932,3.23351336 1.56701932,3.23351336 1.56701932,3.23351336 Z"></path>
+            <path d="M68.3978257,3.23351336 L137.380248,3.23351336" id="Line-3" sketch:type="MSShapeGroup"></path>
+            <path id="Line-3-decoration-1" d="M136.397826,3.23351336 C132.617826,2.18351336 129.377826,1.28351336 125.597826,0.233513364 C125.597826,2.33351336 125.597826,4.13351336 125.597826,6.23351336 C129.377826,5.18351336 132.617826,4.28351336 136.397826,3.23351336 C136.397826,3.23351336 136.397826,3.23351336 136.397826,3.23351336 Z"></path>
+        </g>
+        <text id="HTML-/-JS-/-CSS" sketch:type="MSTextLayer" font-family="Helvetica" font-size="14" font-weight="normal" fill="#7A7A7A">
+            <tspan x="10" y="185">HTML / JS / CSS</tspan>
+            <tspan x="10" y="202">       </tspan>
+        </text>
+        <g id="1428965598_cloud" sketch:type="MSLayerGroup" transform="translate(176.000000, 210.000000)" fill="#6D4470">
+            <path d="M148.483781,4.87099805 C182.903203,4.87099805 210.902168,29.9866836 210.902168,60.8704727 C210.902168,61.040457 210.879586,61.2188418 210.865816,61.3888262 C210.838828,61.8019277 210.806883,62.2150293 210.79807,62.6365313 L210.563438,71.1026426 L220.014293,71.1347617 C242.888238,71.1915879 261.495281,87.9380137 261.495281,108.459674 C261.495281,128.924508 242.924039,145.670934 220.100215,145.776186 L218.082152,145.784092 L48.8193633,145.784092 C23.3490352,145.759879 2.62423828,127.158449 2.62423828,104.311363 C2.62423828,86.6087754 15.1853555,70.851125 33.8739141,65.0983398 L39.0754922,63.5027598 L39.9919922,58.6414043 C42.258457,46.6426816 53.745,37.9334531 67.3041328,37.9334531 C71.6255625,37.9334531 75.8015859,38.8327891 79.7165391,40.5988477 L88.1467969,44.3982949 L92.2148672,36.7667871 C102.550277,17.3880742 124.638809,4.87099805 148.483781,4.87099805 L148.483781,4.87099805 Z M86.1886095,35.2089723 C81.4574882,33.0783174 76.132039,31.8517183 70.4760015,31.8517183 C53.1198523,31.8517183 38.7426541,43.1566237 35.9339588,57.9791199 C15.2635702,64.3257417 0.377171875,81.8304884 0.377171875,102.493354 C0.377171875,128.482389 23.911615,149.551472 52.9391516,149.574377 L215.404782,149.574377 C241.923399,149.443957 263.377172,130.176442 263.377172,106.417162 C263.377172,82.6195506 241.872217,63.3286625 215.301897,63.2599467 C215.319132,62.6316887 215.404782,62.0263359 215.404782,61.3976104 C215.404782,27.8059047 184.981254,0.574376953 147.45086,0.574376953 C120.409464,0.574376953 97.1272712,14.7452423 86.1886095,35.2089723 Z" id="Shape" sketch:type="MSShapeGroup"></path>
+        </g>
+        <g id="ws-browser" sketch:type="MSLayerGroup" transform="translate(249.610384, 191.451776) rotate(49.000000) translate(-249.610384, -191.451776) translate(182.110384, 189.451776)" stroke="#68ACCA" stroke-linecap="square" fill="#68ACCA">
+            <path d="M133.508645,2.21983306 L0.991953875,2.21983307" id="Line-5" sketch:type="MSShapeGroup"></path>
+            <path id="Line-5-decoration-1" d="M1.50864492,2.21983307 C5.28864492,3.26983307 8.52864492,4.16983307 12.3086449,5.21983307 C12.3086449,3.11983307 12.3086449,1.31983307 12.3086449,-0.780166932 C8.52864492,0.269833069 5.28864492,1.16983307 1.50864492,2.21983307 C1.50864492,2.21983307 1.50864492,2.21983307 1.50864492,2.21983307 Z"></path>
+            <path d="M1.30606923,2.75280635 L133.82276,2.75280634" id="Line-6" sketch:type="MSShapeGroup"></path>
+            <path id="Line-6-decoration-1" d="M133.306069,2.75280634 C129.526069,1.70280634 126.286069,0.802806341 122.506069,-0.247193658 C122.506069,1.85280634 122.506069,3.65280634 122.506069,5.75280634 C126.286069,4.70280634 129.526069,3.80280634 133.306069,2.75280634 C133.306069,2.75280634 133.306069,2.75280634 133.306069,2.75280634 Z"></path>
+        </g>
+    </g>
+</svg>

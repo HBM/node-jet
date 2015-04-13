@@ -1,0 +1,15 @@
+{
+  "name": "todo",
+  "version": "1.0.0",
+  "description": "Simple Todo-App with Jet",
+  "main": "todo-server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Gerhard Preuss",
+  "license": "MIT",
+  "dependencies": {
+    "finalhandler": "^0.3.4",
+    "serve-static": "^1.9.2"
+  }
+}
