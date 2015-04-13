@@ -11,10 +11,12 @@ This article demonstrates how to create a realtime collaborative Todo-App with
 
 ## What is Jet?
  
-In many ways Jet is similar to [Pusher](http://pusher.com) or [Firebase](http://firebase.com).
+In many ways Jet is similar to [Pusher](http://pusher.com) or [Firebase](http://firebase.com) as it
+can be used as backbone for distributed realtime Apps.
 But Jet has some notable differences:
 
    - Self-hosted
+   - Fully customizable backend-logic (e.g. validation)
    - Flexible realtime filters
    - Flexible realtime sorting
 
@@ -48,21 +50,16 @@ Subsequently we will create these files:
    - index.html
 
 ## todo-server.js
-
-First we will setup the webserver and the Jet Daemon:
+ 
+First we will setup the webserver for static files and create a Jet Daemon:
 
 ```javascript
-var jet = require('../../lib/jet');
-var finalhandler = require('finalhandler')
-var http = require('http')
-var serveStatic = require('serve-static')
- 
-var port = parseInt(process.argv[2]) || 80;
+var jet = require('node-jet');
+...
 
 // Serve this dir as static content 
 var serve = serveStatic('./');
- 
-// Create server 
+
 var httpServer = http.createServer(function(req, res){
   var done = finalhandler(req, res)
   serve(req, res, done)
@@ -70,17 +67,38 @@ var httpServer = http.createServer(function(req, res){
  
 httpServer.listen(port);
 
-// Create jet daemon
+// Create jet daemon and embed into httpServer
 var daemon = new jet.Daemon();
 daemon.listen({
-	server: httpServer // embed jet websocket upgrade handler
-}); 
+  server: httpServer
+});
 ```
 
-## Todo-Service Peer
+The Jet [Daemon](https://github.com/lipp/node-jet/blob/master/doc/daemon.md) uses Websockets 
+for communication and is hooked up into the webserver so that
+both listen on the same port. If required, the Daemon may run on a different port or even on another
+machine.
+
+Next we will provide the Todo-App service.
 
 In order to provide services or content with Jet, you need a [Peer](https://github.com/lipp/node-jet/blob/master/doc/peer.md).
-Peers connect to the so called Daemon, which is the center of communications and in most cases will run on the same 
-machine as your webserver.
+Peers connect to the Daemon and register their content (States and Methods).
+The Todo-Server Peer will be able to:
 
-Peers can provide or consume content. 
+   - create/delete single Todos
+   - let Todos change
+   - delete all Todos at once
+
+For actions (services) Jet provides **Methods**. They are defined by a unique **path** and a function, 
+which gets executed when the method is called by another Peer. This snippet adds a "service" which prints
+two arguments to the console:
+
+```javascript
+peer.method({
+  path: 'print',
+  call: function(a, b) {
+    console.log(a, b);
+  }
+});
+```
+
