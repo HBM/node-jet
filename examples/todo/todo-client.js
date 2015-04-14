@@ -37,3 +37,10 @@ peer.fetch({
 var renderTodos = function(todos) {
 	console.log(todos);
 };
+
+var addButton = document.getElementById('add-button');
+
+addButton.addEventListener('click', function() {
+	var title = document.getElementById('title-input').value;
+	addTodo(title);
+});
