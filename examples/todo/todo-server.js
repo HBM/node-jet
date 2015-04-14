@@ -4,83 +4,90 @@ var jet = require('../../lib/jet');
 var finalhandler = require('finalhandler')
 var http = require('http')
 var serveStatic = require('serve-static')
- 
+
 var port = parseInt(process.argv[2]) || 80;
 
 // Serve this dir as static content 
 var serve = serveStatic('./');
- 
-// Create server 
-var httpServer = http.createServer(function(req, res){
-  var done = finalhandler(req, res)
-  serve(req, res, done)
+
+// Create Webserver 
+var httpServer = http.createServer(function (req, res) {
+	var done = finalhandler(req, res)
+	serve(req, res, done)
 })
- 
+
 httpServer.listen(port);
 
-// Create jet daemon
+// Create Jet Daemon
 var daemon = new jet.Daemon();
 daemon.listen({
 	server: httpServer // embed jet websocket upgrade handler
 });
 
-// create a peer.
+// Declare Todo Class
+var todoId = 0;
+
+var Todo = function (title) {
+	this.id = todoId++;
+	this.title = title;
+	this.completed = false;
+};
+
+Todo.prototype.id = function () {
+	return id;
+};
+
+Todo.prototype.merge = function (other) {
+	if (other.completed !== undefined) {
+		this.completed = other.completed;
+	}
+
+	if (other.title !== undefined) {
+		this.title = other.title;
+	}
+};
+
+// Create Jet Peer
 var peer = new jet.Peer({
 	url: 'ws://localhost:' + port
 });
 
 var todoStates = {};
-var id = 0;
 
-// provide a "todo/add" method to create new todos
+// Provide a "todo/add" method to create new todos
 peer.method({
 	path: 'todo/add',
-	call: function (todo) {
-		// "generate" unique id 
-		var todoId = ++id;
-
-		var mergeTodoWithDefaults = function (todo) {
-			if (typeof todo !== 'object') {
-				todo = {};
-			}
-			var merged = {};
-			merged.completed = todo.completed === true || false;
-			merged.title = todo.title || '';
-			merged.title = merged.title.substring(0, 30);
-			merged.id = todoId;
-			return merged;
-		};
+	call: function (title) {
+		var todo = new Todo(title);
 
 		// create a new todo state and store ref.
-		todoStates[todoId] = peer.state({
-			path: 'todo/#' + todoId,
-			value: mergeTodoWithDefaults(todo),
-			set: function (changedTodo) {
+		todoStates[todo.id()] = peer.state({
+			path: 'todo/#' + todo.id(),
+			value: todo,
+			set: function (requestedTodo) {
+				todo.merge(requestedTodo);
 				return {
-					value: mergeTodoWithDefaults(changedTodo)
+					value: todo
 				};
 			}
 		});
 	}
 });
 
+
+// Provide a "todo/remove" method to either delete one or all todos
 peer.method({
 	path: 'todo/remove',
-	call: function () {
-		var args = Array.prototype.slice.call(arguments);
-		args.forEach(function (todo) {
-			todoStates[todo.id].remove();
-			delete todoStates[todo.id];
-		});
-	}
-});
+	call: function (todoId) {
+		if (typeof todoId === 'undefined') {
+			for (var id in todos) {
+				todoStates[id].remove();
+				delete todoStates[id];
+			}
 
-peer.method({
-	path: 'todo/removeAll',
-	call: function () {
-		for (var id in todos) {
-			todoStates[id].remove();
-			delete todoStates[id];
+		} else {
+			todoStates[todoId].remove();
+			delete todoStates[todoId];
 		}
 	}
 });

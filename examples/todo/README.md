@@ -6,7 +6,6 @@ This article demonstrates how to create a realtime collaborative Todo-App with
    - Create/delete Todos
    - Edit Todos
    - Simultanoeous working of multiple users
-   - Sort Todos
 
 
 ## What is Jet?
@@ -193,9 +192,14 @@ var Todo = function(title) {
   this.completed = false;
 };
 
-Todo.prototype.merge = function(changes) {
-  this.completed = changes.completed === true || false;
-  this.title = changes.title || this.title;
+Todo.prototype.merge = function(other) {
+  if (other.completed !== undefined) {
+    this.completed = other.completed;
+  }
+
+  if (other.title !== undefined) {
+    this.title = other.title;
+  }
 };
 
 Todo.prototype.id = function() {
@@ -211,13 +215,14 @@ peer.method({
 	call: function (title) {
 		var todo = new Todo(title);
 		// create a new todo state and store ref
-		todoStates[todoId] = peer.state({
+		todoStates[todo.id()] = peer.state({
 			path: 'todo/#' + todo.id(),
 			value: todo,
 			set: function (requestedTodo) {
+			  	todo.merge(requestedTodo);
 				// tell jet the actually new "value"
 				return {
-					value: todo.merge(requestedTodo)
+					value: todo
 				};
 			}
 		});
