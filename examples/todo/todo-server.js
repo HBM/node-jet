@@ -33,10 +33,6 @@ var Todo = function (title) {
 	this.completed = false;
 };
 
-Todo.prototype.id = function () {
-	return id;
-};
-
 Todo.prototype.merge = function (other) {
 	if (other.completed !== undefined) {
 		this.completed = other.completed;
@@ -61,8 +57,8 @@ peer.method({
 		var todo = new Todo(title);
 
 		// create a new todo state and store ref.
-		todoStates[todo.id()] = peer.state({
-			path: 'todo/#' + todo.id(),
+		todoStates[todo.id] = peer.state({
+			path: 'todo/#' + todo.id,
 			value: todo,
 			set: function (requestedTodo) {
 				todo.merge(requestedTodo);
