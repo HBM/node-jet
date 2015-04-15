@@ -10,6 +10,8 @@ This article demonstrates how to create a realtime collaborative Todo-App with
 Collaborative working in this context means, that you can open multiple browser windows and edit
 the Todo List simultaneously from each of them and every windows shows the changes and stay in sync.
 
+The complete project source is available [here](https://github.com/lipp/node-jet/tree/master/examples/todo).
+
 ## What is Jet?
  
 In many ways Jet is similar to [Pusher](http://pusher.com) or [Firebase](http://firebase.com) as it
@@ -44,17 +46,11 @@ For this project we need:
 
 
 The webserver is required for serving the static file content (HTML/JS/CSS).
-
-```sh
-npm install serve-static
-npm install node-jet
-```
-
 Subsequently we will create these files:
 
-   - todo-server.js (Webserver + Jet Daemon + Jet Peer)
-   - todo-client.js (Jet Peer)
-   - index.html
+   - [todo-server.js](./todo-server.js) (Webserver + Jet Daemon + Jet Peer)
+   - [todo-client.js](./todo-client.js) (Jet Peer)
+   - [index.html](./index.html)
 
 ## todo-server.js
 
@@ -217,8 +213,8 @@ peer.method({
 	call: function (title) {
 		var todo = new Todo(title);
 		// create a new todo state and store ref
-		todoStates[todo.id()] = peer.state({
-			path: 'todo/#' + todo.id(),
+		todoStates[todo.id] = peer.state({
+			path: 'todo/#' + todo.id,
 			value: todo,
 			set: function (requestedTodo) {
 			  	todo.merge(requestedTodo);
@@ -318,8 +314,12 @@ var removeAllTodos = function() {
   peer.call('todo/remove', []);
 };
 
-var editTodo = function(id, title, completed) {
-  peer.set('todo/#' + id, {title: title, completed: completed});
+var setTodoTitle = function(id, title) {
+  peer.set('todo/#' + id, {title: title});
+};
+
+var setTodoCompleted = function(id, completed) {
+  peer.set('todo/#' + id, {completed: completed});
 };
 
 peer.fetch({
@@ -340,4 +340,3 @@ peer.fetch({
 ```
 
 
-![arch-push-3rd](./images/arch-pusher.svg)
