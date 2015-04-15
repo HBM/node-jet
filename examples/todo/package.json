@@ -1,0 +1,21 @@
+{
+  "name": "todo",
+  "version": "1.0.0",
+  "description": "Simple Todo-App with Jet",
+  "main": "todo-server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+	"start": "node todo-server.js 8090",
+	"build": "browserify todo-client.js > bundle.js"
+  },
+  "author": "Gerhard Preuss",
+  "license": "MIT",
+  "dependencies": {
+    "finalhandler": "^0.3.4",
+    "node-jet": "^0.2.0",
+    "serve-static": "^1.9.2"
+  },
+  "devDependencies": {
+    "browserify": "^9.0.8"
+  }
+}
