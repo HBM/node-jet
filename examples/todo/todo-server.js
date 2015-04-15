@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-var jet = require('../../lib/jet');
+var jet = require('node-jet');
 var finalhandler = require('finalhandler')
 var http = require('http')
 var serveStatic = require('serve-static')
