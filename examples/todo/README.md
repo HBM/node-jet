@@ -6,7 +6,9 @@ This article demonstrates how to create a realtime collaborative Todo-App with
    - Create/delete Todos
    - Edit Todos
    - Simultanoeous working of multiple users
-
+	
+Collaborative working in this context means, that you can open multiple browser windows and edit
+the Todo List simultaneously from each of them and every windows shows the changes and stay in sync.
 
 ## What is Jet?
  
