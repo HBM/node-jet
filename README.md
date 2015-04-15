@@ -68,6 +68,7 @@ otherPeer.call('greet', ['Steve']);
 otherPeer.set('person/#123', {name: 'Jose', age: 33});
 ```
 
+Read the [Todo-App Tutorial](https://github.com/lipp/node-jet/tree/master/examples/todo/README.md) for building a simple collaborative realtime app.
 
 # Install
 
