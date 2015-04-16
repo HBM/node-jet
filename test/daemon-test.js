@@ -29,11 +29,11 @@ var commandRequestTest = function (port, command, params, checkResult) {
 				response = JSON.parse(response);
 				expect(response.id).to.equal(request.id);
 				if (checkResult) {
-					checkResult(response.result);
+					checkResult(response.result, response.error);
 				} else {
 					expect(response.result).to.be.true;
+					expect(response).to.not.have.property('error');
 				}
-				expect(response).to.not.have.property('error');
 				done();
 			});
 			sender.sendMessage(request);
@@ -84,6 +84,15 @@ describe('A Daemon', function () {
 			expect(result.features.fetch).to.equal('full');
 			expect(result.features.batches).to.be.true;
 			expect(result.features.authentication).to.be.false;
+		});
+
+		commandRequestTest(testPort, 'authenticate', {
+			user: 'foo',
+			password: 'bar'
+		}, function (result, error) {
+			expect(result).to.be.an('undefined');
+			expect(error.message).to.equal('Invalid params');
+			expect(error.data).to.equal('invalid user');
 		});
 	});
 
@@ -188,7 +197,6 @@ describe('A Daemon', function () {
 
 });
 
-
 describe('A Daemon with simple fetching', function () {
 	var daemon;
 	before(function () {
@@ -212,6 +220,39 @@ describe('A Daemon with simple fetching', function () {
 			expect(result.features.fetch).to.equal('simple');
 			expect(result.features.batches).to.be.true;
 			expect(result.features.authentication).to.be.false;
+		});
+	});
+});
+
+describe('A Daemon with specified users (authentication)', function () {
+	var john = {
+		password: '12345',
+		auth: {
+			fetchGroups: [],
+			setGroups: [],
+			callGroups: []
+		}
+	};
+
+	var daemon;
+	before(function () {
+		daemon = new jet.Daemon({
+			users: {
+				john: john
+			}
+		});
+		daemon.listen({
+			tcpPort: testPort + 2
+		});
+	});
+
+	describe('when connected to a peer sending "handmade" message', function () {
+		commandRequestTest(testPort + 2, 'authenticate', {
+			user: 'john',
+			password: '12345'
+		}, function (result, error) {
+			expect(error).to.be.an('undefined');
+			expect(result).to.deep.equals(john.auth);
 		});
 	});
 });
