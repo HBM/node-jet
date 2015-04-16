@@ -1,14 +1,14 @@
 # Collaborative Todo-App with Jet
 
-This article demonstrates how to create a realtime collaborative Todo-App with
+In this article I demonstrate how to create a realtime collaborative Todo-App with
 [Jet](http://jetbus.io). The App will be able to:
 
    - Create/delete Todos
    - Edit Todos
-   - Simultanoeous working of multiple users
+   - Work simultaneously with multiple users
 	
-Collaborative working in this context means, that you can open multiple browser windows and edit
-the Todo List simultaneously from each of them and every windows shows the changes and stay in sync.
+Working simlutaneously means, that multiple users can edit the todo-list
+at the same time and everyone sees each other's changes instantly.
 
 The complete project source is available [here](https://github.com/lipp/node-jet/tree/master/examples/todo).
 
@@ -16,7 +16,7 @@ The complete project source is available [here](https://github.com/lipp/node-jet
  
 In many ways Jet is similar to [Pusher](http://pusher.com) or [Firebase](http://firebase.com) as it
 can be used as backbone for distributed realtime Apps.
-But Jet has some notable differences:
+However, Jet has some notable differences:
 
    - Self-hostable
    - Fully customizable backend-logic (e.g. validation)
@@ -27,17 +27,26 @@ But Jet has some notable differences:
 
 Self-hosted means that running **Jet does not involve any 3rd party servers** where your data passes through.
 Instead the Jet Daemon runs on **your** machine and can be easily embedded into your
-node based webserver. 
+Node.js based webserver. 
 
 Realtime filtering and sorting can save you a lot of bandwidth. Imagine you have records of 5000 players, but you
-want to display only the ten female players with the highest score: Jet only transmits the relevant data (10 records!)
-and updates your query in realtime.
+want to display only the ten female players with the highest score: **Jet only transmits the relevant data** (10 records!)
+and updates in realtime.
+You don't have to transmit all players over the wire and filter them on the client.
+
+In fact, Jet is more than a Node.js framework. It is an open protocol with compatible implementations for
+
+   - [Node.js + Browser](http://github.com/lipp/node-jet)
+   - [Lua](http://github.com/lipp/lua-jet)
+   - [Arduino](https://github.com/lipp/Arduino-Jet)
+   - C (work in progress)
+
 
 Jet is free and open source.
 
 
 
-## Project setup
+## How to use Jet
 
 For this project we need:
 
@@ -52,7 +61,7 @@ Subsequently we will create these files:
    - [todo-client.js](./todo-client.js) (Jet Peer)
    - [index.html](./index.html)
 
-## todo-server.js
+## The webserver
 
 The todo-server.js will provide a webserver for serving static files and Jet Daemon
 for routing. A Jet Peer will finally add the Todo-App logic be providing means for:
@@ -62,7 +71,7 @@ for routing. A Jet Peer will finally add the Todo-App logic be providing means f
    - delete all Todos at once
 
 
-### Webserver and Jet Daemon
+### Static file server and Jet Daemon
  
 First we will setup the webserver for static files and create a Jet Daemon:
 
@@ -99,8 +108,8 @@ But first we have to understand the basic of Jet's core components: **States** a
 
 ### Jet Methods Primer
 
-For actions (services) Jet provides **Methods**. They are defined by a unique **path** and a **function**, 
-which gets invoked when the Method is called by another (remote) Peer. This snippet adds a "service" which prints
+For defining actions Jet provides **Methods**. They are defined by a unique **path** and a **function**, 
+which gets invoked when the Method is called by another Peer. This snippet adds a Method which prints
 two arguments to the console:
 
 ```javascript
@@ -123,7 +132,7 @@ Read more on Methods in the [Doc](https://github.com/lipp/node-jet/blob/master/d
 
 ### Jet States Primer
 
-A Jet State is similar to a database document/entry. It has a unique **path** (key) and an associated (initial) value, which can
+A Jet State is similar to a database document. It has a unique **path** and an associated value, which can
 be of any JSON-compatible type. A **set callback** can be specified, which allows the State to react on change requests.
 If the set function does not throw, **a State-Change is posted automatically**.
 
@@ -160,8 +169,8 @@ peer.set('persons/#52A92d', {name: 'Francis U.', age: 20}, {
 });
 ```
 
-This is just a simple uncomplete example how jet allows to custom validate change requests. Jet allows you to do anything
-inside the set callback, like:
+This is just a simple uncomplete example to show custom validation for change requests. Jet allows you to do anything
+appropriate inside the set callback, like:
 
    - interpolating the requested value (partial changes)
    - custom validation
@@ -247,7 +256,7 @@ peer.method({
 });
 ```
 
-## todo-client.js
+## The Jet Client
 
 The Peer running in the Browser will act as a "consumer" of the Methods and States the Todo-Server Peer provides.
 It will:
@@ -266,10 +275,10 @@ These events include:
     - a State has been removed
     - a State's value has changed
 
-The Jet Daemon is able to filter and sort your Fetch query based on **paths** and/or **values**. A Callback must be provided
-that will be invoked everytime something relevant happens. A Fetch for getting the top ten female players could look like this:
+The Jet Daemon is able to filter and sort your fetch query based on **paths** and/or **values**. A callback must be provided
+that will be invoked everytime something relevant happens. A fetch for getting the **top ten female players** could look like this:
 
-```
+```javascript
 peer.fetch({
     path: {
       startsWith: 'player/'
@@ -339,4 +348,22 @@ peer.fetch({
 });
 ```
 
+# Conclusion
 
+In this article I showed you how to create a simple **realtime collaborative Todo-App**
+with Node.js and Jet. The todo list can be edited by multiple users 
+simultaneously and always stays in sync.
+The Jet webserver performs server-side custom validation, which enables you to
+keep your App integre and flexible at the same time.
+
+You **don't need any cloud service** like Firebase or Pusher to write distributed realtime Apps and **keep
+complete control** over your servers and your data.
+
+At [HBM](http://www.hbm.com) we use the Jet protocol in production in medium- and embedded-class devices 
+and constantly work to improve it.
+
+If you want to read more, checkout the [Jet Homepage](http://jetbus.io) or the github repositories:
+
+   - [Node.js + Browser](http://github.com/lipp/node-jet)
+   - [Lua](http://github.com/lipp/lua-jet)
+   - [Arduino](https://github.com/lipp/Arduino-Jet)
