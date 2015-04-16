@@ -98,51 +98,100 @@ describe('Jet authentication', function () {
 		});
 	});
 
-	describe('fetch access', function () {
-		var peer2;
+});
 
-		beforeEach(function (done) {
-			peer2 = new jet.Peer({
-				url: 'ws://localhost:' + testWsPort
-			});
-			peer2.on('open', function () {
-				done()
-			});
+
+describe('fetch access', function () {
+	var peer, peer2;
+
+	beforeEach(function (done) {
+		peer2 = new jet.Peer({
+			url: 'ws://localhost:' + testWsPort
 		});
-
-		before(function () {
-			peer.state({
-				path: 'pub-admin',
-				value: 123,
-				access: {
-					fetchGroups: ['public', 'admin']
-				}
-			});
-
-			peer.state({
-				path: 'pub-api',
-				value: 234,
-				access: {
-					fetchGroups: ['public', 'api']
-				}
-			});
-
-			peer.state({
-				path: 'everyone',
-				value: 333,
-			});
-		});
-
-		it('John Doe can fetch pub-admin and pub-api', function (done) {
-			peer2.authenticate('John Doe', 'foo');
-			peer2.fetch({
-				sort: {
-					byPath: true,
-					asArray: true
-				}
-			}, function (states) {
-				console.log(states);
-			});
+		peer2.on('open', function () {
+			done();
 		});
 	});
+
+	afterEach(function () {
+		peer2.close();
+	});
+
+	before(function () {
+		peer = new jet.Peer({
+			url: 'ws://localhost:' + testWsPort
+		});
+		peer.state({
+			path: 'pub-admin',
+			value: 123,
+			access: {
+				fetchGroups: ['public', 'admin']
+			}
+		});
+
+		peer.state({
+			path: 'pub-api',
+			value: 234,
+			access: {
+				fetchGroups: ['public', 'api']
+			}
+		});
+
+		peer.state({
+			path: 'everyone',
+			value: 333,
+		});
+	});
+
+	it('John Doe can fetch everyone, pub-admin and pub-api', function (done) {
+		peer2.authenticate('John Doe', '12345');
+		peer2.fetch({
+			sort: {
+				byPath: true,
+				asArray: true,
+				from: 1,
+				to: 10
+			}
+		}, function (states) {
+			expect(states[0].path).to.equal('everyone');
+			expect(states[1].path).to.equal('pub-admin');
+			expect(states[2].path).to.equal('pub-api');
+			expect(states).to.has.length(3);
+			done();
+		});
+	});
+
+	it('Linus can fetch everyone and pub-admin', function (done) {
+		peer2.authenticate('Linus', '12345');
+		peer2.fetch({
+			sort: {
+				byPath: true,
+				asArray: true,
+				from: 1,
+				to: 10
+			}
+		}, function (states) {
+			expect(states[0].path).to.equal('everyone');
+			expect(states[1].path).to.equal('pub-admin');
+			expect(states).to.has.length(2);
+			done();
+		});
+	});
+
+	it('Horst can fetch everyone and not more', function (done) {
+		peer2.authenticate('Horst', '12345');
+		peer2.fetch({
+			sort: {
+				byPath: true,
+				asArray: true,
+				from: 1,
+				to: 10
+			}
+		}, function (states) {
+			expect(states[0].path).to.equal('everyone');
+			expect(states).to.has.length(1);
+			done();
+		});
+	});
+
 });
