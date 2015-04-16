@@ -6,11 +6,30 @@ var testWsPort = 3333;
 
 var daemon;
 
-users = {};
+var users = {};
+
 users['John Doe'] = {
-	password: 'foo',
+	password: '12345',
 	auth: {
 		fetchGroups: ['public'],
+		setGroups: ['public'],
+		callGroups: ['public']
+	}
+};
+
+users['Linus'] = {
+	password: '12345',
+	auth: {
+		fetchGroups: ['admin'],
+		setGroups: ['public'],
+		callGroups: ['public']
+	}
+};
+
+users['Horst'] = {
+	password: '12345',
+	auth: {
+		fetchGroups: ['horsties'],
 		setGroups: ['public'],
 		callGroups: ['public']
 	}
@@ -40,7 +59,7 @@ describe('Jet authentication', function () {
 	});
 
 	it('can authenticate with a valid user/password', function (done) {
-		peer.authenticate('John Doe', 'foo', {
+		peer.authenticate('John Doe', '12345', {
 			success: function (result) {
 				expect(result).to.deep.equal(users['John Doe'].auth);
 				done();
@@ -66,7 +85,7 @@ describe('Jet authentication', function () {
 	});
 
 	it('cannot authenticate with a invalid user and invalid password', function (done) {
-		peer.authenticate('John Doex', 'foo', {
+		peer.authenticate('John Doex', '12345', {
 			success: function (result) {
 				expect(result).to.be.an('undefined');
 				done();
@@ -79,7 +98,51 @@ describe('Jet authentication', function () {
 		});
 	});
 
-	describe('having some states with and without access field', function () {
+	describe('fetch access', function () {
+		var peer2;
 
+		beforeEach(function (done) {
+			peer2 = new jet.Peer({
+				url: 'ws://localhost:' + testWsPort
+			});
+			peer2.on('open', function () {
+				done()
+			});
+		});
+
+		before(function () {
+			peer.state({
+				path: 'pub-admin',
+				value: 123,
+				access: {
+					fetchGroups: ['public', 'admin']
+				}
+			});
+
+			peer.state({
+				path: 'pub-api',
+				value: 234,
+				access: {
+					fetchGroups: ['public', 'api']
+				}
+			});
+
+			peer.state({
+				path: 'everyone',
+				value: 333,
+			});
+		});
+
+		it('John Doe can fetch pub-admin and pub-api', function (done) {
+			peer2.authenticate('John Doe', 'foo');
+			peer2.fetch({
+				sort: {
+					byPath: true,
+					asArray: true
+				}
+			}, function (states) {
+				console.log(states);
+			});
+		});
 	});
 });
