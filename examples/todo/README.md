@@ -48,14 +48,14 @@ Jet is free and open source.
 
 ## How to use Jet
 
-For this project we need:
+For this project I need:
 
    - Jet
    - Webserver
 
 
 The webserver is required for serving the static file content (HTML/JS/CSS).
-Subsequently we will create these files:
+Subsequently I will create these files:
 
    - [todo-server.js](./todo-server.js) (Webserver + Jet Daemon + Jet Peer)
    - [todo-client.js](./todo-client.js) (Jet Peer)
@@ -73,7 +73,7 @@ for routing. A Jet Peer will finally add the Todo-App logic be providing means f
 
 ### Static file server and Jet Daemon
  
-First we will setup the webserver for static files and create a Jet Daemon:
+First I will setup the webserver for static files and create a Jet Daemon:
 
 ```javascript
 var jet = require('node-jet');
@@ -101,9 +101,9 @@ for communication and is hooked up into the webserver so that
 both listen on the same port. If required, the Daemon may run on a different port or even on another
 machine.
 
-Next we will provide the Todo-App service, by creating a [Peer](https://github.com/lipp/node-jet/blob/master/doc/peer.md)
+Next I will provide the Todo-App service, by creating a [Peer](https://github.com/lipp/node-jet/blob/master/doc/peer.md)
 and connecting it to the Daemon.
-But first we have to understand the basic of Jet's core components: **States** and **Methods**.
+But first it is necessary to understand the basics of Jet's core components: **States** and **Methods**.
 
 
 ### Jet Methods Primer
@@ -237,7 +237,7 @@ peer.method({
 });
 ```
 
-To be able to delete a Todo, we will implement **todo/remove**. If no Todo ID is provided, we will delete all Todos at once:
+To be able to delete a Todo, I will implement **todo/remove**. If no Todo ID is provided, the Method will delete all Todos at once:
 
 ```javascript
 peer.method({
@@ -359,8 +359,8 @@ keep your App integre and flexible at the same time.
 You **don't need any cloud service** like Firebase or Pusher to write distributed realtime Apps and **keep
 complete control** over your servers and your data.
 
-At [HBM](http://www.hbm.com) we use the Jet protocol in production in medium- and embedded-class devices 
-and constantly work to improve it.
+At [HBM](http://www.hbm.com) the Jet protocol is used in production code of medium- and embedded-class devices 
+and we are constantly working to improve it.
 
 If you want to read more, checkout the [Jet Homepage](http://jetbus.io) or the github repositories:
 
