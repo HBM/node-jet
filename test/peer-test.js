@@ -10,7 +10,8 @@ var testWsPort = 2315;
 var daemon;
 
 before(function () {
-	daemon = new jet.Daemon();
+	daemon = new jet.Daemon({});
+
 	daemon.listen({
 		tcpPort: testPort,
 		wsPort: testWsPort

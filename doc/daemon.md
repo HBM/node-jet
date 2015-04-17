@@ -1,6 +1,6 @@
 # Daemon API
 
-## new jet.Daemon
+## new jet.Daemon([options])
 
 Creates a new Jet daemon instance.
 
@@ -8,6 +8,28 @@ Creates a new Jet daemon instance.
 var jet = require('node-jet');
 var daemon = new jet.Daemon();
 ```
+
+If you want to run authentication / login, you must provide a user Object.
+
+```javascript
+
+var daemon = new jet.Daemon({
+  users: {
+    john: {
+	  password: '12345',
+	  auth: {
+	    fetchGroups: ['users','public'],
+		setGroups: ['users'],
+		callGroups: ['users']
+	  }
+	},
+	bob: {
+	  ...
+	}
+  }
+});
+```
+
 
 ## daemon.listen(options);
 

@@ -32,9 +32,8 @@ peer.on('open', function(daemonInfo) {
     console.log('Daemon Info: ', daemonInfo);
 });
 ```
-
 ### Events
-
+ 
 The Jet Peer is an EventEmitter and emits the events:
  - "close" (argument: `reason` {any})
  - "open" (argument: `daemonInfo` {Object})
@@ -52,6 +51,13 @@ peer.on('open', function(daemonInfo) {
    console.log('fetch-mode', daemonInfo.features.fetch); // string: 'full' or 'simple'
 });
 ```
+## `peer.authenticate(user, password, [callbacks])
+
+Authenticates the `peer` as `user` if the `password` is correct. The peer gains the access rights 
+as defined in the daemon's `users` object.
+
+Must be called before calling `peer.fetch`. Unauthenticated peers will have access to all States and Methods
+which do not specified an `access` field.
 
 ## `peer.close()`
 
@@ -271,6 +277,7 @@ Creates and returns a Jet Method given the information provided by `desc`.
 The supported `desc` fields are:
 
 - `path`: {String} The unique path of the Method
+- `access`: {Object, Optional} Containing `fetchGroups` and `callGroups`
 - `call`: {Function, Optional} The Function which "executes" the method (synchronous)
 - `callAsync`: {Function, Optional} The Function which "executes" the method
   (asychronously)
@@ -289,6 +296,10 @@ if required.
 ```javascript
 var greet = peer.method({
   path: 'greet',
+  access: {
+    fetchGroups: ['public'],
+	callGroups: ['public']
+  },
   call: function(who) {
     if (who.first === 'John') {
       throw 'John is dismissed';
@@ -357,6 +368,7 @@ The supported `desc` fields are:
 
 - `path`: {String} The unique path of the State
 - `value`: {Any} The initial value of the State
+- `access`: {Object, Optional} Containing `fetchGroups` and `setGroups`
 - `set`: {Function, Optional} The callback Function, that handles State "set"
   messages (synchronously)
 - `setAsync`: {Function, Optional} The callback Function, that handles State "set"
@@ -380,6 +392,10 @@ The argument to the `set` is the requested `newValue`. The function is free to:
 var test = peer.state({
   path: 'test',
   value: 123,
+  access: {
+    fetchGroups: ['public'],
+	setGroups: ['admin']
+  },
   set: function(newValue) {
     if (newValue > 999999){
       throw 'too big';
