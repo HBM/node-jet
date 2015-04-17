@@ -21,8 +21,8 @@ users['Linus'] = {
 	password: '12345',
 	auth: {
 		fetchGroups: ['admin'],
-		setGroups: ['public'],
-		callGroups: ['public']
+		setGroups: ['admin'],
+		callGroups: ['admin']
 	}
 };
 
@@ -101,7 +101,7 @@ describe('Jet authentication', function () {
 });
 
 
-describe('fetch access', function () {
+describe('access tests', function () {
 	var peer, peer2;
 	var everyoneState, pubApiState, pubAdminState;
 
@@ -126,8 +126,10 @@ describe('fetch access', function () {
 		pubAdminState = peer.state({
 			path: 'pub-admin',
 			value: 123,
+			set: function () {},
 			access: {
-				fetchGroups: ['public', 'admin']
+				fetchGroups: ['public', 'admin'],
+				setGroups: ['admin']
 			}
 		});
 
@@ -142,6 +144,17 @@ describe('fetch access', function () {
 		everyoneState = peer.state({
 			path: 'everyone',
 			value: 333,
+		});
+
+		peer.method({
+			path: 'square',
+			call: function (a) {
+				return a * a;
+			},
+			access: {
+				fetchGroups: [],
+				callGroups: ['admin']
+			}
 		});
 	});
 
@@ -222,6 +235,47 @@ describe('fetch access', function () {
 			expect(states[0].path).to.equal('everyone');
 			expect(states).to.has.length(1);
 			done();
+		});
+	});
+
+	it('Linus can set the pub-admin state', function (done) {
+		peer2.authenticate('Linus', '12345');
+		peer2.set('pub-admin', 'master', {
+			valueAsResult: true,
+			success: function (result) {
+				expect(result).to.equal('master');
+				done();
+			}
+		});
+	});
+
+	it('Horst cannot set the pub-admin state', function (done) {
+		peer2.authenticate('Horst', '12345');
+		peer2.set('pub-admin', 'master', {
+			error: function (err) {
+				expect(err.data).to.equal('no access');
+				done();
+			}
+		});
+	});
+
+	it('Linus can call the square method', function (done) {
+		peer2.authenticate('Linus', '12345');
+		peer2.call('square', [2], {
+			success: function (result) {
+				expect(result).to.equal(4);
+				done();
+			}
+		});
+	});
+
+	it('Horst cannot call the square method', function (done) {
+		peer2.authenticate('Horst', '12345');
+		peer2.call('square', [2], {
+			error: function (err) {
+				expect(err.data).to.equal('no access');
+				done();
+			}
 		});
 	});
 
