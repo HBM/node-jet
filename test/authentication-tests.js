@@ -103,6 +103,7 @@ describe('Jet authentication', function () {
 
 describe('fetch access', function () {
 	var peer, peer2;
+	var everyoneState, pubApiState, pubAdminState;
 
 	beforeEach(function (done) {
 		peer2 = new jet.Peer({
@@ -121,7 +122,8 @@ describe('fetch access', function () {
 		peer = new jet.Peer({
 			url: 'ws://localhost:' + testWsPort
 		});
-		peer.state({
+
+		pubAdminState = peer.state({
 			path: 'pub-admin',
 			value: 123,
 			access: {
@@ -129,7 +131,7 @@ describe('fetch access', function () {
 			}
 		});
 
-		peer.state({
+		pubApiState = peer.state({
 			path: 'pub-api',
 			value: 234,
 			access: {
@@ -137,7 +139,7 @@ describe('fetch access', function () {
 			}
 		});
 
-		peer.state({
+		everyoneState = peer.state({
 			path: 'everyone',
 			value: 333,
 		});
@@ -175,6 +177,35 @@ describe('fetch access', function () {
 			expect(states[1].path).to.equal('pub-admin');
 			expect(states).to.has.length(2);
 			done();
+		});
+	});
+
+	it('Linus can fetch everyone and pub-admin and gets correct updates', function (done) {
+		var callCount = 0;
+		peer2.authenticate('Linus', '12345');
+		peer2.fetch({
+			sort: {
+				byPath: true,
+				asArray: true,
+				from: 1,
+				to: 10
+			}
+		}, function (states) {
+			callCount++;
+			expect(states[0].path).to.equal('everyone');
+			expect(states[1].path).to.equal('pub-admin');
+			expect(states).to.has.length(2);
+			if (callCount === 3) {
+				expect(states[0].value).to.equal('foo');
+				expect(states[1].value).to.equal('bar');
+				done();
+			}
+		}, {
+			success: function () {
+				everyoneState.value('foo');
+				pubApiState.value('foo'); // should not trigger fetch callback
+				pubAdminState.value('bar');
+			}
 		});
 	});
 
