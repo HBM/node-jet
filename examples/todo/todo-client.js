@@ -1,4 +1,4 @@
-var jet = require('node-jet');
+var jet = require('../../lib/jet');
 
 var peer = new jet.Peer({
 	url: 'ws://' + window.location.host
@@ -28,21 +28,11 @@ var setTodoCompleted = function (id, completed) {
 	});
 };
 
-peer.fetch({
-	path: {
-		startsWith: 'todo/#'
-	},
-	sort: {
-		byValueField: {
-			id: 'number'
-		},
-		from: 1,
-		to: 30,
-		asArray: true
-	}
-}, function (todos) {
-	renderTodos(todos);
-});
+peer.fetch()
+  .wherePath('startsWith', 'todo/#')
+	.sortByKey('id', 'number')
+	.range(1, 30)
+	.run(renderTodos);
 
 var renderTodo = function (todo) {
 	var container = document.createElement('div');

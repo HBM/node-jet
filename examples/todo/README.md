@@ -279,26 +279,13 @@ The Jet Daemon is able to filter and sort your fetch query based on **paths** an
 that will be invoked everytime something relevant happens. A fetch for getting the **top ten female players** could look like this:
 
 ```javascript
-peer.fetch({
-    path: {
-      startsWith: 'player/'
-    },
-    valueField: {
-      gender: { // nested fields can be accessed like this: 'details.parents.name'
-        equals: 'female'
-      }
-    },
-    sort: {
-      byValueField: {
-        score: 'number' // nested fields can be accessed like this: 'details.parents.name'
-      },
-      descending: true,
-      from: 1,
-      to: 10,
-      asArray: true
-    }
-  }, function(topFemalePlayers) {}
-);
+peer.fetch()
+  .wherePath('startsWith', 'player/')
+	.whereKey('gender', 'equals', 'female')
+	.sortByKey('score', 'number')
+	.range(1, 10)
+	.descending()
+	.run(function(topFemalePlayers) {});
 ```
 
 Fetch is very powerful and is exmplained in more detail in the API [doc](https://github.com/lipp/node-jet/blob/master/doc/peer.md#fetch--peerfetchrule-fetchcb-callbacks). Note that there is no **get** call at all! That is because Jet wants to keep pollers out, since they may decrease system performance.
@@ -331,21 +318,15 @@ var setTodoCompleted = function(id, completed) {
   peer.set('todo/#' + id, {completed: completed});
 };
 
-peer.fetch({
-  path: {
-  	startsWith: 'todo/#'
-  },
-  sort: {
-    byValueField: {
-	  id: 'number'
-	},
-	from: 1,
-	to: 30,
-	asArray: true
-  }
-}, function(todos) {
-  renderTodos(todos);
-});
+var renderTodos = function(todos) {
+  ...
+};
+
+peer.fetch()
+  .wherePath('startsWith', 'todo/#')
+	.sortByKey('id', 'number')
+	.range(1, 30)
+	.run(renderTodos);
 ```
 
 # Conclusion
