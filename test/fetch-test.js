@@ -1277,6 +1277,34 @@ var portBase = 4345;
 				states.removeAll(done);
 			});
 
+			it('chain .wherePath().whereValue()', function (done) {
+				states.push(peer.state({
+					path: 'abc',
+					value: 1
+				}));
+				states.push(peer.state({
+					path: 'abde',
+					value: 3
+				}));
+				states.push(peer.state({
+					path: 'aca',
+					value: 1
+				}));
+
+				var fetchSpy = sinon.spy();
+
+				var fetcher = peer.fetch()
+					.wherePath('startsWith', 'ab')
+					.whereValue('lessThan', 3)
+					.run(fetchSpy);
+
+				setTimeout(function () {
+					expect(fetchSpy.callCount).to.equal(1);
+					expect(fetchSpy.calledWith('abc', 'add', 1)).to.be.true;
+					done();
+				}, waitTime);
+			});
+
 
 			it('startsWith and lessThan', function (done) {
 				states.push(peer.state({
