@@ -26,6 +26,373 @@
 
 }, {}],
 	2: [function (require, module, exports) {
+		// http://wiki.commonjs.org/wiki/Unit_Testing/1.0
+		//
+		// THIS IS NOT TESTED NOR LIKELY TO WORK OUTSIDE V8!
+		//
+		// Originally from narwhal.js (http://narwhaljs.org)
+		// Copyright (c) 2009 Thomas Robinson <280north.com>
+		//
+		// Permission is hereby granted, free of charge, to any person obtaining a copy
+		// of this software and associated documentation files (the 'Software'), to
+		// deal in the Software without restriction, including without limitation the
+		// rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+		// sell copies of the Software, and to permit persons to whom the Software is
+		// furnished to do so, subject to the following conditions:
+		//
+		// The above copyright notice and this permission notice shall be included in
+		// all copies or substantial portions of the Software.
+		//
+		// THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+		// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+		// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+		// AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+		// ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+		// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+		// when used in node, this will actually load the util module we depend on
+		// versus loading the builtin util module as happens otherwise
+		// this is a bug in node module loading as far as I am concerned
+		var util = require('util/');
+
+		var pSlice = Array.prototype.slice;
+		var hasOwn = Object.prototype.hasOwnProperty;
+
+		// 1. The assert module provides functions that throw
+		// AssertionError's when particular conditions are not met. The
+		// assert module must conform to the following interface.
+
+		var assert = module.exports = ok;
+
+		// 2. The AssertionError is defined in assert.
+		// new assert.AssertionError({ message: message,
+		//                             actual: actual,
+		//                             expected: expected })
+
+		assert.AssertionError = function AssertionError(options) {
+			this.name = 'AssertionError';
+			this.actual = options.actual;
+			this.expected = options.expected;
+			this.operator = options.operator;
+			if (options.message) {
+				this.message = options.message;
+				this.generatedMessage = false;
+			} else {
+				this.message = getMessage(this);
+				this.generatedMessage = true;
+			}
+			var stackStartFunction = options.stackStartFunction || fail;
+
+			if (Error.captureStackTrace) {
+				Error.captureStackTrace(this, stackStartFunction);
+			} else {
+				// non v8 browsers so we can have a stacktrace
+				var err = new Error();
+				if (err.stack) {
+					var out = err.stack;
+
+					// try to strip useless frames
+					var fn_name = stackStartFunction.name;
+					var idx = out.indexOf('\n' + fn_name);
+					if (idx >= 0) {
+						// once we have located the function frame
+						// we need to strip out everything before it (and its line)
+						var next_line = out.indexOf('\n', idx + 1);
+						out = out.substring(next_line + 1);
+					}
+
+					this.stack = out;
+				}
+			}
+		};
+
+		// assert.AssertionError instanceof Error
+		util.inherits(assert.AssertionError, Error);
+
+		function replacer(key, value) {
+			if (util.isUndefined(value)) {
+				return '' + value;
+			}
+			if (util.isNumber(value) && !isFinite(value)) {
+				return value.toString();
+			}
+			if (util.isFunction(value) || util.isRegExp(value)) {
+				return value.toString();
+			}
+			return value;
+		}
+
+		function truncate(s, n) {
+			if (util.isString(s)) {
+				return s.length < n ? s : s.slice(0, n);
+			} else {
+				return s;
+			}
+		}
+
+		function getMessage(self) {
+			return truncate(JSON.stringify(self.actual, replacer), 128) + ' ' +
+				self.operator + ' ' +
+				truncate(JSON.stringify(self.expected, replacer), 128);
+		}
+
+		// At present only the three keys mentioned above are used and
+		// understood by the spec. Implementations or sub modules can pass
+		// other keys to the AssertionError's constructor - they will be
+		// ignored.
+
+		// 3. All of the following functions must throw an AssertionError
+		// when a corresponding condition is not met, with a message that
+		// may be undefined if not provided.  All assertion methods provide
+		// both the actual and expected values to the assertion error for
+		// display purposes.
+
+		function fail(actual, expected, message, operator, stackStartFunction) {
+			throw new assert.AssertionError({
+				message: message,
+				actual: actual,
+				expected: expected,
+				operator: operator,
+				stackStartFunction: stackStartFunction
+			});
+		}
+
+		// EXTENSION! allows for well behaved errors defined elsewhere.
+		assert.fail = fail;
+
+		// 4. Pure assertion tests whether a value is truthy, as determined
+		// by !!guard.
+		// assert.ok(guard, message_opt);
+		// This statement is equivalent to assert.equal(true, !!guard,
+		// message_opt);. To test strictly for the value true, use
+		// assert.strictEqual(true, guard, message_opt);.
+
+		function ok(value, message) {
+			if (!value) fail(value, true, message, '==', assert.ok);
+		}
+		assert.ok = ok;
+
+		// 5. The equality assertion tests shallow, coercive equality with
+		// ==.
+		// assert.equal(actual, expected, message_opt);
+
+		assert.equal = function equal(actual, expected, message) {
+			if (actual != expected) fail(actual, expected, message, '==', assert.equal);
+		};
+
+		// 6. The non-equality assertion tests for whether two objects are not equal
+		// with != assert.notEqual(actual, expected, message_opt);
+
+		assert.notEqual = function notEqual(actual, expected, message) {
+			if (actual == expected) {
+				fail(actual, expected, message, '!=', assert.notEqual);
+			}
+		};
+
+		// 7. The equivalence assertion tests a deep equality relation.
+		// assert.deepEqual(actual, expected, message_opt);
+
+		assert.deepEqual = function deepEqual(actual, expected, message) {
+			if (!_deepEqual(actual, expected)) {
+				fail(actual, expected, message, 'deepEqual', assert.deepEqual);
+			}
+		};
+
+		function _deepEqual(actual, expected) {
+			// 7.1. All identical values are equivalent, as determined by ===.
+			if (actual === expected) {
+				return true;
+
+			} else if (util.isBuffer(actual) && util.isBuffer(expected)) {
+				if (actual.length != expected.length) return false;
+
+				for (var i = 0; i < actual.length; i++) {
+					if (actual[i] !== expected[i]) return false;
+				}
+
+				return true;
+
+				// 7.2. If the expected value is a Date object, the actual value is
+				// equivalent if it is also a Date object that refers to the same time.
+			} else if (util.isDate(actual) && util.isDate(expected)) {
+				return actual.getTime() === expected.getTime();
+
+				// 7.3 If the expected value is a RegExp object, the actual value is
+				// equivalent if it is also a RegExp object with the same source and
+				// properties (`global`, `multiline`, `lastIndex`, `ignoreCase`).
+			} else if (util.isRegExp(actual) && util.isRegExp(expected)) {
+				return actual.source === expected.source &&
+					actual.global === expected.global &&
+					actual.multiline === expected.multiline &&
+					actual.lastIndex === expected.lastIndex &&
+					actual.ignoreCase === expected.ignoreCase;
+
+				// 7.4. Other pairs that do not both pass typeof value == 'object',
+				// equivalence is determined by ==.
+			} else if (!util.isObject(actual) && !util.isObject(expected)) {
+				return actual == expected;
+
+				// 7.5 For all other Object pairs, including Array objects, equivalence is
+				// determined by having the same number of owned properties (as verified
+				// with Object.prototype.hasOwnProperty.call), the same set of keys
+				// (although not necessarily the same order), equivalent values for every
+				// corresponding key, and an identical 'prototype' property. Note: this
+				// accounts for both named and indexed properties on Arrays.
+			} else {
+				return objEquiv(actual, expected);
+			}
+		}
+
+		function isArguments(object) {
+			return Object.prototype.toString.call(object) == '[object Arguments]';
+		}
+
+		function objEquiv(a, b) {
+			if (util.isNullOrUndefined(a) || util.isNullOrUndefined(b))
+				return false;
+			// an identical 'prototype' property.
+			if (a.prototype !== b.prototype) return false;
+			// if one is a primitive, the other must be same
+			if (util.isPrimitive(a) || util.isPrimitive(b)) {
+				return a === b;
+			}
+			var aIsArgs = isArguments(a),
+				bIsArgs = isArguments(b);
+			if ((aIsArgs && !bIsArgs) || (!aIsArgs && bIsArgs))
+				return false;
+			if (aIsArgs) {
+				a = pSlice.call(a);
+				b = pSlice.call(b);
+				return _deepEqual(a, b);
+			}
+			var ka = objectKeys(a),
+				kb = objectKeys(b),
+				key, i;
+			// having the same number of owned properties (keys incorporates
+			// hasOwnProperty)
+			if (ka.length != kb.length)
+				return false;
+			//the same set of keys (although not necessarily the same order),
+			ka.sort();
+			kb.sort();
+			//~~~cheap key test
+			for (i = ka.length - 1; i >= 0; i--) {
+				if (ka[i] != kb[i])
+					return false;
+			}
+			//equivalent values for every corresponding key, and
+			//~~~possibly expensive deep test
+			for (i = ka.length - 1; i >= 0; i--) {
+				key = ka[i];
+				if (!_deepEqual(a[key], b[key])) return false;
+			}
+			return true;
+		}
+
+		// 8. The non-equivalence assertion tests for any deep inequality.
+		// assert.notDeepEqual(actual, expected, message_opt);
+
+		assert.notDeepEqual = function notDeepEqual(actual, expected, message) {
+			if (_deepEqual(actual, expected)) {
+				fail(actual, expected, message, 'notDeepEqual', assert.notDeepEqual);
+			}
+		};
+
+		// 9. The strict equality assertion tests strict equality, as determined by ===.
+		// assert.strictEqual(actual, expected, message_opt);
+
+		assert.strictEqual = function strictEqual(actual, expected, message) {
+			if (actual !== expected) {
+				fail(actual, expected, message, '===', assert.strictEqual);
+			}
+		};
+
+		// 10. The strict non-equality assertion tests for strict inequality, as
+		// determined by !==.  assert.notStrictEqual(actual, expected, message_opt);
+
+		assert.notStrictEqual = function notStrictEqual(actual, expected, message) {
+			if (actual === expected) {
+				fail(actual, expected, message, '!==', assert.notStrictEqual);
+			}
+		};
+
+		function expectedException(actual, expected) {
+			if (!actual || !expected) {
+				return false;
+			}
+
+			if (Object.prototype.toString.call(expected) == '[object RegExp]') {
+				return expected.test(actual);
+			} else if (actual instanceof expected) {
+				return true;
+			} else if (expected.call({}, actual) === true) {
+				return true;
+			}
+
+			return false;
+		}
+
+		function _throws(shouldThrow, block, expected, message) {
+			var actual;
+
+			if (util.isString(expected)) {
+				message = expected;
+				expected = null;
+			}
+
+			try {
+				block();
+			} catch (e) {
+				actual = e;
+			}
+
+			message = (expected && expected.name ? ' (' + expected.name + ').' : '.') +
+				(message ? ' ' + message : '.');
+
+			if (shouldThrow && !actual) {
+				fail(actual, expected, 'Missing expected exception' + message);
+			}
+
+			if (!shouldThrow && expectedException(actual, expected)) {
+				fail(actual, expected, 'Got unwanted exception' + message);
+			}
+
+			if ((shouldThrow && actual && expected &&
+					!expectedException(actual, expected)) || (!shouldThrow && actual)) {
+				throw actual;
+			}
+		}
+
+		// 11. Expected to throw an error:
+		// assert.throws(block, Error_opt, message_opt);
+
+		assert.throws = function (block, /*optional*/ error, /*optional*/ message) {
+			_throws.apply(this, [true].concat(pSlice.call(arguments)));
+		};
+
+		// EXTENSION! This is annoying to write outside this module.
+		assert.doesNotThrow = function (block, /*optional*/ message) {
+			_throws.apply(this, [false].concat(pSlice.call(arguments)));
+		};
+
+		assert.ifError = function (err) {
+			if (err) {
+				throw err;
+			}
+		};
+
+		var objectKeys = Object.keys || function (obj) {
+			var keys = [];
+			for (var key in obj) {
+				if (hasOwn.call(obj, key)) keys.push(key);
+			}
+			return keys;
+		};
+
+}, {
+		"util/": 11
+	}],
+	3: [function (require, module, exports) {
 		/*!
 		 * The buffer module from node.js, for the browser.
 		 *
@@ -1359,11 +1726,11 @@
 		}
 
 }, {
-		"base64-js": 3,
-		"ieee754": 4,
-		"is-array": 5
+		"base64-js": 4,
+		"ieee754": 5,
+		"is-array": 6
 	}],
-	3: [function (require, module, exports) {
+	4: [function (require, module, exports) {
 		var lookup = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 
 		;
@@ -1489,7 +1856,7 @@
 		}(typeof exports === 'undefined' ? (this.base64js = {}) : exports))
 
 }, {}],
-	4: [function (require, module, exports) {
+	5: [function (require, module, exports) {
 		exports.read = function (buffer, offset, isLE, mLen, nBytes) {
 			var e, m,
 				eLen = nBytes * 8 - mLen - 1,
@@ -1576,7 +1943,7 @@
 		};
 
 }, {}],
-	5: [function (require, module, exports) {
+	6: [function (require, module, exports) {
 
 		/**
 		 * isArray
@@ -1612,7 +1979,7 @@
 		};
 
 }, {}],
-	6: [function (require, module, exports) {
+	7: [function (require, module, exports) {
 		// Copyright Joyent, Inc. and other Node contributors.
 		//
 		// Permission is hereby granted, free of charge, to any person obtaining a
@@ -1916,7 +2283,7 @@
 		}
 
 }, {}],
-	7: [function (require, module, exports) {
+	8: [function (require, module, exports) {
 		if (typeof Object.create === 'function') {
 			// implementation from standard node.js 'util' module
 			module.exports = function inherits(ctor, superCtor) {
@@ -1942,7 +2309,7 @@
 		}
 
 }, {}],
-	8: [function (require, module, exports) {
+	9: [function (require, module, exports) {
 		// shim for using process in browser
 
 		var process = module.exports = {};
@@ -2007,12 +2374,12 @@
 		};
 
 }, {}],
-	9: [function (require, module, exports) {
+	10: [function (require, module, exports) {
 		module.exports = function isBuffer(arg) {
 			return arg && typeof arg === 'object' && typeof arg.copy === 'function' && typeof arg.fill === 'function' && typeof arg.readUInt8 === 'function';
 		}
 }, {}],
-	10: [function (require, module, exports) {
+	11: [function (require, module, exports) {
 		(function (process, global) {
 			// Copyright Joyent, Inc. and other Node contributors.
 			//
@@ -2609,32 +2976,695 @@
 
 		}).call(this, require('_process'), typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 }, {
-		"./support/isBuffer": 9,
-		"_process": 8,
-		"inherits": 7
-	}],
-	11: [function (require, module, exports) {
-		/**
-		 * Export Peer only for browserify
-		 */
-		exports.Peer = require('./jet/peer');
-}, {
-		"./jet/peer": 17
+		"./support/isBuffer": 10,
+		"_process": 9,
+		"inherits": 8
 	}],
 	12: [function (require, module, exports) {
-		var jetUtils = require('./utils');
+		var jet = require('../../lib/jet');
 
-		var Element = function (eachPeerFetcher, owningPeer, path, value) {
+		var peer = new jet.Peer({
+			url: 'ws://' + window.location.host
+		});
+
+		var addTodo = function (title) {
+			peer.call('todo/add', [title]);
+		};
+
+		var removeTodo = function (id) {
+			peer.call('todo/remove', [id]);
+		};
+
+		var removeAllTodos = function () {
+			peer.call('todo/remove', []);
+		};
+
+		var setTodoTitle = function (id, title) {
+			peer.set('todo/#' + id, {
+				title: title
+			});
+		};
+
+		var setTodoCompleted = function (id, completed) {
+			peer.set('todo/#' + id, {
+				completed: completed
+			});
+		};
+
+		var renderTodo = function (todo) {
+			var container = document.createElement('div');
+
+			var input = document.createElement('input');
+			input.type = 'text';
+			input.value = todo.value.title;
+
+			var changeButton = document.createElement('input');
+			changeButton.type = 'button';
+			changeButton.value = 'change title';
+			changeButton.addEventListener('click', function () {
+				setTodoTitle(todo.value.id, input.value);
+			});
+
+			var completedCheckbox = document.createElement('input');
+			completedCheckbox.type = 'checkbox';
+			completedCheckbox.checked = todo.value.completed;
+			completedCheckbox.addEventListener('click', function () {
+				setTodoCompleted(todo.value.id, !todo.value.completed);
+			});
+
+			container.appendChild(input);
+			container.appendChild(changeButton);
+			container.appendChild(completedCheckbox);
+
+			return container;
+		};
+
+		var renderTodos = function (todos) {
+			var root = document.getElementById('todos');
+			while (root.firstChild) {
+				root.removeChild(root.firstChild);
+			}
+			todos.forEach(function (todo) {
+				root.appendChild(renderTodo(todo));
+			});
+			console.log(todos);
+		};
+
+		document.getElementById('add-button').addEventListener('click', function () {
+			var titleInput = document.getElementById('title-input');
+			addTodo(titleInput.value);
+			titleInput.value = '';
+		});
+
+		peer.fetch()
+			.wherePath('startsWith', 'todo/#')
+			.sortByKey('id', 'number')
+			.range(1, 30)
+			.run(renderTodos);
+
+
+}, {
+		"../../lib/jet": 13
+	}],
+	13: [function (require, module, exports) {
+		module.exports = {
+			'Peer': require('./jet/peer'),
+			'Daemon': require('./jet/daemon')
+		};
+}, {
+		"./jet/daemon": 14,
+		"./jet/peer": 24
+	}],
+	14: [function (require, module, exports) {
+		var net = require('net');
+
+		var WebSocketServer = require('ws').Server;
+
+		var EventEmitter = require('events').EventEmitter;
+		var MessageSocket = require('./message-socket').MessageSocket;
+
+		var jetUtils = require('./utils');
+		var jetAccess = require('./daemon/access');
+		var Router = require('./daemon/router').Router;
+		var JsonRPC = require('./daemon/jsonrpc');
+		var jetFetcher = require('./fetcher');
+		var fetchCommon = require('./fetch-common');
+		var Router = require('./daemon/router').Router;
+		var Peers = require('./daemon/peers').Peers;
+		var Elements = require('./element').Elements;
+
+		var isDefined = jetUtils.isDefined;
+		var noop = jetUtils.noop;
+		var checked = jetUtils.checked;
+		var optional = jetUtils.optional;
+		var errorObject = jetUtils.errorObject;
+		var version = '0.2.3';
+
+		var InfoObject = function (options) {
+			options.features = options.features || {};
+			this.name = options.name || 'node-jet';
+			this.version = version;
+			this.protocolVersion = 2;
+			this.features = {};
+			this.features.batches = true;
+			this.features.authentication = false;
+			this.features.fetch = options.features.fetch || 'full';
+			return this;
+		};
+
+		var createDaemon = function (options) {
+			options = options || {};
+			var log = options.log || noop;
+
+			var users = options.users || {};
+			delete options.users;
+			options.users = false;
+			var router = new Router(log);
+			var elements = new Elements();
+			var daemon = new EventEmitter();
+			var infoObject = new InfoObject(options);
+			var peers;
+
+			// dispatches the 'change' jet call.
+			// updates the internal cache (element table)
+			// and publishes a change event.
+			var change = function (peer, message) {
+				var params = checked(message, 'params', 'object');
+				fetchCommon.changeCore(peer, elements, params);
+			};
+
+			var fetchSimpleId = 'fetch_all';
+
+			// dispatches the 'fetch' (simple variant) jet call.
+			// sets up simple fetching for this peer (fetch all (with access), unsorted).
+			var fetchSimple = function (peer, message) {
+				if (peer.fetchingSimple === true) {
+					throw jetUtils.invalidParams('already fetching');
+				}
+				var queueNotification = function (nparams) {
+					peer.sendMessage({
+						method: fetchSimpleId,
+						params: nparams
+					});
+				};
+				// create a "fetch all" fetcher
+				var fetcher = jetFetcher.create({}, queueNotification);
+				peer.fetchingSimple = true;
+				if (isDefined(message.id)) {
+					peer.sendMessage({
+						id: message.id,
+						result: fetchSimpleId
+					});
+				}
+				peer.addFetcher(fetchSimpleId, fetcher);
+				elements.addFetcher(peer.id + fetchSimpleId, fetcher, peer);
+			};
+
+			// dispatchers the 'unfetch' (simple variant) jet call.
+			// removes all ressources associated with the fetcher.
+			var unfetchSimple = function (peer, message) {
+				if (!!!peer.fetchingSimple) {
+					throw jetUtils.invalidParams('not fetching');
+				}
+				var fetchId = fetchSimpleId;
+				var fetchPeerId = peer.id + fetchId;
+
+				peer.removeFetcher(fetchId);
+				elements.removeFetcher(fetchPeerId);
+			};
+
+			// dispatches the 'fetch' jet call.
+			// creates a fetch operation and optionally a sorter.
+			// all elements are inputed as "fake" add events. The
+			// fetcher is only asociated with the element if
+			// it "shows interest".
+			var fetch = function (peer, message) {
+				var params = checked(message, 'params', 'object');
+				var fetchId = checked(params, 'id');
+
+				var queueNotification = function (nparams) {
+					peer.sendMessage({
+						method: fetchId,
+						params: nparams
+					});
+				};
+
+				var queueSuccess = function () {
+					if (isDefined(message.id)) {
+						peer.sendMessage({
+							id: message.id,
+							result: true
+						});
+					}
+				};
+				fetchCommon.fetchCore(peer, elements, params, queueNotification, queueSuccess);
+			};
+
+			// dispatchers the 'unfetch' jet call.
+			// removes all ressources associated with the fetcher.
+			var unfetch = function (peer, message) {
+				var params = message.params;
+				fetchCommon.unfetchCore(peer, elements, params);
+			};
+
+
+			// route / forwards a peer request or notification ("call","set") to the peer
+			// of the corresponding element specified by "params.path".
+			// creates an entry in the "route" table if it is a request and sets up a timer
+			// which will respond a response timeout error to the requestor if
+			// no corresponding response is received.
+			var route = function (peer, message) {
+				var params = message.params;
+				var path = checked(params, 'path', 'string');
+				var element = elements.get(path);
+				if (!jetAccess.hasAccess(message.method, peer, element)) {
+					throw jetUtils.invalidParams('no access');
+				}
+				var req = {};
+				if (isDefined(message.id)) {
+					req.id = router.request(message, peer, element);
+				}
+				req.method = path;
+
+				if (message.method === 'set') {
+					req.params = {
+						value: params.value,
+						valueAsResult: params.valueAsResult
+					};
+				} else {
+					req.params = params.args;
+				}
+				element.peer.sendMessage(req);
+			};
+
+			var add = function (peer, message) {
+				var params = checked(message, 'params', 'object');
+				fetchCommon.addCore(peer, peers.eachPeerFetcherWithAccess(), elements, params);
+			};
+
+			var remove = function (peer, message) {
+				var params = checked(message, 'params', 'object');
+				fetchCommon.removeCore(peer, elements, params);
+			};
+
+			var config = function (peer, message) {
+				var params = message.params;
+				var name = params.name;
+				delete params.name;
+
+				if (Object.keys(params).length > 0) {
+					throw jetUtils.invalidParams('unsupported config field');
+				}
+
+				if (name) {
+					peer.name = name;
+				}
+			};
+
+			var info = function (peer, message) {
+				return infoObject;
+			};
+
+			var authenticate = function (peer, message) {
+				var params = checked(message, 'params', 'object');
+				var user = checked(params, 'user', 'string');
+				var password = checked(params, 'password', 'string');
+
+				if (peer.hasFetchers()) {
+					throw jetUtils.invalidParams('already fetching');
+				}
+
+				if (!users[user]) {
+					throw jetUtils.invalidParams('invalid user');
+				}
+
+				if (users[user].password !== password) {
+					throw jetUtils.invalidParams('invalid password');
+				}
+
+				peer.auth = users[user].auth;
+				return peer.auth;
+			};
+
+			var safe = function (f) {
+				return function (peer, message) {
+					try {
+						var result = f(peer, message) || true;
+						if (message.id) {
+							peer.sendMessage({
+								id: message.id,
+								result: result
+							});
+						}
+					} catch (err) {
+						if (message.id) {
+							peer.sendMessage({
+								id: message.id,
+								error: errorObject(err)
+							});
+						}
+					}
+				};
+			};
+
+			var safeForward = function (f) {
+				return function (peer, message) {
+					try {
+						f(peer, message);
+					} catch (err) {
+						if (message.id) {
+							peer.sendMessage({
+								id: message.id,
+								error: errorObject(err)
+							});
+						}
+					}
+				};
+			};
+
+			var services = {
+				add: safe(add),
+				remove: safe(remove),
+				call: safeForward(route),
+				set: safeForward(route),
+				change: safe(change),
+				config: safe(config),
+				info: safe(info),
+				authenticate: safe(authenticate),
+				echo: safe(function (peer, message) {
+					return message.params;
+				})
+			};
+
+			if (infoObject.features.fetch === 'full') {
+				services.fetch = safeForward(fetch);
+				services.unfetch = safe(unfetch);
+			} else {
+				services.fetch = safeForward(fetchSimple);
+				services.unfetch = safe(unfetchSimple);
+			}
+
+			var jsonrpc = new JsonRPC(services, router);
+
+			peers = new Peers(jsonrpc, elements);
+
+			daemon.listen = function (options) {
+				if (options.tcpPort) {
+					var listener = net.createServer(function (peerSocket) {
+						var sock = new MessageSocket(peerSocket);
+						var peer = peers.add(sock);
+						peer.on('disconnect', function () {
+							daemon.emit('disconnect', peer);
+						});
+						daemon.emit('connection', peer);
+					});
+					listener.listen(options.tcpPort);
+				}
+				if (options.wsPort || options.server) {
+					var wsServer = new WebSocketServer({
+						port: options.wsPort,
+						server: options.server,
+						handleProtocols: function (protocols, cb) {
+							if (protocols.indexOf('jet') > -1) {
+								cb(true, 'jet');
+							} else {
+								cb(false);
+							}
+						}
+					});
+					wsServer.on('connection', function (ws) {
+						var peer = peers.add(ws);
+						peer.on('disconnect', function () {
+							daemon.emit('disconnect', peer);
+						});
+						daemon.emit('connection', peer);
+					});
+				}
+			};
+			return daemon;
+		};
+
+		module.exports = createDaemon;
+}, {
+		"./daemon/access": 15,
+		"./daemon/jsonrpc": 16,
+		"./daemon/peers": 17,
+		"./daemon/router": 18,
+		"./element": 19,
+		"./fetch-common": 20,
+		"./fetcher": 21,
+		"./message-socket": 22,
+		"./utils": 29,
+		"events": 7,
+		"net": 1,
+		"ws": 33
+	}],
+	15: [function (require, module, exports) {
+		var jetUtils = require('../utils');
+		var isDefined = jetUtils.isDefined;
+
+		var intersects = function (arrayA, arrayB) {
+			for (var i = 0; i < arrayA.length; ++i) {
+				if (arrayB.indexOf(arrayA[i]) !== -1) {
+					return true;
+				}
+			};
+			return false;
+		};
+
+		var grantAccess = function (accessName, access, auth) {
+			var groupName = accessName + 'Groups';
+			return intersects(access[groupName], auth[groupName]);
+		};
+
+		exports.hasAccess = function (accessName, peer, element) {
+			if (!isDefined(element.access)) {
+				return true;
+			} else if (!isDefined(peer.auth)) {
+				return false;
+			} else {
+				return grantAccess(accessName, element.access, peer.auth);
+			}
+		};
+
+		exports.intersects = intersects;
+		exports.grantAccess = grantAccess;
+}, {
+		"../utils": 29
+	}],
+	16: [function (require, module, exports) {
+		var util = require('util');
+		var utils = require('../utils');
+
+		var isDefined = utils.isDefined;
+
+		var JsonRPC = function (services, router) {
+
+			var dispatchMessage = function (peer, message) {
+				var service;
+				if (message.method) {
+					service = services[message.method];
+					if (service) {
+						service(peer, message);
+					} else if (isDefined(message.id)) {
+						peer.sendMessage({
+							id: message.id,
+							error: utils.methodNotFound(message.method)
+						});
+					}
+					return;
+
+				} else if (isDefined(message.result) || isDefined(message.error)) {
+					router.response(peer, message);
+					return;
+				} else if (isDefined(message.id)) {
+					var error = utils.invalidRequest(message);
+					peer.sendMessage({
+						id: message.id,
+						error: error
+					});
+				}
+			};
+
+			this.dispatch = function (peer, message) {
+				try {
+					message = JSON.parse(message);
+				} catch (e) {
+					peer.sendMessage({
+						error: utils.parseError(e)
+					});
+					throw e;
+				}
+				if (util.isArray(message)) {
+					message.forEach(function (msg) {
+						dispatchMessage(peer, msg);
+					});
+				} else {
+					dispatchMessage(peer, message);
+				}
+			};
+
+		};
+
+		module.exports = JsonRPC;
+}, {
+		"../utils": 29,
+		"util": 11
+	}],
+	17: [function (require, module, exports) {
+		var jetUtils = require('../utils');
+		var access = require('./access');
+		var net = require('net');
+		var uuid = require('uuid');
+		var EventEmitter = require('events').EventEmitter;
+
+		var genPeerId = function (sock) {
+			if (sock instanceof net.Socket) {
+				return sock.remoteAddress + ':' + sock.remotePort;
+			} else {
+				// this is a websocket
+				try {
+					sock = sock._sender._socket;
+					return sock.remoteAddress + ':' + sock.remotePort;
+				} catch (e) {
+					return uuid.v1();
+				}
+			}
+		};
+
+		exports.Peers = function (jsonrpc, elements) {
+
+			var instances = {};
+
+			var remove = function (peer) {
+				if (peer && instances[peer.id]) {
+					peer.eachFetcher(function (fetchId) {
+						elements.removeFetcher(peer.id + fetchId);
+					});
+					peer.fetchers = {};
+					elements.removePeer(peer);
+					delete instances[peer.id];
+				}
+			};
+
+			var eachInstance = jetUtils.eachKeyValue(instances);
+
+			var eachPeerFetcherWithAccessIterator = function (element, f) {
+				eachInstance(function (peerId, peer) {
+					if (access.hasAccess('fetch', peer, element)) {
+						peer.eachFetcher(function (fetchId, fetcher) {
+							f(peerId + fetchId, fetcher);
+						});
+					}
+				});
+			};
+
+			this.eachPeerFetcherWithAccess = function () {
+				return eachPeerFetcherWithAccessIterator;
+			};
+
+			this.add = function (sock) {
+				var peer = new EventEmitter();
+				var peerId = genPeerId(sock);
+
+				peer.sendMessage = function (message) {
+					message = JSON.stringify(message);
+					sock.send(message);
+				};
+
+				sock.on('message', function (message) {
+					try {
+						jsonrpc.dispatch(peer, message);
+					} catch (e) {
+						remove(peer);
+						return;
+					}
+				});
+
+				peer.id = peerId;
+				peer.fetchers = {};
+				peer.eachFetcher = jetUtils.eachKeyValue(peer.fetchers);
+				peer.addFetcher = function (id, fetcher) {
+					peer.fetchers[id] = fetcher;
+				};
+				peer.removeFetcher = function (id) {
+					delete peer.fetchers[id];
+				};
+				peer.hasFetchers = function () {
+					return Object.keys(peer.fetchers).length !== 0;
+				};
+				instances[peerId] = peer;
+				sock.once('close', function () {
+					peer.emit('disconnect');
+					remove(peer);
+				});
+				return peer;
+			};
+
+		};
+}, {
+		"../utils": 29,
+		"./access": 15,
+		"events": 7,
+		"net": 1,
+		"uuid": 32
+	}],
+	18: [function (require, module, exports) {
+		var utils = require('../utils');
+		var assert = require('assert');
+		var optional = utils.optional;
+		var responseTimeout = utils.responseTimeout;
+
+		exports.Router = function (log) {
+
+			// holds info about all pending requests (which are routed)
+			// key is (daemon generated) unique id, value is Object
+			// with original request id and receiver (peer) and request
+			// timer
+			var routes = {};
+
+			// counter to make the routed request more unique.
+			// addresses situation if a peer makes two requests with
+			// same message.id.
+			var rcount = 0;
+
+			this.request = function (message, peer, element) {
+				var timeout = optional(message.params, 'timeout', 'number') || element.timeout || 5;
+				/* jslint bitwise: true */
+				rcount = (rcount + 1) % 2 ^ 31;
+				var id = message.id.toString() + peer.id + rcount;
+				assert.equal(routes[id], null);
+				routes[id] = {
+					receiver: peer,
+					id: message.id,
+					timer: setTimeout(function () {
+						delete routes[id];
+						peer.sendMessage({
+							id: message.id,
+							error: responseTimeout(message.params)
+						});
+					}, timeout * 1000)
+				};
+				return id;
+			};
+
+
+			// routes an incoming response to the requestor (peer)
+			// which made the request.
+			// stops timeout timer eventually.
+			this.response = function (peer, message) {
+				var route = routes[message.id];
+				if (route) {
+					clearTimeout(route.timer);
+					delete routes[message.id];
+					message.id = route.id;
+					route.receiver.sendMessage(message);
+				} else {
+					log('cannot route message (timeout?)', message);
+				}
+			};
+
+		};
+}, {
+		"../utils": 29,
+		"assert": 2
+	}],
+	19: [function (require, module, exports) {
+		var jetUtils = require('./utils');
+		var access = require('./daemon/access');
+
+		var Element = function (eachPeerFetcherWithAccess, owningPeer, path, value, access) {
 			this.fetchers = {};
 			this.eachFetcher = jetUtils.eachKeyValue(this.fetchers);
 			this.path = path;
 			this.value = value;
 			this.peer = owningPeer;
+			this.access = access;
 
 			var fetchers = this.fetchers;
 			var lowerPath = path.toLowerCase();
 
-			eachPeerFetcher(function (peerFetchId, fetcher) {
+			eachPeerFetcherWithAccess(this, function (peerFetchId, fetcher) {
 				try {
 					var mayHaveInterest = fetcher(path, lowerPath, 'add', value);
 					if (mayHaveInterest) {
@@ -2682,13 +3712,13 @@
 			this.each = jetUtils.eachKeyValue(this.instances);
 		};
 
-		Elements.prototype.add = function (peers, owningPeer, path, value) {
+		Elements.prototype.add = function (peers, owningPeer, path, value, access) {
 			if (this.instances[path]) {
 				throw jetUtils.invalidParams({
 					pathAlreadyExists: path
 				});
 			} else {
-				this.instances[path] = new Element(peers, owningPeer, path, value);
+				this.instances[path] = new Element(peers, owningPeer, path, value, access);
 			}
 		};
 
@@ -2739,21 +3769,23 @@
 			delete this.instances[path];
 		};
 
-		Elements.prototype.addFetcher = function (id, fetcher) {
+		Elements.prototype.addFetcher = function (id, fetcher, peer) {
 			this.each(function (path, element) {
-				var mayHaveInterest;
-				try {
-					mayHaveInterest = fetcher(
-						path,
-						path.toLowerCase(),
-						'add',
-						element.value
-					);
-					if (mayHaveInterest) {
-						element.addFetcher(id, fetcher);
+				if (access.hasAccess('fetch', peer, element)) {
+					var mayHaveInterest;
+					try {
+						mayHaveInterest = fetcher(
+							path,
+							path.toLowerCase(),
+							'add',
+							element.value
+						);
+						if (mayHaveInterest) {
+							element.addFetcher(id, fetcher);
+						}
+					} catch (err) {
+						console.error('fetcher failed', err);
 					}
-				} catch (err) {
-					console.error('fetcher failed', err);
 				}
 			});
 		};
@@ -2766,14 +3798,16 @@
 
 		exports.Elements = Elements;
 }, {
-		"./utils": 21
+		"./daemon/access": 15,
+		"./utils": 29
 	}],
-	13: [function (require, module, exports) {
+	20: [function (require, module, exports) {
 		var jetUtils = require('./utils');
 		var jetSorter = require('./sorter');
 		var jetFetcher = require('./fetcher');
 
 		var checked = jetUtils.checked;
+		var optional = jetUtils.optional;
 
 		var isDefined = jetUtils.isDefined;
 
@@ -2802,7 +3836,7 @@
 			}
 
 			peer.addFetcher(fetchId, fetcher);
-			elements.addFetcher(peer.id + fetchId, fetcher);
+			elements.addFetcher(peer.id + fetchId, fetcher, peer);
 			initializing = false;
 
 			if (isDefined(sorter) && sorter.flush) {
@@ -2825,8 +3859,9 @@
 
 		exports.addCore = function (peer, eachPeerFetcher, elements, params) {
 			var path = checked(params, 'path', 'string');
+			var access = optional(params, 'access', 'object');
 			var value = params.value;
-			elements.add(eachPeerFetcher, peer, path, value);
+			elements.add(eachPeerFetcher, peer, path, value, access);
 		};
 
 		exports.removeCore = function (peer, elements, params) {
@@ -2839,11 +3874,11 @@
 			elements.change(path, params.value, peer);
 		};
 }, {
-		"./fetcher": 14,
-		"./sorter": 20,
-		"./utils": 21
+		"./fetcher": 21,
+		"./sorter": 28,
+		"./utils": 29
 	}],
-	14: [function (require, module, exports) {
+	21: [function (require, module, exports) {
 		'use strict';
 		var jetPathMatcher = require('./path_matcher');
 		var jetValueMatcher = require('./value_matcher');
@@ -2919,11 +3954,11 @@
 			}
 		};
 }, {
-		"./path_matcher": 16,
-		"./utils": 21,
-		"./value_matcher": 22
+		"./path_matcher": 23,
+		"./utils": 29,
+		"./value_matcher": 30
 	}],
-	15: [function (require, module, exports) {
+	22: [function (require, module, exports) {
 		(function (process, Buffer) {
 			var util = require('util');
 			var events = require('events');
@@ -3119,13 +4154,13 @@
 			exports.MessageSocket = MessageSocket;
 		}).call(this, require('_process'), require("buffer").Buffer)
 }, {
-		"_process": 8,
-		"buffer": 2,
-		"events": 6,
+		"_process": 9,
+		"buffer": 3,
+		"events": 7,
 		"net": 1,
-		"util": 10
+		"util": 11
 	}],
-	16: [function (require, module, exports) {
+	23: [function (require, module, exports) {
 		'use strict';
 
 		var jetUtils = require('./utils');
@@ -3290,15 +4325,16 @@
 			}
 		};
 }, {
-		"./utils": 21
+		"./utils": 29
 	}],
-	17: [function (require, module, exports) {
+	24: [function (require, module, exports) {
 		var util = require('util');
 		var events = require('events');
 		var jetUtils = require('./utils');
 		var JsonRPC = require('./peer/jsonrpc');
 		var Fetcher = require('./peer/fetch').Fetcher;
 		var FakeFetcher = require('./peer/fetch').FakeFetcher;
+		var FetchChainer = require('./peer/fetch-chainer').FetchChainer;
 
 		/**
 		 * Helpers
@@ -3332,14 +4368,14 @@
 			// processDaemonInfo is called and 
 			// the peer knows, which fetch variant
 			// is supported.
-			this.fetch = Peer.prototype.fetchQueue;
+			this.fetchCall = Peer.prototype.fetchQueue;
 
 			var processDaemonInfo = function (daemonInfo) {
 				that.daemonInfo = daemonInfo;
 				if (daemonInfo.features.fetch === 'simple') {
-					that.fetch = that.fetchFake;
+					that.fetchCall = that.fetchFake;
 				} else {
-					that.fetch = that.fetchFull;
+					that.fetchCall = that.fetchFull;
 				}
 
 				that.flushQueuedFetches();
@@ -3422,7 +4458,7 @@
 			try {
 				/* peer.close() may have been called */
 				this.queuedFetches.forEach(function (args) {
-					that.fetch.apply(that, args);
+					that.fetchCall.apply(that, args);
 				});
 			} catch (err) {
 				if (this.jsonrpc.closed) {} else {
@@ -3445,6 +4481,14 @@
 			return new FakeFetcher(this.jsonrpc, fetchParams, f, callbacks);
 		};
 
+		Peer.prototype.fetch = function (fetchParams, f, callbacks) {
+			if (fetchParams) {
+				return this.fetchCall(fetchParams, f, callbacks);
+			} else {
+				return new FetchChainer(this);
+			}
+		};
+
 		/*
 		 * Add
 		 */
@@ -3458,7 +4502,8 @@
 			};
 			var params = {
 				path: path,
-				value: desc.value
+				value: desc.value, // optional
+				access: desc.access // optional
 			};
 			that.jsonrpc.service('add', params, addDispatcher, callbacks);
 			var ref = {
@@ -3520,6 +4565,17 @@
 			this.jsonrpc.flush();
 		};
 
+		/**
+		 * Authenticate
+		 */
+		Peer.prototype.authenticate = function (user, password, callbacks) {
+			this.jsonrpc.flush(); // flush to force unbatched message
+			this.jsonrpc.service('authenticate', {
+				user: user,
+				password: password
+			}, null, callbacks);
+			this.jsonrpc.flush();
+		};
 
 		/**
 		 * Config
@@ -3534,7 +4590,7 @@
 		/**
 		 * Set
 		 *
-		 * Sets the State specified by "path" to "value". 
+		 * Sets the State specified by "path" to "value".
 		 * Optionally a "callbacks" object can be specified,
 		 * which may have the fields:
 		 *
@@ -3778,13 +4834,111 @@
 
 		module.exports = Peer;
 }, {
-		"./peer/fetch": 18,
-		"./peer/jsonrpc": 19,
-		"./utils": 21,
-		"events": 6,
-		"util": 10
+		"./peer/fetch": 26,
+		"./peer/fetch-chainer": 25,
+		"./peer/jsonrpc": 27,
+		"./utils": 29,
+		"events": 7,
+		"util": 11
 	}],
-	18: [function (require, module, exports) {
+	25: [function (require, module, exports) {
+		var FetchChainer = function (peer) {
+			this.rule = {};
+			this.peer = peer;
+		};
+
+		FetchChainer.prototype.run = function (fetchCallback, callbacks) {
+			return this.peer.fetchCall(this.rule, fetchCallback, callbacks);
+		};
+
+		FetchChainer.prototype.all = function () {};
+
+		FetchChainer.prototype.wherePath = function (match, comp) {
+			this.rule.path = this.rule.path || {};
+			this.rule.path[match] = comp;
+			return this;
+		};
+
+		FetchChainer.prototype.whereKey = function (key, match, comp) {
+			this.rule.valueField = this.rule.valueField || {};
+			this.rule.valueField[key] = {};
+			this.rule.valueField[key][match] = comp;
+			return this;
+		};
+
+		FetchChainer.prototype.whereValue = function () {
+			var args = Array.prototype.slice.call(arguments, 0);
+			if (args.length == 2) {
+				var match = args[0];
+				var comp = args[1];
+				this.rule.value = this.rule.value || {};
+				this.rule.value[match] = comp;
+				return this;
+			} else {
+				return this.whereKey(args[0], args[1], args[2]);
+			}
+		};
+
+		var defaultSort = function () {
+			return {
+				asArray: true
+			};
+		};
+
+		FetchChainer.prototype.differential = function () {
+			this.rule.sort = this.rule.sort || defaultSort();
+			this.rule.sort.asArray = false;
+			return this;
+		};
+
+		FetchChainer.prototype.ascending = function () {
+			this.rule.sort = this.rule.sort || defaultSort();
+			this.rule.sort.descending = false;
+			return this;
+		};
+
+		FetchChainer.prototype.descending = function () {
+			this.rule.sort = this.rule.sort || defaultSort();
+			this.rule.sort.descending = true;
+			return this;
+		};
+
+		FetchChainer.prototype.sortByPath = function () {
+			this.rule.sort = this.rule.sort || defaultSort();
+			this.rule.sort.byPath = true;
+			return this;
+		};
+
+		FetchChainer.prototype.sortByKey = function (key, type) {
+			this.rule.sort = this.rule.sort || defaultSort();
+			this.rule.sort.byValueField = {};
+			this.rule.sort.byValueField[key] = type;
+			return this;
+		};
+
+		FetchChainer.prototype.sortByValue = function () {
+			var args = Array.prototype.slice.call(arguments, 0);
+			this.rule.sort = this.rule.sort || defaultSort();
+			if (args.length === 1) {
+				this.rule.sort.byValue = args[0];
+			} else {
+				return this.sortByKey(args[0], args[1]);
+			}
+			return this;
+		};
+
+		FetchChainer.prototype.range = function (from, to) {
+			this.rule.sort = this.rule.sort || defaultSort();
+			this.rule.sort.from = from;
+			this.rule.sort.to = to || from + 20;
+			return this;
+		};
+
+
+		module.exports.FetchChainer = FetchChainer;
+
+}, {}],
+	26: [function (require, module, exports) {
 		var jetUtils = require('../utils');
 		var fetchCommon = require('../fetch-common');
 		var Elements = require('../element').Elements;
@@ -3824,7 +4978,10 @@
 		var FakePeer = function () {
 			this.fetchers = {};
 			this.id = 'fakePeer';
-			this.eachFetcher = jetUtils.eachKeyValue(this.fetchers);
+			var eachFetcherIterator = jetUtils.eachKeyValue(this.fetchers);
+			this.eachFetcher = function (element, f) {
+				eachFetcherIterator(f);
+			};
 		};
 
 		FakePeer.prototype.addFetcher = function (fetchId, fetcher) {
@@ -3844,7 +5001,7 @@
 		 *
 		 * Mimiks normal "fetch" API when the Daemon runs
 		 * fetch = 'simple' mode. In this case, the Daemon supports
-		 * only one "fetch all" per Peer. 
+		 * only one "fetch all" per Peer.
 		 * Filtering (value and/or path based) and sorting are handled
 		 * by the peer.
 		 *
@@ -3974,11 +5131,11 @@
 			Fetcher: Fetcher
 		};
 }, {
-		"../element": 12,
-		"../fetch-common": 13,
-		"../utils": 21
+		"../element": 19,
+		"../fetch-common": 20,
+		"../utils": 29
 	}],
-	19: [function (require, module, exports) {
+	27: [function (require, module, exports) {
 		'use strict';
 
 		var util = require('util');
@@ -4022,8 +5179,9 @@
 		 * JsonRPC constructor.
 		 */
 		var JsonRPC = function (config) {
-			if (config.url) {
-				this.sock = new WebSocket(config.url, 'jet');
+			if (config.url || (typeof (window) !== 'undefined')) {
+				var url = config.url || ('ws://' + window.location.host);
+				this.sock = new WebSocket(url, 'jet');
 			} else {
 				this.sock = new MessageSocket(config.port || 11122, config.ip);
 			}
@@ -4295,13 +5453,13 @@
 
 		module.exports = JsonRPC;
 }, {
-		"../message-socket": 15,
-		"../utils": 21,
-		"events": 6,
-		"util": 10,
-		"ws": 23
+		"../message-socket": 22,
+		"../utils": 29,
+		"events": 7,
+		"util": 11,
+		"ws": 33
 	}],
-	20: [function (require, module, exports) {
+	28: [function (require, module, exports) {
 		'use strict';
 
 		var jetUtils = require('./utils');
@@ -4528,9 +5686,9 @@
 			};
 		};
 }, {
-		"./utils": 21
+		"./utils": 29
 	}],
-	21: [function (require, module, exports) {
+	29: [function (require, module, exports) {
 		var invalidParams = function (data) {
 			return {
 				message: 'Invalid params',
@@ -4661,7 +5819,7 @@
 			};
 		};
 }, {}],
-	22: [function (require, module, exports) {
+	30: [function (require, module, exports) {
 		'use strict';
 
 		var jetUtils = require('./utils');
@@ -4789,9 +5947,236 @@
 			};
 		};
 }, {
-		"./utils": 21
+		"./utils": 29
 	}],
-	23: [function (require, module, exports) {
+	31: [function (require, module, exports) {
+		(function (global) {
+
+			var rng;
+
+			if (global.crypto && crypto.getRandomValues) {
+				// WHATWG crypto-based RNG - http://wiki.whatwg.org/wiki/Crypto
+				// Moderately fast, high quality
+				var _rnds8 = new Uint8Array(16);
+				rng = function whatwgRNG() {
+					crypto.getRandomValues(_rnds8);
+					return _rnds8;
+				};
+			}
+
+			if (!rng) {
+				// Math.random()-based (RNG)
+				//
+				// If all else fails, use Math.random().  It's fast, but is of unspecified
+				// quality.
+				var _rnds = new Array(16);
+				rng = function () {
+					for (var i = 0, r; i < 16; i++) {
+						if ((i & 0x03) === 0) r = Math.random() * 0x100000000;
+						_rnds[i] = r >>> ((i & 0x03) << 3) & 0xff;
+					}
+
+					return _rnds;
+				};
+			}
+
+			module.exports = rng;
+
+
+		}).call(this, typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+}, {}],
+	32: [function (require, module, exports) {
+		//     uuid.js
+		//
+		//     Copyright (c) 2010-2012 Robert Kieffer
+		//     MIT License - http://opensource.org/licenses/mit-license.php
+
+		// Unique ID creation requires a high quality random # generator.  We feature
+		// detect to determine the best RNG source, normalizing to a function that
+		// returns 128-bits of randomness, since that's what's usually required
+		var _rng = require('./rng');
+
+		// Maps for number <-> hex string conversion
+		var _byteToHex = [];
+		var _hexToByte = {};
+		for (var i = 0; i < 256; i++) {
+			_byteToHex[i] = (i + 0x100).toString(16).substr(1);
+			_hexToByte[_byteToHex[i]] = i;
+		}
+
+		// **`parse()` - Parse a UUID into it's component bytes**
+		function parse(s, buf, offset) {
+			var i = (buf && offset) || 0,
+				ii = 0;
+
+			buf = buf || [];
+			s.toLowerCase().replace(/[0-9a-f]{2}/g, function (oct) {
+				if (ii < 16) { // Don't overflow!
+					buf[i + ii++] = _hexToByte[oct];
+				}
+			});
+
+			// Zero out remaining bytes if string was short
+			while (ii < 16) {
+				buf[i + ii++] = 0;
+			}
+
+			return buf;
+		}
+
+		// **`unparse()` - Convert UUID byte array (ala parse()) into a string**
+		function unparse(buf, offset) {
+			var i = offset || 0,
+				bth = _byteToHex;
+			return bth[buf[i++]] + bth[buf[i++]] +
+				bth[buf[i++]] + bth[buf[i++]] + '-' +
+				bth[buf[i++]] + bth[buf[i++]] + '-' +
+				bth[buf[i++]] + bth[buf[i++]] + '-' +
+				bth[buf[i++]] + bth[buf[i++]] + '-' +
+				bth[buf[i++]] + bth[buf[i++]] +
+				bth[buf[i++]] + bth[buf[i++]] +
+				bth[buf[i++]] + bth[buf[i++]];
+		}
+
+		// **`v1()` - Generate time-based UUID**
+		//
+		// Inspired by https://github.com/LiosK/UUID.js
+		// and http://docs.python.org/library/uuid.html
+
+		// random #'s we need to init node and clockseq
+		var _seedBytes = _rng();
+
+		// Per 4.5, create and 48-bit node id, (47 random bits + multicast bit = 1)
+		var _nodeId = [
+  _seedBytes[0] | 0x01,
+  _seedBytes[1], _seedBytes[2], _seedBytes[3], _seedBytes[4], _seedBytes[5]
+];
+
+		// Per 4.2.2, randomize (14 bit) clockseq
+		var _clockseq = (_seedBytes[6] << 8 | _seedBytes[7]) & 0x3fff;
+
+		// Previous uuid creation time
+		var _lastMSecs = 0,
+			_lastNSecs = 0;
+
+		// See https://github.com/broofa/node-uuid for API details
+		function v1(options, buf, offset) {
+			var i = buf && offset || 0;
+			var b = buf || [];
+
+			options = options || {};
+
+			var clockseq = options.clockseq !== undefined ? options.clockseq : _clockseq;
+
+			// UUID timestamps are 100 nano-second units since the Gregorian epoch,
+			// (1582-10-15 00:00).  JSNumbers aren't precise enough for this, so
+			// time is handled internally as 'msecs' (integer milliseconds) and 'nsecs'
+			// (100-nanoseconds offset from msecs) since unix epoch, 1970-01-01 00:00.
+			var msecs = options.msecs !== undefined ? options.msecs : new Date().getTime();
+
+			// Per 4.2.1.2, use count of uuid's generated during the current clock
+			// cycle to simulate higher resolution clock
+			var nsecs = options.nsecs !== undefined ? options.nsecs : _lastNSecs + 1;
+
+			// Time since last uuid creation (in msecs)
+			var dt = (msecs - _lastMSecs) + (nsecs - _lastNSecs) / 10000;
+
+			// Per 4.2.1.2, Bump clockseq on clock regression
+			if (dt < 0 && options.clockseq === undefined) {
+				clockseq = clockseq + 1 & 0x3fff;
+			}
+
+			// Reset nsecs if clock regresses (new clockseq) or we've moved onto a new
+			// time interval
+			if ((dt < 0 || msecs > _lastMSecs) && options.nsecs === undefined) {
+				nsecs = 0;
+			}
+
+			// Per 4.2.1.2 Throw error if too many uuids are requested
+			if (nsecs >= 10000) {
+				throw new Error('uuid.v1(): Can\'t create more than 10M uuids/sec');
+			}
+
+			_lastMSecs = msecs;
+			_lastNSecs = nsecs;
+			_clockseq = clockseq;
+
+			// Per 4.1.4 - Convert from unix epoch to Gregorian epoch
+			msecs += 12219292800000;
+
+			// `time_low`
+			var tl = ((msecs & 0xfffffff) * 10000 + nsecs) % 0x100000000;
+			b[i++] = tl >>> 24 & 0xff;
+			b[i++] = tl >>> 16 & 0xff;
+			b[i++] = tl >>> 8 & 0xff;
+			b[i++] = tl & 0xff;
+
+			// `time_mid`
+			var tmh = (msecs / 0x100000000 * 10000) & 0xfffffff;
+			b[i++] = tmh >>> 8 & 0xff;
+			b[i++] = tmh & 0xff;
+
+			// `time_high_and_version`
+			b[i++] = tmh >>> 24 & 0xf | 0x10; // include version
+			b[i++] = tmh >>> 16 & 0xff;
+
+			// `clock_seq_hi_and_reserved` (Per 4.2.2 - include variant)
+			b[i++] = clockseq >>> 8 | 0x80;
+
+			// `clock_seq_low`
+			b[i++] = clockseq & 0xff;
+
+			// `node`
+			var node = options.node || _nodeId;
+			for (var n = 0; n < 6; n++) {
+				b[i + n] = node[n];
+			}
+
+			return buf ? buf : unparse(b);
+		}
+
+		// **`v4()` - Generate random UUID**
+
+		// See https://github.com/broofa/node-uuid for API details
+		function v4(options, buf, offset) {
+			// Deprecated - 'format' argument, as supported in v1.2
+			var i = buf && offset || 0;
+
+			if (typeof (options) == 'string') {
+				buf = options == 'binary' ? new Array(16) : null;
+				options = null;
+			}
+			options = options || {};
+
+			var rnds = options.random || (options.rng || _rng)();
+
+			// Per 4.4, set bits for version and `clock_seq_hi_and_reserved`
+			rnds[6] = (rnds[6] & 0x0f) | 0x40;
+			rnds[8] = (rnds[8] & 0x3f) | 0x80;
+
+			// Copy bytes to buffer, if provided
+			if (buf) {
+				for (var ii = 0; ii < 16; ii++) {
+					buf[i + ii] = rnds[ii];
+				}
+			}
+
+			return buf || unparse(rnds);
+		}
+
+		// Export public API
+		var uuid = v4;
+		uuid.v1 = v1;
+		uuid.v4 = v4;
+		uuid.parse = parse;
+		uuid.unparse = unparse;
+
+		module.exports = uuid;
+
+}, {
+		"./rng": 31
+	}],
+	33: [function (require, module, exports) {
 
 		/**
 		 * Module dependencies.
@@ -4838,100 +6223,5 @@
 
 		if (WebSocket) ws.prototype = WebSocket.prototype;
 
-}, {}],
-	24: [function (require, module, exports) {
-		var jet = require('node-jet');
-
-		var peer = new jet.Peer({
-			url: 'ws://' + window.location.host
-		});
-
-		var addTodo = function (title) {
-			peer.call('todo/add', [title]);
-		};
-
-		var removeTodo = function (id) {
-			peer.call('todo/remove', [id]);
-		};
-
-		var removeAllTodos = function () {
-			peer.call('todo/remove', []);
-		};
-
-		var setTodoTitle = function (id, title) {
-			peer.set('todo/#' + id, {
-				title: title
-			});
-		};
-
-		var setTodoCompleted = function (id, completed) {
-			peer.set('todo/#' + id, {
-				completed: completed
-			});
-		};
-
-		peer.fetch({
-			path: {
-				startsWith: 'todo/#'
-			},
-			sort: {
-				byValueField: {
-					id: 'number'
-				},
-				from: 1,
-				to: 30,
-				asArray: true
-			}
-		}, function (todos) {
-			renderTodos(todos);
-		});
-
-		var renderTodo = function (todo) {
-			var container = document.createElement('div');
-
-			var input = document.createElement('input');
-			input.type = 'text';
-			input.value = todo.value.title;
-
-			var changeButton = document.createElement('input');
-			changeButton.type = 'button';
-			changeButton.value = 'change title';
-			changeButton.addEventListener('click', function () {
-				setTodoTitle(todo.value.id, input.value);
-			});
-
-			var completedCheckbox = document.createElement('input');
-			completedCheckbox.type = 'checkbox';
-			completedCheckbox.checked = todo.value.completed;
-			completedCheckbox.addEventListener('click', function () {
-				setTodoCompleted(todo.value.id, !todo.value.completed);
-			});
-
-			container.appendChild(input);
-			container.appendChild(changeButton);
-			container.appendChild(completedCheckbox);
-
-			return container;
-		};
-
-		var renderTodos = function (todos) {
-			var root = document.getElementById('todos');
-			while (root.firstChild) {
-				root.removeChild(root.firstChild);
-			}
-			todos.forEach(function (todo) {
-				root.appendChild(renderTodo(todo));
-			});
-			console.log(todos);
-		};
-
-		document.getElementById('add-button').addEventListener('click', function () {
-			var titleInput = document.getElementById('title-input');
-			addTodo(titleInput.value);
-			titleInput.value = '';
-		});
-
-}, {
-		"node-jet": 11
-	}]
-}, {}, [24]);
+}, {}]
+}, {}, [12]);
