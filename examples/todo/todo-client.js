@@ -1,4 +1,4 @@
-var jet = require('../../lib/jet');
+var jet = require('node-jet');
 
 var peer = new jet.Peer({
 	url: 'ws://' + window.location.host
@@ -27,12 +27,6 @@ var setTodoCompleted = function (id, completed) {
 		completed: completed
 	});
 };
-
-peer.fetch()
-  .wherePath('startsWith', 'todo/#')
-	.sortByKey('id', 'number')
-	.range(1, 30)
-	.run(renderTodos);
 
 var renderTodo = function (todo) {
 	var container = document.createElement('div');
@@ -70,7 +64,6 @@ var renderTodos = function (todos) {
 	todos.forEach(function (todo) {
 		root.appendChild(renderTodo(todo));
 	});
-	console.log(todos);
 };
 
 document.getElementById('add-button').addEventListener('click', function () {
@@ -78,3 +71,9 @@ document.getElementById('add-button').addEventListener('click', function () {
 	addTodo(titleInput.value);
 	titleInput.value = '';
 });
+
+peer.fetch()
+	.wherePath('startsWith', 'todo/#')
+	.sortByKey('id', 'number')
+	.range(1, 30)
+	.run(renderTodos);
