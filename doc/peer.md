@@ -51,13 +51,13 @@ peer.on('open', function(daemonInfo) {
    console.log('fetch-mode', daemonInfo.features.fetch); // string: 'full' or 'simple'
 });
 ```
-## `peer.authenticate(user, password, [callbacks])
+## `peer.authenticate(user, password, [callbacks])`
 
 Authenticates the `peer` as `user` if the `password` is correct. The peer gains the access rights 
 as defined in the daemon's `users` object.
 
 Must be called before calling `peer.fetch`. Unauthenticated peers will have access to all States and Methods
-which do not specified an `access` field.
+which did not specify an `access` field.
 
 ## `peer.close()`
 
