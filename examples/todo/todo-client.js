@@ -73,7 +73,7 @@ document.getElementById('add-button').addEventListener('click', function () {
 });
 
 peer.fetch()
-	.wherePath('startsWith', 'todo/#')
+	.path('startsWith', 'todo/#')
 	.sortByKey('id', 'number')
 	.range(1, 30)
 	.run(renderTodos);
