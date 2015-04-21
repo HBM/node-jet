@@ -280,12 +280,12 @@ that will be invoked everytime something relevant happens. A fetch for getting t
 
 ```javascript
 peer.fetch()
-  .wherePath('startsWith', 'player/')
-	.whereKey('gender', 'equals', 'female')
-	.sortByKey('score', 'number')
-	.range(1, 10)
-	.descending()
-	.run(function(topFemalePlayers) {});
+  .path('startsWith', 'player/')
+  .key('gender', 'equals', 'female')
+  .sortByKey('score', 'number')
+  .range(1, 10)
+  .descending()
+  .run(function(topFemalePlayers) {});
 ```
 
 Fetch is very powerful and is exmplained in more detail in the API [doc](https://github.com/lipp/node-jet/blob/master/doc/peer.md#fetch--peerfetchrule-fetchcb-callbacks). Note that there is no **get** call at all! That is because Jet wants to keep pollers out, since they may decrease system performance.
@@ -323,10 +323,10 @@ var renderTodos = function(todos) {
 };
 
 peer.fetch()
-  .wherePath('startsWith', 'todo/#')
-	.sortByKey('id', 'number')
-	.range(1, 30)
-	.run(renderTodos);
+  .path('startsWith', 'todo/#')
+  .sortByKey('id', 'number')
+  .range(1, 30)
+  .run(renderTodos);
 ```
 
 # Conclusion
