@@ -81,6 +81,55 @@ var portBase = 4345;
 			peer.close();
 		});
 
+		describe('fetch chaining', function () {
+			var states;
+
+			beforeEach(function () {
+				states = new StateArray();
+			})
+
+			afterEach(function (done) {
+				states.removeAll(done);
+			});
+
+			it('fetch().path("startsWith", ...).run(cb)', function (done) {
+				states.push(peer.state({
+					path: 'abc',
+					value: 1
+				}));
+
+				states.push(peer.state({
+					path: 'Aa',
+					value: 2
+				}));
+
+				states.push(peer.state({
+					path: 'ca',
+					value: 3
+				}));
+
+				var fetchSpy = sinon.spy();
+
+				var a2 = peer.state({
+					path: 'aXXX',
+					value: 3
+				});
+
+				var fetcher = peer.fetch().path('startsWith', 'a').run(fetchSpy);
+
+				a2.remove();
+
+				setTimeout(function () {
+					expect(fetchSpy.callCount).to.equal(3);
+					expect(fetchSpy.calledWith('abc', 'add', 1, fetcher)).to.be.true;
+					expect(fetchSpy.calledWith('aXXX', 'add', 3, fetcher)).to.be.true;
+					expect(fetchSpy.calledWith('aXXX', 'remove', 3, fetcher)).to.be.true;
+					done();
+				}, waitTime);
+			});
+
+		});
+
 		describe('fetch by path', function () {
 
 			var states;
@@ -1226,6 +1275,34 @@ var portBase = 4345;
 
 			afterEach(function (done) {
 				states.removeAll(done);
+			});
+
+			it('chain .path().value()', function (done) {
+				states.push(peer.state({
+					path: 'abc',
+					value: 1
+				}));
+				states.push(peer.state({
+					path: 'abde',
+					value: 3
+				}));
+				states.push(peer.state({
+					path: 'aca',
+					value: 1
+				}));
+
+				var fetchSpy = sinon.spy();
+
+				var fetcher = peer.fetch()
+					.path('startsWith', 'ab')
+					.value('lessThan', 3)
+					.run(fetchSpy);
+
+				setTimeout(function () {
+					expect(fetchSpy.callCount).to.equal(1);
+					expect(fetchSpy.calledWith('abc', 'add', 1)).to.be.true;
+					done();
+				}, waitTime);
 			});
 
 

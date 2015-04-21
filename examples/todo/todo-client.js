@@ -28,22 +28,6 @@ var setTodoCompleted = function (id, completed) {
 	});
 };
 
-peer.fetch({
-	path: {
-		startsWith: 'todo/#'
-	},
-	sort: {
-		byValueField: {
-			id: 'number'
-		},
-		from: 1,
-		to: 30,
-		asArray: true
-	}
-}, function (todos) {
-	renderTodos(todos);
-});
-
 var renderTodo = function (todo) {
 	var container = document.createElement('div');
 
@@ -80,7 +64,6 @@ var renderTodos = function (todos) {
 	todos.forEach(function (todo) {
 		root.appendChild(renderTodo(todo));
 	});
-	console.log(todos);
 };
 
 document.getElementById('add-button').addEventListener('click', function () {
@@ -88,3 +71,9 @@ document.getElementById('add-button').addEventListener('click', function () {
 	addTodo(titleInput.value);
 	titleInput.value = '';
 });
+
+peer.fetch()
+	.wherePath('startsWith', 'todo/#')
+	.sortByKey('id', 'number')
+	.range(1, 30)
+	.run(renderTodos);

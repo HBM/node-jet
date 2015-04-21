@@ -4,6 +4,8 @@ var jet = require('../lib/jet');
 
 var peer = new jet.Peer();
 
-peer.fetch({}, function (path, event, value) {
-	console.log(path, event, value);
-});
+peer.fetch()
+	.all()
+	.run(function (path, event, value) {
+		console.log(path, event, value);
+	});

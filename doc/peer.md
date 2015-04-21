@@ -116,14 +116,54 @@ peer.call('sum', [1,2,3,4,5], {
 peer.call('greet', {first: 'John', last: 'Mitchell'});
 ```
 
-## `fetch = peer.fetch(rule, fetchCb, [callbacks])`
+## `fetchChain = peer.fetch()`
 
-Creates and returns a Fetch instance. The supported fields of `rule` are:
+Creates and returns a FetchChain instance. Use it like this:
 
-- `path`: {Object, Optional} For path based fetches
-- `value`: {Object, Optional} For value based fetches of primitive types
-- `valueField`: {Object, Optional} For valuefield based fetches of Objects
-- `sort`: {Object, Optional} For sorted fetches
+```javascript
+fetchRef = peer.fetch()
+  .path('startsWith', 'players/')
+  .sortByKey('score', 'number')
+  .range(1, 10)
+  .run(function(topTenPlayers, fetchRef) {
+  });
+```
+
+## `fetchChain.run(fetchCb, [callbacks])`
+
+Runs (starts) the fetch rule defined by the FetchChain instance. Optionally executes `callbacks.success` or `callbacks.error`.
+The `fetchCb` arguments for non-sorting fetches are:
+
+- `path`: {String} The path of the State / Method which triggered the Fetch Notification
+- `event`: {String} The event which triggered the Fetch Notification ('add', 'remove',
+   'change')
+- `value`: {Any | undefined} The current value of the State or `undefined` for Methods
+- `fetchRef`: {Object} The reference of the fetch (for unfetching)
+
+```javascript
+fetchRef = peer.fetch()
+  .path('startsWith', 'movie)
+  .run(function(path, event, value, fetchRef) {
+  });
+```
+
+For sorting fetch rules, the `fetchCb` arguments are: 
+
+- `sortedStatesArray`: {Array} The sorted states/methods
+- `fetchRef`: {Object} The reference of the fetch (for unfetching)
+
+```javascript
+fetchRef = peer.fetch()
+  .path('startsWith', 'players/')
+  .sortByKey('score', 'number')
+  .range(1, 10)
+  .run(function(topTenPlayers, fetchRef) {
+  });
+```
+
+## `fetchChain.path(predicate, comp)`
+
+Adds a path matching rule to the fetchChain.
 
 [Implemented](https://github.com/lipp/node-jet/blob/master/lib/jet/path_matcher.js#L6) `path` predicates are:
 
@@ -140,7 +180,11 @@ Creates and returns a Fetch instance. The supported fields of `rule` are:
 - `equalsOneOf` {Array of Strings}
 - `equalsNotOneOf` {Array of Strings}
 
-[Implemented](https://github.com/lipp/node-jet/blob/master/lib/jet/value_matcher.js#L7) `value` and `valueField` predicates are:
+## `fetchChain.value(predicate, comp)`
+
+Adds a value matching rule for **primitive type** values to the fetchChain.
+
+[Implemented](https://github.com/lipp/node-jet/blob/master/lib/jet/value_matcher.js#L7) predicates are:
 
 - `lessThan` {any less than comparable}
 - `greaterThan` {any greater than comparable}
@@ -148,128 +192,52 @@ Creates and returns a Fetch instance. The supported fields of `rule` are:
 - `equalsNot` {any primitive type}
 - `isType` {String}
 
-Fetching all movies could look like this:
+## `fetchChain.key(keyString, predicate, comp)`
 
-```javascript
-peer.fetch({
-    path: {
-      startsWith: 'movie/'
-    }
-  }, function(path, event, value) {}
-);
-```
+Adds a key matching rule for **Object type** values to the fetchChain. 
+Nested keys can be specified like this: `relatives.father.age`.
 
-Fetching the top ten female players could look like this:
+[Implemented](https://github.com/lipp/node-jet/blob/master/lib/jet/value_matcher.js#L7)  predicates are:
 
-```javascript
-peer.fetch({
-    path: {
-      startsWith: 'player/'
-    },
-    valueField: {
-      gender: { // nested fields can be accessed like this: 'details.parents.name'
-        equals: 'female'
-      }
-    },
-    sort: {
-      byValueField: {
-        score: 'number' // nested fields can be accessed like this: 'details.parents.name'
-      },
-      descending: true,
-      from: 1,
-      to: 10,
-      asArray: true
-    }
-  }, function(topFemalePlayers) {}
-);
-```
+- `lessThan` {any less than comparable}
+- `greaterThan` {any greater than comparable}
+- `equals` {any primitive type}
+- `equalsNot` {any primitive type}
+- `isType` {String}
 
-If `rule` is a empty Object, a "Fetch all" is set up.
+## `fetchChain.sortByPath()`
 
-```javascript
-var fetchAll = peer.fetch({}, function(path, event, value) {
-  console.log(path, event, value);
-});
-```
+Adds a sort by path rule to the fetchChain.
 
-The `fetchCb` arguments for non-sorting fetches are:
+## `fetchChain.sortByValue(type)
 
-- `path`: {String} The path of the State / Method which triggered the Fetch Notification
-- `event`: {String} The event which triggered the Fetch Notification ('add', 'remove',
-   'change')
-- `value`: {Any | undefined} The current value of the State or `undefined` for Methods
+Adds a sort by value for **primitive types** to the fetchChain. Type can be either:
 
-```javascript
-var fetchPersons = peer.fetch({
-  path: {
-    startsWith: 'persons/'
-  }
-}, function(path, event, value) {
-  console.log(path, event, value);
-}, {
-  success: function() {
-    console.log('fetch setup successfully');
-  },
-  error: function(e) {
-    console.log('fetch setup failed', e);
-  }
-}});
-```
+- `number`
+- `string`
 
-The `fetchCb` argument for sorting fetches are:
+## `fetchChain.sortByKey(keyString, type)
 
-- `changes`: {Array} The changes compared to the previous time the function was
-  invoked:
-  - `path`: {String} The path of the State / Method which triggered the Fetch Notification
-  - `index`: {Number} The index / position within the range (from-to)
-  - `value`: {Any | undefined} The current value of the State or `undefined` for Methods
-- `n`: {Number} The number of matches within the given range (from-to)
+Adds a sort by key for **Object types** to the fetchChain. Type can be either:
 
-These are the "differences" (changes) to the previous set of data and allows e.g. for minimal DOM manipulation.
-There is also the more convenient `sort.asArray` fetch rule option which always provides an complete sorted Array
-argument to `fetchCb`.
+- `number`
+- `string`
 
-```javascript
-var sortedPersons = [];
-var fetchPersons = peer.fetch({
-  path: {
-    startsWith: 'persons/'
-  },
-  sort: {
-    from: 1,
-    to: 10,
-    byValueField: {
-      age: 'number'
-    }
-  }
-}, function(changes, n) {
-  sortedPersons.length = n;  
-  changes.forEach(function(change) {
-    // indices are 1 based (not 0 based).
-    sortedPersons[change.index-1] = {
-      name: change.value.name,
-      age: change.value.age
-    };
-  });
-});
-```
+Nested keys can be specified like this: `relatives.father.age`.
 
-If `sort.asArray === true`, the argument provided to `fetchCb` is always the complete sorted Array:
+## `fetchChain.range(from, to)`
 
-```javascript
-var fetchPersons = peer.fetch({
-  path: {
-    startsWith: 'persons/'
-  },
-  sort: {
-    asArray: true,
-    byValueField: {
-      age: 'number'
-    }
-  }
-}, function(youngPersons) {
-});
-```
+Adds a sort range to the fetchChain. Note that **the first index is 1**. from-to is a closed interval, that
+means `fetchChain.range(1,10)` gives you up to ten matching states/methods.
+
+## `fetchChain.descending()`
+
+Adds a sort descending rule to the fetchChain.
+
+## `fetchChain.ascending()`
+
+Adds a sort ascending rule to the fetchChain.
+
 
 ## `method = peer.method(desc, [callbacks])`
 
