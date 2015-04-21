@@ -53,12 +53,11 @@ setInterval(function() {
 Consume Content:
 
 ```javascript
-// fetch/grab/query/get content
-otherPeer.fetch({
-  path: {
-    startsWith: 'person/'
-  }}, function(path, event, value) {
-  ...  // events can be 'add', 'change', 'remove'
+// fetch/query content
+otherPeer.fetch()
+  .path('startsWith', 'person/')
+  .run(function(path, event, value) {
+    ...  // events can be 'add', 'change', 'remove'
 });
 
 // call methods
