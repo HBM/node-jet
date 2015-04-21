@@ -108,10 +108,8 @@ describe('A Daemon', function () {
 		peer.state({
 			path: 'pathdoesnotmatter',
 			value: 32
-		}, {
-			success: function () {
-				peer.close();
-			}
+		}).then(function () {
+			peer.close();
 		});
 	});
 
@@ -142,13 +140,10 @@ describe('A Daemon', function () {
 			}
 		});
 
-		peer.call('alwaysTooLate', [1, 2], {
-			timeout: 0.001,
-			error: function (err) {
-				expect(err.message).to.equal('Response Timeout');
-				expect(err.code).to.equal(-32001);
-				done();
-			}
+		peer.call('alwaysTooLate', [1, 2], 0.001).catch(function (err) {
+			expect(err.message).to.equal('Response Timeout');
+			expect(err.code).to.equal(-32001);
+			done();
 		});
 	});
 

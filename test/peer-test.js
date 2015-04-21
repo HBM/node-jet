@@ -146,17 +146,17 @@ describe('Jet module', function () {
 					expect(newval).to.equal(876);
 				}
 			});
-			peer.fetch(random, function (path, event, value) {
-				expect(path).to.equal(random);
-				expect(event).to.equal('add');
-				expect(value).to.equal(123);
-				peer.set(random, 876, {
-					success: function () {
+			peer.fetch()
+				.path('contains', random)
+				.run(function (path, event, value) {
+					expect(path).to.equal(random);
+					expect(event).to.equal('add');
+					expect(value).to.equal(123);
+					peer.set(random, 876).then(function () {
 						expect(newVal).to.equal(876);
 						done();
-					}
+					});
 				});
-			});
 		});
 
 		it('can add a read-only state and setting it fails', function (done) {
@@ -165,11 +165,9 @@ describe('Jet module', function () {
 				path: random,
 				value: 123
 			});
-			peer.set(random, 6237, {
-				error: function (err) {
-					expect(err).to.be.an.object;
-					done();
-				}
+			peer.set(random, 6237).catch(function (err) {
+				expect(err).to.be.an.object;
+				done();
 			});
 		});
 
@@ -184,12 +182,10 @@ describe('Jet module', function () {
 					}
 				}
 			});
-			peer.set(random, 6237, {
-				error: function (err) {
-					expect(err.message).to.equal('Internal error');
-					expect(err.data.message).to.equal('out of range');
-					done();
-				}
+			peer.set(random, 6237).catch(function (err) {
+				expect(err.message).to.equal('Internal error');
+				expect(err.data.message).to.equal('out of range');
+				done();
 			});
 		});
 
@@ -207,12 +203,10 @@ describe('Jet module', function () {
 					}
 				}
 			});
-			peer.set(random, 6237, {
-				error: function (err) {
-					expect(err.message).to.equal('out of range');
-					expect(err.code).to.equal(1234);
-					done();
-				}
+			peer.set(random, 6237).catch(function (err) {
+				expect(err.message).to.equal('out of range');
+				expect(err.code).to.equal(1234);
+				done();
 			});
 		});
 
@@ -229,16 +223,14 @@ describe('Jet module', function () {
 					}, 10);
 				}
 			});
-			peer.fetch(random, function (path, event, value) {
-				expect(path).to.equal(random);
-				expect(event).to.equal('add');
-				expect(value).to.equal(123);
-				peer.set(random, 876, {
-					success: function () {
-						done();
-					}
+			peer.fetch()
+				.path('contains', random)
+				.run(function (path, event, value) {
+					expect(path).to.equal(random);
+					expect(event).to.equal('add');
+					expect(value).to.equal(123);
+					peer.set(random, 876).then(done);
 				});
-			});
 		});
 
 		it('can add and set a state with setAsync (setAsync is "safe")', function (done) {
@@ -250,11 +242,9 @@ describe('Jet module', function () {
 					throw new Error();
 				}
 			});
-			peer.set(random, 876, {
-				error: function (err) {
-					expect(err).to.be.an.object;
-					done();
-				}
+			peer.set(random, 876).catch(function (err) {
+				expect(err).to.be.an.object;
+				done();
 			});
 		});
 
@@ -263,11 +253,7 @@ describe('Jet module', function () {
 			var state = peer.state({
 				path: random,
 				value: 'asd'
-			}, {
-				success: function () {
-					done();
-				}
-			});
+			}).then(done);
 		});
 
 		it('can add and remove a state', function (done) {
@@ -276,11 +262,7 @@ describe('Jet module', function () {
 				path: random,
 				value: 'asd'
 			});
-			state.remove({
-				success: function () {
-					done();
-				}
-			});
+			state.remove().then(done);
 		});
 
 		it('remove a state twice fails', function (done) {
@@ -290,17 +272,13 @@ describe('Jet module', function () {
 				path: random,
 				value: 'asd'
 			});
-			state.remove({
-				success: function () {
-					removed = true;
-				}
+			state.remove().then(function () {
+				removed = true;
 			});
-			state.remove({
-				error: function () {
-					expect(removed).to.be.true;
-					expect(state.isAdded()).to.be.false;
-					done();
-				}
+			state.remove().catch(function () {
+				expect(removed).to.be.true;
+				expect(state.isAdded()).to.be.false;
+				done();
 			});
 		});
 
@@ -310,17 +288,13 @@ describe('Jet module', function () {
 			var state = peer.state({
 				path: random,
 				value: 'asd'
-			}, {
-				success: function () {
-					expect(state.isAdded()).to.be.true;
-					wasAdded = true;
-				}
+			}).then(function () {
+				expect(state.isAdded()).to.be.true;
+				wasAdded = true;
 			});
-			state.add(undefined, {
-				error: function () {
-					expect(wasAdded).to.be.true;
-					done();
-				}
+			state.add(undefined).catch(function () {
+				expect(wasAdded).to.be.true;
+				done();
 			});
 		});
 
@@ -331,13 +305,13 @@ describe('Jet module', function () {
 				value: 'asd'
 			});
 			state.remove();
-			state.add(undefined, {
-				success: function () {
-					peer.fetch(random, function (path, event, value) {
+			state.add(undefined).then(function () {
+				peer.fetch()
+					.all()
+					.run(function (path, event, value) {
 						expect(value).to.equal('asd');
 						done();
 					});
-				}
 			});
 		});
 
@@ -348,13 +322,13 @@ describe('Jet module', function () {
 				value: 'asd'
 			});
 			state.remove();
-			state.add(123, {
-				success: function () {
-					peer.fetch(random, function (path, event, value) {
+			state.add(123).then(function () {
+				peer.fetch()
+					.path('contains', random)
+					.run(function (path, event, value) {
 						expect(value).to.equal(123);
 						done();
 					});
-				}
 			});
 		});
 
@@ -362,13 +336,15 @@ describe('Jet module', function () {
 		it('can add a state and post a state change', function (done) {
 			var random = randomPath();
 			var state;
-			peer.fetch(random, function (path, event, value) {
-				if (event === 'change') {
-					expect(value).to.equal('foobarX');
-					expect(state.value()).to.equal('foobarX');
-					done();
-				}
-			});
+			peer.fetch()
+				.path('contains', random)
+				.run(function (path, event, value) {
+					if (event === 'change') {
+						expect(value).to.equal('foobarX');
+						expect(state.value()).to.equal('foobarX');
+						done();
+					}
+				});
 			state = peer.state({
 				path: random,
 				value: 675
@@ -386,11 +362,7 @@ describe('Jet module', function () {
 					path: random,
 					value: 'asd'
 				});
-				state.remove({
-					success: function () {
-						done();
-					}
-				});
+				state.remove().then(done);
 			});
 		});
 
@@ -406,11 +378,9 @@ describe('Jet module', function () {
 				}
 			});
 
-			peer.call(path, [1, 2, false], {
-				success: function (result) {
-					expect(result).to.equal(3);
-					done();
-				}
+			peer.call(path, [1, 2, false]).then(function () {
+				expect(result).to.equal(3);
+				done();
 			});
 		});
 
@@ -428,11 +398,9 @@ describe('Jet module', function () {
 			peer.call(path, {
 				x: 1,
 				y: 2
-			}, {
-				success: function (result) {
-					expect(result).to.equal(3);
-					done();
-				}
+			}).then(function (result) {
+				expect(result).to.equal(3);
+				done();
 			});
 		});
 
@@ -445,12 +413,10 @@ describe('Jet module', function () {
 				}
 			});
 
-			peer.call(path, [1, 2, false], {
-				error: function (err) {
-					expect(err).to.be.an.object;
-					expect(err.data.message).to.equal('argh');
-					done();
-				}
+			peer.call(path, [1, 2, false]).catch(function (err) {
+				expect(err).to.be.an.object;
+				expect(err.data.message).to.equal('argh');
+				done();
 			});
 		});
 
@@ -471,11 +437,9 @@ describe('Jet module', function () {
 				}
 			});
 
-			peer.call(path, [1, 2, false], {
-				success: function (result) {
-					expect(result).to.equal(3);
-					done();
-				}
+			peer.call(path, [1, 2, false]).then(function (result) {
+				expect(result).to.equal(3);
+				done();
 			});
 		});
 
@@ -497,11 +461,9 @@ describe('Jet module', function () {
 			peer.call(path, {
 				x: 1,
 				y: 2
-			}, {
-				success: function (result) {
-					expect(result).to.equal(3);
-					done();
-				}
+			}).then(function (result) {
+				expect(result).to.equal(3);
+				done();
 			});
 		});
 
@@ -522,13 +484,11 @@ describe('Jet module', function () {
 				}
 			});
 
-			peer.call(path, [1, 2, false], {
-				error: function (err) {
-					expect(err.code).to.equal(-32602);
-					expect(err.message).to.equal('Internal error');
-					expect(err.data).to.equal('dont-like-this');
-					done();
-				}
+			peer.call(path, [1, 2, false]).catch(function (err) {
+				expect(err.code).to.equal(-32602);
+				expect(err.message).to.equal('Internal error');
+				expect(err.data).to.equal('dont-like-this');
+				done();
 			});
 		});
 
@@ -546,13 +506,11 @@ describe('Jet module', function () {
 				}
 			});
 
-			peer.call(path, [1, 2, false], {
-				error: function (err) {
-					expect(err.code).to.equal(-32602);
-					expect(err.message).to.equal('Internal error');
-					expect(err.data).to.contain('Invalid');
-					done();
-				}
+			peer.call(path, [1, 2, false]).catch(function (err) {
+				expect(err.code).to.equal(-32602);
+				expect(err.message).to.equal('Internal error');
+				expect(err.data).to.contain('Invalid');
+				done();
 			});
 		});
 
@@ -565,11 +523,9 @@ describe('Jet module', function () {
 				}
 			});
 
-			peer.call(path, [1, 2, false], {
-				error: function (err) {
-					expect(err).to.be.an.object;
-					done();
-				}
+			peer.call(path, [1, 2, false]).catch(function (err) {
+				expect(err).to.be.an.object;
+				done();
 			});
 		});
 
@@ -597,14 +553,12 @@ describe('Jet module', function () {
 			peer.state({
 				path: path,
 				value: 222
-			}, {
-				error: function (err) {
-					expect(err).to.be.an.object;
-					expect(err.message).to.equal('Invalid params');
-					expect(err.code).to.equal(-32602);
-					expect(err.data.pathAlreadyExists).to.equal(path);
-					done();
-				}
+			}).catch(function (err) {
+				expect(err).to.be.an.object;
+				expect(err.message).to.equal('Invalid params');
+				expect(err.code).to.equal(-32602);
+				expect(err.data.pathAlreadyExists).to.equal(path);
+				done();
 			});
 		});
 
@@ -620,13 +574,10 @@ describe('Jet module', function () {
 				}
 			});
 
-			peer.set(path, 123, {
-				valueAsResult: true,
-				success: function (result) {
-					state.remove();
-					expect(result).to.be.false;
-					done();
-				}
+			peer.set(path, 123).then(function (result) {
+				state.remove();
+				expect(result).to.be.false;
+				done();
 			});
 		});
 
@@ -644,35 +595,29 @@ describe('Jet module', function () {
 				}
 			});
 
-			peer.set(path, 123, {
-				valueAsResult: true,
-				success: function (result) {
-					state.remove();
-					expect(result).to.be.false;
-					done();
-				}
+			peer.set(path, 123).then(function (result) {
+				state.remove();
+				expect(result).to.be.false;
+				done();
 			});
 		});
 
 		it('can fetch and unfetch', function (done) {
 			var setupOK;
-			var fetcher = peer.fetch('bla', function () {}, {
-				success: function () {
+			var fetcher = peer.fetch()
+				.path('contains', 'bla')
+				.run(function () {})
+				.then(function () {
 					setupOK = true;
 					expect(fetcher.isFetching()).to.be.true;
-				}
-			});
-			fetcher.unfetch({
-				success: function () {
-					expect(setupOK).to.be.true;
-					expect(fetcher.isFetching()).to.be.false;
-					fetcher.fetch({
-						success: function () {
-							expect(fetcher.isFetching()).to.be.true;
-							done();
-						}
-					});
-				}
+				});
+			fetcher.unfetch().then(function () {
+				expect(setupOK).to.be.true;
+				expect(fetcher.isFetching()).to.be.false;
+				fetcher.fetch().then(function () {
+					expect(fetcher.isFetching()).to.be.true;
+					done();
+				});
 			});
 		});
 

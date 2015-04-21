@@ -18,14 +18,7 @@ StateArray.prototype.addAll = function (peer, initialStates, done) {
 		initialStates.forEach(function (state) {
 			that.push(peer.state(state));
 		});
-		that.push(peer.state(last, {
-			success: function () {
-				done();
-			},
-			error: function () {
-				done();
-			}
-		}));
+		that.push(peer.state(last).then(done));
 	} else {
 		if (done) {
 			done();
@@ -39,14 +32,7 @@ StateArray.prototype.removeAll = function (done) {
 	this.forEach(function (state) {
 		state.remove();
 	});
-	last.remove({
-		success: function () {
-			done();
-		},
-		error: function () {
-			done();
-		}
-	});
+	last.remove().then(done);
 };
 
 var portBase = 4345;
@@ -776,17 +762,13 @@ var portBase = 4345;
 					var fetchSpy = sinon.spy();
 					var fetchOK;
 
-					var fetcher = peer.fetch({
-						sort: {
-							byPath: true,
-							from: 1,
-							to: 10
-						}
-					}, fetchSpy, {
-						success: function () {
+					var fetcher = peer.fetch()
+						.sortByPath()
+						.range(1, 10)
+						.run(fetchSpy)
+						.then(function () {
 							fetchOK = true;
-						}
-					});
+						});
 
 					setTimeout(function () {
 						var expectedChanges = [];
@@ -1371,11 +1353,7 @@ describe('A Daemon with features.fetch = "simple" and two states', function () {
 		peer.state({
 			path: 'def',
 			value: 123
-		}, {
-			success: function () {
-				done();
-			}
-		});
+		}).then(done);
 	});
 
 	after(function () {
