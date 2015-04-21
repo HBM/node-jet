@@ -92,7 +92,7 @@ var portBase = 4345;
 				states.removeAll(done);
 			});
 
-			it('fetch().wherePath("startsWith", ...).run(cb)', function (done) {
+			it('fetch().path("startsWith", ...).run(cb)', function (done) {
 				states.push(peer.state({
 					path: 'abc',
 					value: 1
@@ -115,7 +115,7 @@ var portBase = 4345;
 					value: 3
 				});
 
-				var fetcher = peer.fetch().wherePath('startsWith', 'a').run(fetchSpy);
+				var fetcher = peer.fetch().path('startsWith', 'a').run(fetchSpy);
 
 				a2.remove();
 
@@ -1277,7 +1277,7 @@ var portBase = 4345;
 				states.removeAll(done);
 			});
 
-			it('chain .wherePath().whereValue()', function (done) {
+			it('chain .path().value()', function (done) {
 				states.push(peer.state({
 					path: 'abc',
 					value: 1
@@ -1294,8 +1294,8 @@ var portBase = 4345;
 				var fetchSpy = sinon.spy();
 
 				var fetcher = peer.fetch()
-					.wherePath('startsWith', 'ab')
-					.whereValue('lessThan', 3)
+					.path('startsWith', 'ab')
+					.value('lessThan', 3)
 					.run(fetchSpy);
 
 				setTimeout(function () {
