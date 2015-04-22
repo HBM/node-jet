@@ -135,6 +135,19 @@ describe('Jet module', function () {
 			expect(peer).to.be.an.instanceof(EventEmitter);
 		});
 
+		it('state() returns promise/state-ref', function () {
+			var state = peer.state({
+				path: randomPath(),
+				value: 123
+			});
+			expect(state).to.be.an('object');
+			expect(state.add).to.be.a('function');
+			expect(state.remove).to.be.a('function');
+			expect(state.isAdded).to.be.a('function');
+			expect(state.then).to.be.a('function');
+			expect(state.catch).to.be.a('function');
+		});
+
 		it('can add, fetch and set a state', function (done) {
 			var random = randomPath();
 			var newVal;
@@ -229,7 +242,9 @@ describe('Jet module', function () {
 					expect(path).to.equal(random);
 					expect(event).to.equal('add');
 					expect(value).to.equal(123);
-					peer.set(random, 876).then(done);
+					peer.set(random, 876).then(function () {
+						done();
+					});
 				});
 		});
 
@@ -253,7 +268,9 @@ describe('Jet module', function () {
 			var state = peer.state({
 				path: random,
 				value: 'asd'
-			}).then(done);
+			}).then(function () {
+				done();
+			});
 		});
 
 		it('can add and remove a state', function (done) {
@@ -262,7 +279,9 @@ describe('Jet module', function () {
 				path: random,
 				value: 'asd'
 			});
-			state.remove().then(done);
+			state.remove().then(function () {
+				done();
+			});
 		});
 
 		it('remove a state twice fails', function (done) {
@@ -305,9 +324,9 @@ describe('Jet module', function () {
 				value: 'asd'
 			});
 			state.remove();
-			state.add(undefined).then(function () {
+			state.add().then(function () {
 				peer.fetch()
-					.all()
+					.path('equals', random)
 					.run(function (path, event, value) {
 						expect(value).to.equal('asd');
 						done();
@@ -362,7 +381,9 @@ describe('Jet module', function () {
 					path: random,
 					value: 'asd'
 				});
-				state.remove().then(done);
+				state.remove().then(function () {
+					done();
+				});
 			});
 		});
 
@@ -378,7 +399,7 @@ describe('Jet module', function () {
 				}
 			});
 
-			peer.call(path, [1, 2, false]).then(function () {
+			peer.call(path, [1, 2, false]).then(function (result) {
 				expect(result).to.equal(3);
 				done();
 			});
@@ -608,17 +629,15 @@ describe('Jet module', function () {
 				.path('contains', 'bla')
 				.run(function () {})
 				.then(function () {
-					setupOK = true;
 					expect(fetcher.isFetching()).to.be.true;
+					fetcher.unfetch().then(function () {
+						expect(fetcher.isFetching()).to.be.false;
+						fetcher.fetch().then(function () {
+							expect(fetcher.isFetching()).to.be.true;
+							done();
+						});
+					});
 				});
-			fetcher.unfetch().then(function () {
-				expect(setupOK).to.be.true;
-				expect(fetcher.isFetching()).to.be.false;
-				fetcher.fetch().then(function () {
-					expect(fetcher.isFetching()).to.be.true;
-					done();
-				});
-			});
 		});
 
 	});
