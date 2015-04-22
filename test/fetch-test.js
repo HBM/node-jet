@@ -32,7 +32,11 @@ StateArray.prototype.removeAll = function (done) {
 	this.forEach(function (state) {
 		state.remove();
 	});
-	last.remove().then(done);
+	if (last) {
+		last.remove().then(done);
+	} else {
+		done();
+	}
 };
 
 var portBase = 4345;
@@ -78,6 +82,23 @@ var portBase = 4345;
 				states.removeAll(function () {
 					done();
 				});
+			});
+
+			it('can fetch unfetch and fetch', function (done) {
+				var setupOK;
+				var fetcher = peer.fetch()
+					.path('contains', 'bla')
+					.run(function () {})
+					.then(function () {
+						expect(fetcher.isFetching()).to.be.true;
+						fetcher.unfetch().then(function () {
+							expect(fetcher.isFetching()).to.be.false;
+							fetcher.fetch().then(function () {
+								expect(fetcher.isFetching()).to.be.true;
+								done();
+							});
+						});
+					});
 			});
 
 			it('fetch().path("startsWith", ...).run(cb)', function (done) {
