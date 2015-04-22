@@ -37,6 +37,7 @@ describe('The jet.peer.promise-callback module', function () {
 	it('.then(function(value){}, function(err) {})', function (done) {
 		var p = new PromisedCallback(function (callbacks) {
 			expect(callbacks.success).to.be.a('function');
+			expect(callbacks.error).to.be.a('function');
 			callbacks.error('foo');
 		});
 		p.then(function (value) {}, function (err) {
@@ -44,6 +45,51 @@ describe('The jet.peer.promise-callback module', function () {
 			done();
 		});
 		expect(p.isPending()).to.be.true;
+	});
+
+	it('.catch(function(err) {})', function (done) {
+		var p = new PromisedCallback(function (callbacks) {
+			expect(callbacks.error).to.be.a('function');
+			callbacks.error('foo');
+		});
+		p.catch(function (err) {
+			expect(err).to.equal('foo');
+			done();
+		});
+		expect(p.isPending()).to.be.true;
+	});
+
+	it('.then().catch()', function (done) {
+		var p = new PromisedCallback(function (callbacks) {
+			expect(callbacks.error).to.be.a('function');
+			expect(callbacks.success).to.be.a('function');
+			callbacks.error('foo');
+		});
+		p.xx = 6666;
+		var pref = p.then(function () {
+
+		}).catch(function (err) {
+			expect(p.xx).to.equal(6666);
+			expect(err).to.equal('foo');
+			done();
+		});
+		expect(pref.xx).to.equal(6666);
+	});
+
+	it('.then().catch()', function (done) {
+		var p = new PromisedCallback(function (callbacks) {
+			expect(callbacks.error).to.be.a('function');
+			expect(callbacks.success).to.be.a('function');
+			callbacks.success();
+		});
+		p.xx = 6666;
+		var pref = p.then(function () {
+			expect(p.xx).to.equal(6666);
+			done();
+		}).catch(function (err) {
+
+		});
+		expect(pref.xx).to.equal(6666);
 	});
 
 });
