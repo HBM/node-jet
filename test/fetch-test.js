@@ -103,9 +103,12 @@ var portBase = 4345;
 					value: 3
 				});
 
-				var fetcher = peer.fetch().path('startsWith', 'a').run(fetchSpy);
-
-				a2.remove();
+				var fetcher = peer.fetch()
+					.path('startsWith', 'a')
+					.run(fetchSpy)
+					.then(function () {
+						a2.remove();
+					});
 
 				setTimeout(function () {
 					expect(fetchSpy.callCount).to.equal(3);
@@ -175,9 +178,11 @@ var portBase = 4345;
 				var fetcher = peer.fetch()
 					.path('startsWith', 'a')
 					.pathCaseInsensitive()
-					.run(fetchSpy);
+					.run(fetchSpy)
+					.then(function () {
 
-				a2.remove();
+						a2.remove();
+					});
 
 				setTimeout(function () {
 					expect(fetchSpy.callCount).to.equal(4);
