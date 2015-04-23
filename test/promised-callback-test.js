@@ -92,4 +92,28 @@ describe('The jet.peer.promise-callback module', function () {
 		expect(pref.xx).to.equal(6666);
 	});
 
+	it('execution order is safe', function (done) {
+		var cnt = 0;
+		var nums = [];
+		var oldSetImmediate = setImmediate;
+		var setImmediateCalls = 0;
+		setImmediate = function () {
+			setImmediateCalls++;
+			oldSetImmediate.apply(undefined, arguments);
+		};
+		for (var i = 0; i < 10000; ++i) {
+			nums.push(i);
+		}
+		nums.forEach(function (i) {
+			new PromisedCallback(function (callbacks) {
+				expect(cnt).to.equal(i);
+				++cnt;
+				if (cnt === 10000) {
+					expect(setImmediateCalls).to.equal(1);
+					done();
+				}
+			})
+		});
+	});
+
 });
