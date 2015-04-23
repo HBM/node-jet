@@ -116,4 +116,20 @@ describe('The jet.peer.promise-callback module', function () {
 		});
 	});
 
+	it('.finally is executed in case of success', function (done) {
+		var p = new PromisedCallback(function (callbacks) {
+			callbacks.success();
+		}).then(function () {}).catch(function () {}).finally(function () {
+			done();
+		});
+	});
+
+	it('.finally is executed in case of error', function (done) {
+		var p = new PromisedCallback(function (callbacks) {
+			callbacks.error();
+		}).then(function () {}).catch(function () {}).finally(function () {
+			done();
+		});
+	});
+
 });
