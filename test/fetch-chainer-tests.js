@@ -35,6 +35,15 @@ describe('The jet.peer.fetch-chainer module', function () {
 		});
 	});
 
+	it('.pathCaseInsensitive() adds path rules caseInsensitive', function () {
+		fc.pathCaseInsensitive();
+		expect(fc.rule).to.deep.equal({
+			path: {
+				caseInsensitive: true
+			}
+		});
+	});
+
 	it('.value() adds value rules', function () {
 		// last .value wins
 		fc.value('equals', 'foo').value('equals', 'bar');
