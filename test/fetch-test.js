@@ -142,6 +142,29 @@ var portBase = 4345;
 				}, waitTime);
 			});
 
+			it('immediate value changes are fetch in correct order', function (done) {
+				states.push(peer.state({
+					path: 'abc',
+					value: 1
+				}));
+
+				var fetchSpy = sinon.spy();
+				var fetcher = peer.fetch()
+					.path('equals', 'abc')
+					.run(fetchSpy);
+
+				states[0].value(2);
+
+				setTimeout(function () {
+					expect(fetchSpy.callCount).to.equal(2);
+					expect(fetchSpy.calledWith('abc', 'add', 1, fetcher)).to.be.true;
+					expect(fetchSpy.calledWith('abc', 'change', 2, fetcher)).to.be.true;
+					fetcher.unfetch().then(function () {
+						done();
+					});
+				}, waitTime);
+			});
+
 			it('fetch().path("equalsOneOf", [...])', function (done) {
 				states.push(peer.state({
 					path: 'abc',
