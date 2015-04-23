@@ -58,7 +58,7 @@ otherPeer.fetch()
   .path('startsWith', 'person/')
   .run(function(path, event, value) {
     ...  // events can be 'add', 'change', 'remove'
-});
+  });
 
 // call methods
 otherPeer.call('greet', ['Steve']);
