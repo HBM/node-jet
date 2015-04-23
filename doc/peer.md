@@ -51,7 +51,7 @@ peer.on('open', function(daemonInfo) {
    console.log('fetch-mode', daemonInfo.features.fetch); // string: 'full' or 'simple'
 });
 ```
-## `peer.authenticate(user, password, [callbacks])`
+## `promise = peer.authenticate(user, password)`
 
 Authenticates the `peer` as `user` if the `password` is correct. The peer gains the access rights 
 as defined in the daemon's `users` object.
@@ -59,57 +59,56 @@ as defined in the daemon's `users` object.
 Must be called before calling `peer.fetch`. Unauthenticated peers will have access to all States and Methods
 which did not specify an `access` field.
 
-## `peer.close()`
+```javascript
+peer.authenticate('foo', 'secretbar').then(function() {
+  console.log('great success!');
+}).catch(function(err) {
+  console.log('failed', err);
+});
+```
 
+## `peer.close()`
+ 
 Closes the connection to the Daemon.
 
-## `peer.set(path, value, [callbacks])`
-
-Tries to set the Jet State specified by `path` to `value`. `callbacks` is an optional parameter of type Object, which may hold `success` and/or `error` callback functions.  
+## `promise = peer.set(path, value, [timeout])`
+ 
+Tries to set the Jet State specified by `path` to `value` with an optional `timeout` [seconds]. 
 
 ```javascript
-peer.set('foo', 123, {
-  success: function() {
+peer.set('foo', 123).then(function() {
     console.log('set finished successfully');
-  },
-  error: function(e) {
+  }).catch(function(err) {
     console.log('set failed', e);
-  }
-});
+  });
 
 // dont care about the result
 peer.set('foo', 12341);
 ```
 
-The `callbacks` Object may also specify a `timeout` in seconds and set the `valueAsResult` flag, which causes the new "real" value to be provided as argument to `success`.
+The promise resolve callback may define an input argument, 
+which will have the new "real" value of the state as this may be different than the one specified. This is a more expensive call
+ans should be used only when neccesary.
 
 ```javascript
-peer.set('magic', 123, {
-  timeout: 7,
-  valueAsResult: true,
-  success: function(realNewValue) {
-    console.log('magic is now', realNewValue);
-  },
-  error: function(e) {
-    console.log('set failed', e);
-  }
-});
+peer.set('magic', 32.12).then(function(realValue) {
+    console.log('real value is', realValue);
+  }).catch(err) {
+    console.log('err', err);
+  });
 ```
 
-## `peer.call(path, args, [callbacks])`
+## `promise = peer.call(path, args, [timeout])`
 
-Calls the Jet Method specified by `path` with `args` as arguments.
-`args` must be an Object or an Array. `callbacks` is an optional parameter of type Object, which may hold `success` and/or `error` callback functions. A `timeout` can also be specified.
+Calls the Jet Method specified by `path` with `args` as arguments with an optional `timeout` [seconds].
+`args` must be an Object or an Array. 
 
 ```javascript
-peer.call('sum', [1,2,3,4,5], {
-  success: function(result) {
+peer.call('sum', [1,2,3,4,5]).then(function(result) {
     console.log('sum is', result);
-  },
-  error: function(e) {
+  }).catch(function(e) {
     console.log('could not calc the sum', e);
-  },
-  timeout: 0.5
+  });
 });
 
 // dont care about the result
@@ -129,9 +128,12 @@ fetchRef = peer.fetch()
   });
 ```
 
-## `fetchChain.run(fetchCb, [callbacks])`
+## `promise = fetchChain.run(fetchCb)`
 
-Runs (starts) the fetch rule defined by the FetchChain instance. Optionally executes `callbacks.success` or `callbacks.error`.
+Runs (starts) the fetch rule defined by the FetchChain instance. 
+`.run` stops the fetchChain and returns a promise which gets resolved when
+it has been registered at the Daemon.
+
 The `fetchCb` arguments for non-sorting fetches are:
 
 - `path`: {String} The path of the State / Method which triggered the Fetch Notification
@@ -144,6 +146,11 @@ The `fetchCb` arguments for non-sorting fetches are:
 fetchRef = peer.fetch()
   .path('startsWith', 'movie)
   .run(function(path, event, value, fetchRef) {
+    if (value.title === 'Foo') {
+	  fetchRef.unfetch();
+	}
+  }).then(function() {
+    console.log('fetch is setup');  
   });
 ```
 
@@ -161,7 +168,7 @@ fetchRef = peer.fetch()
   });
 ```
 
-## `fetchChain.path(predicate, comp)`
+## `fetchChain = fetchChain.path(predicate, comp)`
 
 Adds a path matching rule to the fetchChain.
 
@@ -180,8 +187,8 @@ Adds a path matching rule to the fetchChain.
 - `equalsOneOf` {Array of Strings}
 - `equalsNotOneOf` {Array of Strings}
 
-## `fetchChain.value(predicate, comp)`
-
+## `fetchChain = fetchChain.value(predicate, comp)`
+ 
 Adds a value matching rule for **primitive type** values to the fetchChain.
 
 [Implemented](https://github.com/lipp/node-jet/blob/master/lib/jet/value_matcher.js#L7) predicates are:
@@ -192,7 +199,7 @@ Adds a value matching rule for **primitive type** values to the fetchChain.
 - `equalsNot` {any primitive type}
 - `isType` {String}
 
-## `fetchChain.key(keyString, predicate, comp)`
+## `fetchChain = fetchChain.key(keyString, predicate, comp)`
 
 Adds a key matching rule for **Object type** values to the fetchChain. 
 Nested keys can be specified like this: `relatives.father.age`.
@@ -205,18 +212,18 @@ Nested keys can be specified like this: `relatives.father.age`.
 - `equalsNot` {any primitive type}
 - `isType` {String}
 
-## `fetchChain.sortByPath()`
+## `fetchChain = fetchChain.sortByPath()`
 
 Adds a sort by path rule to the fetchChain.
 
-## `fetchChain.sortByValue(type)
+## `fetchChain = fetchChain.sortByValue(type)
 
 Adds a sort by value for **primitive types** to the fetchChain. Type can be either:
 
 - `number`
 - `string`
 
-## `fetchChain.sortByKey(keyString, type)
+## `fetchChain = fetchChain.sortByKey(keyString, type)
 
 Adds a sort by key for **Object types** to the fetchChain. Type can be either:
 
@@ -225,22 +232,22 @@ Adds a sort by key for **Object types** to the fetchChain. Type can be either:
 
 Nested keys can be specified like this: `relatives.father.age`.
 
-## `fetchChain.range(from, to)`
+## `fetchChain = fetchChain.range(from, to)`
 
 Adds a sort range to the fetchChain. Note that **the first index is 1**. from-to is a closed interval, that
 means `fetchChain.range(1,10)` gives you up to ten matching states/methods.
 
-## `fetchChain.descending()`
+## `fetchChain = fetchChain.descending()`
 
 Adds a sort descending rule to the fetchChain.
 
-## `fetchChain.ascending()`
+## `fetchChain = fetchChain.ascending()`
 
 Adds a sort ascending rule to the fetchChain.
 
 
-## `method = peer.method(desc, [callbacks])`
-
+## `method = peer.method(desc)`
+ 
 Creates and returns a Jet Method given the information provided by `desc`.
 The supported `desc` fields are:
 
@@ -284,14 +291,11 @@ var sum = peer.method({
     var sum = a + b +c + d + e;
     return sum;
   }
-}, {
-  success: function() {
+}).then(function() {
     console.log('method added successfully');
-  },
-  error: function(e) {
+}).catch(function(e) {
     console.log('method adding failed', e);
-  }
-})
+});
 ```
 
 The arguments to the `callAsync` Function are:
@@ -329,7 +333,7 @@ var greet = peer.method({
 ```
 
 
-## `state = peer.state(desc, [callbacks])`
+## `state = peer.state(desc)`
 
 Creates and returns a State given the information provided by `desc`.
 The supported `desc` fields are:
@@ -370,13 +374,10 @@ var test = peer.state({
     }
     setTest(newValue);
   }
-},{
-  success: function() {
+}).then(function() {
     console.log('state added successfully');
-  },
-  error: function(e) {
+}).catch(e) {
     console.log('state adding failed', e);
-  }
 });
 
 var testAdjust = peer.state({
@@ -405,12 +406,6 @@ The Function is free to:
   - `dontNotify`: {Boolean, Optional} Don't auto-send a change Notification
 - throw an Error, the Error should be a String or an Object with `code` and `message`
 
-The `callbacks` object is optional. When specified, the supported fields are:
-
-- `success`: {Function, Optional} Called, when adding the State to the Daemon was
-  ok
-- `error`: {Function, Optional} Called, when adding the State to the Daemon was not
-  ok
 
 ```javascript
 var testAsync = peer.state({
@@ -462,21 +457,23 @@ var testAsyncAdjust = peer.state({
 });
 ```
 
-## `fetcher.unfetch([callbacks])`
+## `promise = fetcher.unfetch()`
 
-Unfetches (removes) the Fetcher. `callbacks` is optional.
+Unfetches (removes) the Fetcher.
 
 ```javascript
 // setup some fetcher
-var fetcher = peer.fetch({},function(){});
+var fetcher = peer.fetch().all().run(function() {});
 
 // unfetch it
-fetcher.unfetch();
+fetcher.unfetch().then(function() {
+  console.log('unfetched');
+});
 ```
 
-## `state.remove([callbacks])`
+## `promise = state.remove()`
 
-Removes the State. `callbacks` is optional.
+Removes the State.
 
 ```javascript
 // create some state
@@ -486,22 +483,19 @@ var state = peer.state({
 });
 
 // remove it
-state.remove({
-  success: function() {
+state.remove().then(function() {
     console.log('state is now removed');
-  },
-  error: function(e) {
+}).catch(function(e) {
     console.log('could not remove state', e);
-  }
 });
 
 // or just
 state.remove();
 ```
 
-## `method.remove([callbacks])`
+## `promise = method.remove()`
 
-Removes the method. `callbacks` is optional.
+Removes the method.
 
 ```javascript
 // create some method
@@ -511,17 +505,14 @@ var method = peer.method({
 });
 
 // remove it
-method.remove({
-  success: function() {
+method.remove().then(function() {
     console.log('method is now removed');
-  },
-  error: function(e) {
+}).catch(function(e) {
     console.log('could not remove method', e);
-  }
 });
 ```
 
-## `state.value([newValue])`
+## `promise = state.value([newValue])`
 
 If `newValue` is `undefined`, returns the current value. Else posts a value
 change Notification that the State's value is now `newValue`.
