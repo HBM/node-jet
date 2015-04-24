@@ -31,11 +31,10 @@ describe('Jet module', function () {
 
 	it('a jet peer can connect to the jet daemon', function (done) {
 		var peer = new jet.Peer({
-			port: testPort,
-			//url: 'ws://localhost:11123',
-			onOpen: function () {
-				done()
-			}
+			port: testPort
+		});
+		peer.connect().then(function () {
+			done();
 		});
 	});
 
@@ -48,32 +47,23 @@ describe('Jet module', function () {
 
 	it('peer.close onopen does not brake', function (done) {
 		var peer = new jet.Peer({
-			port: testPort,
-			onOpen: function () {
-				peer.close();
-				done();
-			}
+			port: testPort
 		});
-	});
-
-	it('peer.on("open") is fired and onOpen is executed before', function (done) {
-		var spy = sinon.spy();
-		var peer = new jet.Peer({
-			port: testPort,
-			onOpen: spy
-		});
-		peer.on('open', function () {
-			sinon.assert.calledOnce(spy);
+		peer.connect().then(function () {
 			peer.close();
+		});
+		peer.closed().then(function () {
 			done();
 		});
 	});
 
-	it('peer.on("open") is fired and provides daemon info as argument', function (done) {
+
+	it('peer.connect() is resolved and provides peer and daemonInfo as argument', function (done) {
 		var peer = new jet.Peer({
 			port: testPort
 		});
-		peer.on('open', function (daemonInfo) {
+		peer.connect().then(function (peer) {
+			var daemonInfo = peer.daemonInfo;
 			expect(daemonInfo).to.be.an('object');
 			expect(daemonInfo.name).to.equal('node-jet');
 			expect(daemonInfo.version).to.be.a('string');
@@ -86,14 +76,11 @@ describe('Jet module', function () {
 		});
 	});
 
-	it('peer.on("close") is fired and onClose is executed before', function (done) {
-		var spy = sinon.spy();
+	it('peer.closed() gets resolved', function (done) {
 		var peer = new jet.Peer({
-			port: testPort,
-			onClose: spy
+			port: testPort
 		});
-		peer.on('close', function () {
-			sinon.assert.calledOnce(spy);
+		peer.closed().then(function () {
 			done();
 		});
 		peer.close();
@@ -101,11 +88,11 @@ describe('Jet module', function () {
 
 	it('can connect via WebSocket', function (done) {
 		var peer = new jet.Peer({
-			url: 'ws://localhost:' + testWsPort,
-			onOpen: function () {
-				peer.close();
-				done();
-			}
+			url: 'ws://localhost:' + testWsPort
+		});
+		peer.connect().then(function () {
+			peer.close();
+			done();
 		});
 	});
 
@@ -120,10 +107,10 @@ describe('Jet module', function () {
 			peer = new jet.Peer({
 				//url: 'ws://localhost:11123',
 				port: testPort,
-				name: 'test-peer',
-				onOpen: function () {
-					done();
-				}
+			});
+
+			peer.connect().then(function () {
+				done();
 			});
 		});
 
@@ -131,9 +118,6 @@ describe('Jet module', function () {
 			peer.close();
 		});
 
-		it('should be an instance of EventEmitter', function () {
-			expect(peer).to.be.an.instanceof(EventEmitter);
-		});
 
 		it('state() returns promise/state-ref', function () {
 			var state = peer.state({
@@ -161,10 +145,11 @@ describe('Jet module', function () {
 			});
 			peer.fetch()
 				.path('contains', random)
-				.run(function (path, event, value) {
+				.run(function (path, event, value, ref) {
 					expect(path).to.equal(random);
 					expect(event).to.equal('add');
 					expect(value).to.equal(123);
+					ref.unfetch();
 					peer.set(random, 876).then(function () {
 						expect(newVal).to.equal(876);
 						done();
@@ -624,7 +609,6 @@ describe('Jet module', function () {
 		});
 
 		it('can fetch and unfetch', function (done) {
-			var setupOK;
 			var fetcher = peer.fetch()
 				.path('contains', 'bla')
 				.run(function () {})

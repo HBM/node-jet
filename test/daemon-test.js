@@ -98,18 +98,21 @@ describe('A Daemon', function () {
 
 	it('releasing a peer (with fetchers and elements) does not brake', function (done) {
 		var peer = new jet.Peer({
-			port: testPort,
-			onClose: function () {
-				done();
-			}
+			port: testPort
 		});
 
-		peer.fetch('something', function () {});
-		peer.state({
-			path: 'pathdoesnotmatter',
-			value: 32
-		}).then(function () {
-			peer.close();
+		peer.connect().then(function () {
+			peer.fetch('something', function () {});
+			peer.state({
+				path: 'pathdoesnotmatter',
+				value: 32
+			}).then(function () {
+				peer.close();
+			});
+		});
+
+		peer.closed().then(function () {
+			done();
 		});
 	});
 
@@ -129,21 +132,23 @@ describe('A Daemon', function () {
 			port: testPort
 		});
 
-		peer.method({
-			path: 'alwaysTooLate',
-			callAsync: function (reply, arg1, arg2) {
-				setTimeout(function () {
-					reply({
-						result: 123
-					});
-				}, 100);
-			}
-		});
+		peer.connect().then(function () {
+			peer.method({
+				path: 'alwaysTooLate',
+				callAsync: function (reply, arg1, arg2) {
+					setTimeout(function () {
+						reply({
+							result: 123
+						});
+					}, 100);
+				}
+			});
 
-		peer.call('alwaysTooLate', [1, 2], 0.001).catch(function (err) {
-			expect(err.message).to.equal('Response Timeout');
-			expect(err.code).to.equal(-32001);
-			done();
+			peer.call('alwaysTooLate', [1, 2], 0.001).catch(function (err) {
+				expect(err.message).to.equal('Response Timeout');
+				expect(err.code).to.equal(-32001);
+				done();
+			});
 		});
 	});
 
@@ -180,11 +185,12 @@ describe('A Daemon', function () {
 		it('peer can connect via websockets on same port', function (done) {
 			var peer = new jet.Peer({
 				url: 'ws://localhost:23456',
-				name: 'blabla',
-				onOpen: function () {
-					peer.close();
-					done();
-				}
+				name: 'blabla'
+			});
+
+			peer.connect().then(function () {
+				peer.close();
+				done();
 			});
 		});
 

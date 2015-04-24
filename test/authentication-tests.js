@@ -53,7 +53,7 @@ describe('Jet authentication', function () {
 			url: 'ws://localhost:' + testWsPort
 		});
 
-		peer.on('open', function () {
+		peer.connect().then(function () {
 			done();
 		});
 	});
@@ -92,7 +92,7 @@ describe('access tests', function () {
 		peer2 = new jet.Peer({
 			url: 'ws://localhost:' + testWsPort
 		});
-		peer2.on('open', function () {
+		peer2.connect().then(function () {
 			done();
 		});
 	});
@@ -106,38 +106,41 @@ describe('access tests', function () {
 			url: 'ws://localhost:' + testWsPort
 		});
 
-		pubAdminState = peer.state({
-			path: 'pub-admin',
-			value: 123,
-			set: function () {},
-			access: {
-				fetchGroups: ['public', 'admin'],
-				setGroups: ['admin']
-			}
-		});
+		peer.connect().then(function () {
 
-		pubApiState = peer.state({
-			path: 'pub-api',
-			value: 234,
-			access: {
-				fetchGroups: ['public', 'api']
-			}
-		});
+			pubAdminState = peer.state({
+				path: 'pub-admin',
+				value: 123,
+				set: function () {},
+				access: {
+					fetchGroups: ['public', 'admin'],
+					setGroups: ['admin']
+				}
+			});
 
-		everyoneState = peer.state({
-			path: 'everyone',
-			value: 333,
-		});
+			pubApiState = peer.state({
+				path: 'pub-api',
+				value: 234,
+				access: {
+					fetchGroups: ['public', 'api']
+				}
+			});
 
-		peer.method({
-			path: 'square',
-			call: function (a) {
-				return a * a;
-			},
-			access: {
-				fetchGroups: [],
-				callGroups: ['admin']
-			}
+			everyoneState = peer.state({
+				path: 'everyone',
+				value: 333,
+			});
+
+			peer.method({
+				path: 'square',
+				call: function (a) {
+					return a * a;
+				},
+				access: {
+					fetchGroups: [],
+					callGroups: ['admin']
+				}
+			});
 		});
 	});
 
