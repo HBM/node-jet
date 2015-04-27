@@ -98,20 +98,22 @@ describe('A Daemon', function () {
 
 	it('releasing a peer (with fetchers and elements) does not brake', function (done) {
 		var peer = new jet.Peer({
-			port: testPort,
-			onClose: function () {
-				done();
-			}
+			port: testPort
 		});
 
-		peer.fetch('something', function () {});
-		peer.state({
-			path: 'pathdoesnotmatter',
-			value: 32
-		}, {
-			success: function () {
-				peer.close();
-			}
+		var state = new jet.State('pathdoesnotmatter', 32);
+		var fetcher = new jet.Fetcher();
+
+		jet.Promise.all([
+				peer.connect(),
+				peer.fetch(fetcher),
+				peer.add(state)
+		]).then(function () {
+			peer.close();
+		});
+
+		peer.closed().then(function () {
+			done();
 		});
 	});
 
@@ -123,7 +125,9 @@ describe('A Daemon', function () {
 			expect(peerMS).to.be.an('object');
 			done();
 		});
-		peer.close();
+		peer.connect().then(function () {
+			peer.close();
+		});
 	});
 
 	it('timeout response is generated', function (done) {
@@ -131,25 +135,25 @@ describe('A Daemon', function () {
 			port: testPort
 		});
 
-		peer.method({
-			path: 'alwaysTooLate',
-			callAsync: function (reply, arg1, arg2) {
-				setTimeout(function () {
-					reply({
-						result: 123
-					});
-				}, 100);
-			}
+		var tooLate = new jet.Method('alwaysTooLate');
+		tooLate.on('call', function (args, reply) {
+			setTimeout(function () {
+				reply({
+					result: 123
+				});
+			}, 100);
 		});
 
-		peer.call('alwaysTooLate', [1, 2], {
-			timeout: 0.001,
-			error: function (err) {
-				expect(err.message).to.equal('Response Timeout');
-				expect(err.code).to.equal(-32001);
-				done();
-			}
+		jet.Promise.all([
+				peer.connect(),
+				peer.add(tooLate),
+				peer.call('alwaysTooLate', [1, 2], 0.001)
+		]).catch(function (err) {
+			expect(err.message).to.equal('Response Timeout');
+			expect(err.code).to.equal(-32001);
+			done();
 		});
+
 	});
 
 	describe('hooking to a (http) server', function () {
@@ -185,11 +189,12 @@ describe('A Daemon', function () {
 		it('peer can connect via websockets on same port', function (done) {
 			var peer = new jet.Peer({
 				url: 'ws://localhost:23456',
-				name: 'blabla',
-				onOpen: function () {
-					peer.close();
-					done();
-				}
+				name: 'blabla'
+			});
+
+			peer.connect().then(function () {
+				peer.close();
+				done();
 			});
 		});
 
