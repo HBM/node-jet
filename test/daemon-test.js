@@ -147,7 +147,9 @@ describe('A Daemon', function () {
 		jet.Promise.all([
 				peer.connect(),
 				peer.add(tooLate),
-				peer.call('alwaysTooLate', [1, 2], 0.001)
+				peer.call('alwaysTooLate', [1, 2], {
+				timeout: 0.001
+			})
 		]).catch(function (err) {
 			expect(err.message).to.equal('Response Timeout');
 			expect(err.code).to.equal(-32001);

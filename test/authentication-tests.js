@@ -134,7 +134,7 @@ describe('access tests', function () {
 					provider.add(squareMethod)
 			]).then(function () {
 			done();
-		});
+		}).catch(done);
 	});
 
 	afterEach(function () {
@@ -224,44 +224,69 @@ describe('access tests', function () {
 
 
 	it('Horst can fetch everyone and not more', function (done) {
-		peer2.authenticate('Horst', '12345');
-		peer2.fetch()
-			.sortByPath()
-			.range(1, 10)
-			.run(function (states) {
-				expect(states[0].path).to.equal('everyone');
-				expect(states).to.has.length(1);
-				done();
-			});
+		consumer = new jet.Peer({
+			url: url,
+			user: 'Horst',
+			password: '12345'
+		});
+
+		var all = new jet.Fetcher().sortByPath().range(1, 10);
+		all.on('data', function (states) {
+			expect(states[0].path).to.equal('everyone');
+			expect(states).to.has.length(1);
+			done();
+		});
+		consumer.fetch(all);
 	});
 
 	it('Linus can set the pub-admin state', function (done) {
-		peer2.authenticate('Linus', '12345');
-		peer2.set('pub-admin', 'master').then(function (result) {
+		consumer = new jet.Peer({
+			url: url,
+			user: 'Linus',
+			password: '12345'
+		});
+
+		consumer.set('pub-admin', 'master', {
+			valueAsResult: true
+		}).then(function (result) {
 			expect(result).to.equal('master');
 			done();
-		});
+		}).catch(done);
 	});
 
 	it('Horst cannot set the pub-admin state', function (done) {
-		peer2.authenticate('Horst', '12345');
-		peer2.set('pub-admin', 'master').catch(function (err) {
+		consumer = new jet.Peer({
+			url: url,
+			user: 'Horst',
+			password: '12345'
+		});
+
+		consumer.set('pub-admin', 'master').catch(function (err) {
 			expect(err.data).to.equal('no access');
 			done();
 		});
 	});
 
 	it('Linus can call the square method', function (done) {
-		peer2.authenticate('Linus', '12345');
-		peer2.call('square', [2]).then(function (result) {
+		consumer = new jet.Peer({
+			url: url,
+			user: 'Linus',
+			password: '12345'
+		});
+		consumer.call('square', [2]).then(function (result) {
 			expect(result).to.equal(4);
 			done();
 		});
 	});
 
 	it('Horst cannot call the square method', function (done) {
-		peer2.authenticate('Horst', '12345');
-		peer2.call('square', [2]).catch(function (err) {
+		consumer = new jet.Peer({
+			url: url,
+			user: 'Horst',
+			password: '12345'
+		});
+
+		consumer.call('square', [2]).catch(function (err) {
 			expect(err.data).to.equal('no access');
 			done();
 		});
