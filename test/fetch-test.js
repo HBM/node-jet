@@ -127,249 +127,283 @@ var portBase = 4345;
 			});
 
 			it('immediate value changes are fetch in correct order', function (done) {
-				states.push(peer.state({
+				states.push({
 					path: 'abc',
 					value: 1
-				}));
+				});
 
-				var fetchSpy = sinon.spy();
-				var fetcher = peer.fetch()
-					.path('equals', 'abc')
-					.run(fetchSpy);
+				states.addAll().then(function () {
+					var fetchSpy = sinon.spy();
+					var fetcher = new jet.Fetcher()
+						.path('equals', 'abc')
+						.on('data', fetchSpy);
 
-				states[0].value(2);
+					peer.fetch(fetcher);
 
-				setTimeout(function () {
-					expect(fetchSpy.callCount).to.equal(2);
-					expect(fetchSpy.calledWith('abc', 'add', 1, fetcher)).to.be.true;
-					expect(fetchSpy.calledWith('abc', 'change', 2, fetcher)).to.be.true;
-					fetcher.unfetch().then(function () {
-						done();
-					});
-				}, waitTime);
+					states[0].value(2);
+
+					setTimeout(function () {
+						expect(fetchSpy.callCount).to.equal(2);
+						expect(fetchSpy.calledWith('abc', 'add', 1)).to.be.true;
+						expect(fetchSpy.calledWith('abc', 'change', 2)).to.be.true;
+						fetcher.unfetch().then(function () {
+							done();
+						});
+					}, waitTime);
+				});
 			});
 
 			it('fetch().path("equalsOneOf", [...])', function (done) {
-				states.push(peer.state({
+				states.push({
 					path: 'abc',
 					value: 1
-				}));
+				});
 
-				states.push(peer.state({
+				states.push({
 					path: 'Aa',
 					value: 2
-				}));
+				});
 
-				states.push(peer.state({
+				states.push({
 					path: 'Aaa',
-					value: 3
-				}));
-
-				var fetchSpy = sinon.spy();
-
-				var fetcher = peer.fetch()
-					.path('equalsOneOf', ['abc', 'Aa'])
-					.run(fetchSpy);
-
-				setTimeout(function () {
-					expect(fetchSpy.callCount).to.equal(2);
-					expect(fetchSpy.calledWith('abc', 'add', 1, fetcher)).to.be.true;
-					expect(fetchSpy.calledWith('Aa', 'add', 2, fetcher)).to.be.true;
-					fetcher.unfetch().then(function () {
-						done();
-					});
-				}, waitTime);
-			});
-
-			it('startsWith case insensitive', function (done) {
-				states.push(peer.state({
-					path: 'abc',
-					value: 1
-				}));
-
-				states.push(peer.state({
-					path: 'Aa',
-					value: 2
-				}));
-
-				states.push(peer.state({
-					path: 'ca',
-					value: 3
-				}));
-
-				var fetchSpy = sinon.spy();
-				var a2 = peer.state({
-					path: 'aXXX',
 					value: 3
 				});
 
-				var fetcher = peer.fetch()
-					.path('startsWith', 'a')
-					.pathCaseInsensitive()
-					.run(fetchSpy)
-					.then(function () {
+				states.addAll().then(function () {
 
-						a2.remove();
-					});
+					var fetchSpy = sinon.spy();
 
-				setTimeout(function () {
-					expect(fetchSpy.callCount).to.equal(4);
-					expect(fetchSpy.calledWith('Aa', 'add', 2, fetcher)).to.be.true;
-					expect(fetchSpy.calledWith('abc', 'add', 1, fetcher)).to.be.true;
-					expect(fetchSpy.calledWith('aXXX', 'add', 3, fetcher)).to.be.true;
-					expect(fetchSpy.calledWith('aXXX', 'remove', 3, fetcher)).to.be.true;
-					fetcher.unfetch().then(function () {
-						done();
-					});
-				}, waitTime);
+					var fetcher = new jet.Fetcher()
+						.path('equalsOneOf', ['abc', 'Aa'])
+						.on('data', fetchSpy);
+
+					peer.fetch(fetcher);
+
+					setTimeout(function () {
+						expect(fetchSpy.callCount).to.equal(2);
+						expect(fetchSpy.calledWith('abc', 'add', 1)).to.be.true;
+						expect(fetchSpy.calledWith('Aa', 'add', 2)).to.be.true;
+						fetcher.unfetch().then(function () {
+							done();
+						});
+					}, waitTime);
+				}).catch(done);
+			});
+
+			it('startsWith case insensitive', function (done) {
+				states.push({
+					path: 'abc',
+					value: 1
+				});
+
+				states.push({
+					path: 'Aa',
+					value: 2
+				});
+
+				states.push({
+					path: 'ca',
+					value: 3
+				});
+
+				states.addAll().then(function () {
+
+					var fetchSpy = sinon.spy();
+					var a2 = new jet.State('aXXX', 3);
+					peer.add(a2);
+
+					var fetcher = new jet.Fetcher()
+						.path('startsWith', 'a')
+						.pathCaseInsensitive()
+						.on('data', fetchSpy);
+
+					peer.fetch(fetcher)
+						.then(function () {
+
+							a2.remove();
+						});
+
+					setTimeout(function () {
+						expect(fetchSpy.callCount).to.equal(4);
+						expect(fetchSpy.calledWith('Aa', 'add', 2)).to.be.true;
+						expect(fetchSpy.calledWith('abc', 'add', 1)).to.be.true;
+						expect(fetchSpy.calledWith('aXXX', 'add', 3)).to.be.true;
+						expect(fetchSpy.calledWith('aXXX', 'remove', 3)).to.be.true;
+						fetcher.unfetch().then(function () {
+							done();
+						});
+					}, waitTime);
+				}).catch(done);
 			});
 
 			it('contains (explicit)', function (done) {
-				states.push(peer.state({
+				states.push({
 					path: 'abc',
 					value: 1
-				}));
+				});
 
-				states.push(peer.state({
+				states.push({
 					path: 'Abcd',
 					value: 2
-				}));
+				});
 
-				states.push(peer.state({
+				states.push({
 					path: 'ca',
 					value: 3
-				}));
+				});
 
-				var fetchSpy = sinon.spy();
-				var fetcher = peer.fetch()
-					.path('contains', 'bc')
-					.run(fetchSpy);
+				states.addAll().then(function () {
 
-				setTimeout(function () {
-					expect(fetchSpy.callCount).to.equal(2);
-					expect(fetchSpy.calledWith('Abcd', 'add', 2, fetcher)).to.be.true;
-					expect(fetchSpy.calledWith('abc', 'add', 1, fetcher)).to.be.true;
-					fetcher.unfetch().then(function () {
-						done();
-					});
+					var fetchSpy = sinon.spy();
+					var fetcher = new jet.Fetcher()
+						.path('contains', 'bc')
+						.on('data', fetchSpy);
 
-				}, waitTime);
+					peer.fetch(fetcher);
+
+					setTimeout(function () {
+						expect(fetchSpy.callCount).to.equal(2);
+						expect(fetchSpy.calledWith('Abcd', 'add', 2)).to.be.true;
+						expect(fetchSpy.calledWith('abc', 'add', 1)).to.be.true;
+						fetcher.unfetch().then(function () {
+							done();
+						});
+
+					}, waitTime);
+				}).catch(done);
 			});
 
 			it('equals', function (done) {
-				states.push(peer.state({
+				states.push({
 					path: 'abc',
 					value: 1
-				}));
+				});
 
-				states.push(peer.state({
+				states.push({
 					path: 'Abcd',
 					value: 2
-				}));
+				});
 
-				var fetchSpy = sinon.spy();
-				var fetcher = peer.fetch()
-					.path('equals', 'abc')
-					.run(fetchSpy);
-				setTimeout(function () {
-					expect(fetchSpy.callCount).to.equal(1);
-					expect(fetchSpy.calledWith('abc', 'add', 1, fetcher)).to.be.true;
-					fetcher.unfetch().then(function () {
-						done();
-					});
-				}, waitTime);
+				states.addAll().then(function () {
+
+					var fetchSpy = sinon.spy();
+					var fetcher = new jet.Fetcher()
+						.path('equals', 'abc')
+						.on('data', fetchSpy);
+
+					peer.fetch(fetcher);
+					setTimeout(function () {
+						expect(fetchSpy.callCount).to.equal(1);
+						expect(fetchSpy.calledWith('abc', 'add', 1)).to.be.true;
+						fetcher.unfetch().then(function () {
+							done();
+						});
+					}, waitTime);
+				});
 			});
 
 			it('equalsNot', function (done) {
-				states.push(peer.state({
+				states.push({
 					path: 'abc',
 					value: 1
-				}));
+				});
 
-				states.push(peer.state({
+				states.push({
 					path: 'Abcd',
 					value: 2
-				}));
+				});
 
-				var fetchSpy = sinon.spy();
-				var fetcher = peer.fetch()
-					.path('equalsNot', 'abc')
-					.run(fetchSpy);
-				setTimeout(function () {
-					expect(fetchSpy.callCount).to.equal(1);
-					expect(fetchSpy.calledWith('Abcd', 'add', 2, fetcher)).to.be.true;
-					fetcher.unfetch().then(function () {
-						done();
-					});
-				}, waitTime);
+				states.addAll().then(function () {
+
+					var fetchSpy = sinon.spy();
+					var fetcher = new jet.Fetcher()
+						.path('equalsNot', 'abc')
+						.on('data', fetchSpy);
+
+					peer.fetch(fetcher);
+					setTimeout(function () {
+						expect(fetchSpy.callCount).to.equal(1);
+						expect(fetchSpy.calledWith('Abcd', 'add', 2)).to.be.true;
+						fetcher.unfetch().then(function () {
+							done();
+						});
+					}, waitTime);
+				});
 			});
 
 			it('containsOneOf', function (done) {
-				states.push(peer.state({
+				states.push({
 					path: 'abc',
 					value: 1
-				}));
+				});
 
-				states.push(peer.state({
+				states.push({
 					path: 'Abcd',
 					value: 2
-				}));
+				});
 
-				states.push(peer.state({
+				states.push({
 					path: 'x',
 					value: 2
-				}));
+				});
 
+				states.addAll().then(function () {
 
-				var fetchSpy = sinon.spy();
-				var fetcher = peer.fetch()
-					.path('containsOneOf', ['d', 'a'])
-					.run(fetchSpy);
-				setTimeout(function () {
-					expect(fetchSpy.callCount).to.equal(2);
-					expect(fetchSpy.calledWith('Abcd', 'add', 2, fetcher)).to.be.true;
-					expect(fetchSpy.calledWith('abc', 'add', 1, fetcher)).to.be.true;
-					fetcher.unfetch().then(function () {
-						done();
-					});
-				}, waitTime);
+					var fetchSpy = sinon.spy();
+					var fetcher = new jet.Fetcher()
+						.path('containsOneOf', ['d', 'a'])
+						.on('data', fetchSpy);
+
+					peer.fetch(fetcher);
+					setTimeout(function () {
+						expect(fetchSpy.callCount).to.equal(2);
+						expect(fetchSpy.calledWith('Abcd', 'add', 2)).to.be.true;
+						expect(fetchSpy.calledWith('abc', 'add', 1)).to.be.true;
+						fetcher.unfetch().then(function () {
+							done();
+						});
+					}, waitTime);
+				}).catch(done);
 			});
 
 			it('containsAllOf and startsWith', function (done) {
-				states.push(peer.state({
+				states.push({
 					path: '1abc',
 					value: 1
-				}));
+				});
 
-				states.push(peer.state({
+				states.push({
 					path: '1Abcd',
 					value: 2
-				}));
+				});
 
-				states.push(peer.state({
+				states.push({
 					path: '1Abd',
 					value: 2
-				}));
+				});
 
-				states.push(peer.state({
+				states.push({
 					path: 'x',
 					value: 2
-				}));
+				});
 
+				states.addAll().then(function () {
 
-				var fetchSpy = sinon.spy();
-				var fetcher = peer.fetch()
-					.path('startsWith', '1')
-					.path('containsAllOf', ['b', 'c'])
-					.run(fetchSpy);
-				setTimeout(function () {
-					expect(fetchSpy.callCount).to.equal(2);
-					expect(fetchSpy.calledWith('1Abcd', 'add', 2, fetcher)).to.be.true;
-					expect(fetchSpy.calledWith('1abc', 'add', 1, fetcher)).to.be.true;
-					fetcher.unfetch().then(function () {
-						done();
-					});
-				}, waitTime);
+					var fetchSpy = sinon.spy();
+					var fetcher = new jet.Fetcher()
+						.path('startsWith', '1')
+						.path('containsAllOf', ['b', 'c'])
+						.on('data', fetchSpy);
+					peer.fetch(fetcher);
+					setTimeout(function () {
+						expect(fetchSpy.callCount).to.equal(2);
+						expect(fetchSpy.calledWith('1Abcd', 'add', 2)).to.be.true;
+						expect(fetchSpy.calledWith('1abc', 'add', 1)).to.be.true;
+						fetcher.unfetch().then(function () {
+							done();
+						});
+					}, waitTime);
+				});
 			});
 
 		});
@@ -379,7 +413,7 @@ var portBase = 4345;
 			var states;
 
 			beforeEach(function () {
-				states = new StateArray();
+				states = new StateArray(peer);
 			})
 
 			afterEach(function (done) {
@@ -391,113 +425,130 @@ var portBase = 4345;
 
 			it('equals', function (done) {
 
-				states.push(peer.state({
+				states.push({
 					path: 'a',
 					value: 1
-				}));
+				});
 
-				states.push(peer.state({
+				states.push({
 					path: 'b',
 					value: '1'
-				}));
+				});
 
-				var fetchSpy = sinon.spy();
+				states.addAll().then(function () {
+					var fetchSpy = sinon.spy();
 
-				var fetcher = peer.fetch()
-					.value('equals', 1)
-					.run(fetchSpy);
-
-				setTimeout(function () {
-					expect(fetchSpy.callCount).to.equal(1);
-					expect(fetchSpy.calledWith('a', 'add', 1, fetcher)).to.be.true;
-					fetcher.unfetch().then(function () {
-						done();
-					});
-				}, waitTime);
+					var fetcher = new jet.Fetcher()
+						.value('equals', 1)
+						.on('data', fetchSpy);
+					peer.fetch(fetcher);
+					setTimeout(function () {
+						expect(fetchSpy.callCount).to.equal(1);
+						expect(fetchSpy.calledWith('a', 'add', 1)).to.be.true;
+						fetcher.unfetch().then(function () {
+							done();
+						});
+					}, waitTime);
+				}).catch(done);
 
 			});
 
 			it('greaterThan', function (done) {
 
-				states.push(peer.state({
+				states.push({
 					path: 'a',
 					value: 3
-				}));
+				});
 
-				states.push(peer.state({
+				states.push({
 					path: 'b',
 					value: 2
-				}));
+				});
 
-				var fetchSpy = sinon.spy();
+				states.addAll().then(function () {
 
-				var fetcher = peer.fetch()
-					.value('greaterThan', 2)
-					.run(fetchSpy);
+					var fetchSpy = sinon.spy();
 
-				setTimeout(function () {
-					expect(fetchSpy.callCount).to.equal(1);
-					expect(fetchSpy.calledWith('a', 'add', 3, fetcher)).to.be.true;
-					fetcher.unfetch().then(function () {
-						done();
-					});
-				}, waitTime);
+					var fetcher = new jet.Fetcher()
+						.value('greaterThan', 2)
+						.on('data', fetchSpy);
+
+					peer.fetch(fetcher);
+
+					setTimeout(function () {
+						expect(fetchSpy.callCount).to.equal(1);
+						expect(fetchSpy.calledWith('a', 'add', 3)).to.be.true;
+						fetcher.unfetch().then(function () {
+							done();
+						});
+					}, waitTime);
+				});
 
 			});
 
 			it('lessThan', function (done) {
 
-				states.push(peer.state({
+				states.push({
 					path: 'a',
 					value: 3
-				}));
+				});
 
-				states.push(peer.state({
+				states.push({
 					path: 'b',
 					value: 2
-				}));
+				});
 
-				var fetchSpy = sinon.spy();
+				states.addAll().then(function () {
 
-				var fetcher = peer.fetch()
-					.value('lessThan', 3)
-					.run(fetchSpy);
+					var fetchSpy = sinon.spy();
 
-				setTimeout(function () {
-					expect(fetchSpy.callCount).to.equal(1);
-					expect(fetchSpy.calledWith('b', 'add', 2, fetcher)).to.be.true;
-					fetcher.unfetch().then(function () {
-						done();
-					});
-				}, waitTime);
+					var fetcher = new jet.Fetcher()
+						.value('lessThan', 3)
+						.on('data', fetchSpy);
+
+					peer.fetch(fetcher);
+
+					setTimeout(function () {
+						expect(fetchSpy.callCount).to.equal(1);
+						expect(fetchSpy.calledWith('b', 'add', 2)).to.be.true;
+						fetcher.unfetch().then(function () {
+							done();
+						});
+					}, waitTime);
+				});
 
 			});
 
 			it('isType', function (done) {
 
-				states.push(peer.state({
+				states.push({
 					path: 'a',
 					value: 1
-				}));
+				});
 
-				states.push(peer.state({
+				states.push({
 					path: 'b',
 					value: '1'
-				}));
+				});
 
-				var fetchSpy = sinon.spy();
+				states.addAll().then(function () {
 
-				var fetcher = peer.fetch()
-					.value('isType', 'string')
-					.run(fetchSpy);
+					var fetchSpy = sinon.spy();
 
-				setTimeout(function () {
-					expect(fetchSpy.callCount).to.equal(1);
-					expect(fetchSpy.calledWith('b', 'add', '1', fetcher)).to.be.true;
-					fetcher.unfetch().then(function () {
-						done();
-					});
-				}, waitTime);
+					var fetcher = new jet.Fetcher()
+						.value('isType', 'string')
+						.on('data', fetchSpy);
+
+					peer.fetch(fetcher);
+
+					setTimeout(function () {
+						expect(fetchSpy.callCount).to.equal(1);
+						expect(fetchSpy.calledWith('b', 'add', '1')).to.be.true;
+						fetcher.unfetch().then(function () {
+							done();
+						});
+					}, waitTime);
+				}).catch(done);
 
 			});
 
