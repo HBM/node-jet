@@ -560,7 +560,7 @@ var portBase = 4345;
 			var states;
 
 			beforeEach(function () {
-				states = new StateArray();
+				states = new StateArray(peer);
 			})
 
 			afterEach(function (done) {
@@ -572,7 +572,7 @@ var portBase = 4345;
 
 			it('equals', function (done) {
 
-				states.push(peer.state({
+				states.push({
 					path: 'a',
 					value: {
 						age: 35,
@@ -582,56 +582,9 @@ var portBase = 4345;
 							dad: 'Paul'
 						}
 					}
-				}));
+				});
 
-				states.push(peer.state({
-					path: 'b',
-					value: {
-						age: 31,
-						name: 'Nick',
-						parents: {
-							mom: 'Liz',
-							dad: 'Paul'
-						}
-					}
-				}));
-
-				states.push(peer.state({
-					path: 'g',
-					value: '1'
-				}));
-
-				var fetchSpy = sinon.spy();
-
-				var fetcher = peer.fetch()
-					.key('age', 'equals', 35)
-					.run(fetchSpy);
-
-				setTimeout(function () {
-					expect(fetchSpy.callCount).to.equal(1);
-					expect(fetchSpy.calledWith('a', 'add')).to.be.true;
-					fetcher.unfetch().then(function () {
-						done();
-					});
-				}, waitTime);
-
-			});
-
-			it('greaterThan', function (done) {
-
-				states.push(peer.state({
-					path: 'a',
-					value: {
-						age: 35,
-						name: 'John',
-						parents: {
-							mom: 'Liz',
-							dad: 'Paul'
-						}
-					}
-				}));
-
-				var nick = peer.state({
+				states.push({
 					path: 'b',
 					value: {
 						age: 31,
@@ -643,45 +596,34 @@ var portBase = 4345;
 					}
 				});
 
-				states.push(nick);
-
-				states.push(peer.state({
+				states.push({
 					path: 'g',
 					value: '1'
-				}));
+				});
 
-				var fetchSpy = sinon.spy();
+				states.addAll().then(function () {
 
-				var fetcher = peer.fetch()
-					.key('age', 'greaterThan', 31)
-					.run(fetchSpy);
+					var fetchSpy = sinon.spy();
 
-				setTimeout(function () {
-					expect(fetchSpy.callCount).to.equal(1);
-					expect(fetchSpy.calledWith('a', 'add')).to.be.true;
-					nick.value({
-						name: 'Nick',
-						age: 32,
-						parents: {
-							mom: 'Liz',
-							dad: 'Paul'
-						}
-					});
+					var fetcher = new jet.Fetcher()
+						.key('age', 'equals', 35)
+						.on('data', fetchSpy);
+					peer.fetch(fetcher);
+
 					setTimeout(function () {
-						expect(fetchSpy.callCount).to.equal(2);
-						expect(fetchSpy.calledWith('b', 'add')).to.be.true;
+						expect(fetchSpy.callCount).to.equal(1);
+						expect(fetchSpy.calledWith('a', 'add')).to.be.true;
 						fetcher.unfetch().then(function () {
 							done();
 						});
-
 					}, waitTime);
-				}, waitTime);
 
+				});
 			});
 
-			it('equals and lessThan', function (done) {
+			it('greaterThan', function (done) {
 
-				states.push(peer.state({
+				states.push({
 					path: 'a',
 					value: {
 						age: 35,
@@ -691,22 +633,10 @@ var portBase = 4345;
 							dad: 'Paul'
 						}
 					}
-				}));
-
-				states.push(peer.state({
-					path: 'a',
-					value: {
-						age: 40,
-						name: 'John',
-						parents: {
-							mom: 'Anna',
-							dad: 'Paul'
-						}
-					}
-				}));
+				});
 
 
-				states.push(peer.state({
+				states.push({
 					path: 'b',
 					value: {
 						age: 31,
@@ -716,27 +646,110 @@ var portBase = 4345;
 							dad: 'Paul'
 						}
 					}
-				}));
+				});
 
-				states.push(peer.state({
+				states.push({
 					path: 'g',
 					value: '1'
-				}));
+				});
 
-				var fetchSpy = sinon.spy();
+				states.addAll().then(function () {
 
-				var fetcher = peer.fetch()
-					.key('age', 'lessThan', 40)
-					.key('name', 'equals', 'John')
-					.run(fetchSpy);
+					var fetchSpy = sinon.spy();
 
-				setTimeout(function () {
-					expect(fetchSpy.callCount).to.equal(1);
-					expect(fetchSpy.calledWith('a', 'add')).to.be.true;
-					fetcher.unfetch().then(function () {
-						done();
-					});
-				}, waitTime);
+					var fetcher = new jet.Fetcher()
+						.key('age', 'greaterThan', 31)
+						.on('data', fetchSpy);
+
+					peer.fetch(fetcher);
+
+					setTimeout(function () {
+						expect(fetchSpy.callCount).to.equal(1);
+						expect(fetchSpy.calledWith('a', 'add')).to.be.true;
+						states[1].value({
+							name: 'Nick',
+							age: 32,
+							parents: {
+								mom: 'Liz',
+								dad: 'Paul'
+							}
+						});
+						setTimeout(function () {
+							expect(fetchSpy.callCount).to.equal(2);
+							expect(fetchSpy.calledWith('b', 'add')).to.be.true;
+							fetcher.unfetch().then(function () {
+								done();
+							});
+
+						}, waitTime);
+					}, waitTime);
+
+				}).catch(done);
+			});
+
+			it('equals and lessThan', function (done) {
+
+				states.push({
+					path: 'a',
+					value: {
+						age: 35,
+						name: 'John',
+						parents: {
+							mom: 'Liz',
+							dad: 'Paul'
+						}
+					}
+				});
+
+				states.push({
+					path: 'a',
+					value: {
+						age: 40,
+						name: 'John',
+						parents: {
+							mom: 'Anna',
+							dad: 'Paul'
+						}
+					}
+				});
+
+
+				states.push({
+					path: 'b',
+					value: {
+						age: 31,
+						name: 'Nick',
+						parents: {
+							mom: 'Liz',
+							dad: 'Paul'
+						}
+					}
+				});
+
+				states.push({
+					path: 'g',
+					value: '1'
+				});
+
+				state.addAll().then(function () {
+
+					var fetchSpy = sinon.spy();
+
+					var fetcher = new jet.Fetcher()
+						.key('age', 'lessThan', 40)
+						.key('name', 'equals', 'John')
+						.on('data', fetchSpy);
+
+					peer.fetch(fetcher);
+
+					setTimeout(function () {
+						expect(fetchSpy.callCount).to.equal(1);
+						expect(fetchSpy.calledWith('a', 'add')).to.be.true;
+						fetcher.unfetch().then(function () {
+							done();
+						});
+					}, waitTime);
+				}).catch(done);
 
 			});
 
@@ -747,7 +760,7 @@ var portBase = 4345;
 			var states;
 
 			beforeEach(function () {
-				states = new StateArray();
+				states = new StateArray(peer);
 			})
 
 			afterEach(function (done) {
@@ -757,24 +770,27 @@ var portBase = 4345;
 			});
 
 
-			it('sort as empty object defaults to byPath=true,from=1,to=10', function (done) {
-				var initialStates = [];
+			it('sort by path and differential', function (done) {
 				for (var i = 10; i < 30; ++i) {
-					initialStates.push({
+					states.push({
 						path: i.toString(),
 						value: i
 					});
 				}
 
-				var fetchAndTest = function () {
+				states.addAll().then(function () {
+
+
 					var fetchSpy = sinon.spy();
 					var fetchOK;
 
-					var fetcher = peer.fetch()
+					var fetcher = new jet.Fetcher()
 						.sortByPath()
 						.range(1, 10)
 						.differential()
-						.run(fetchSpy)
+						.on('data', fetchSpy)
+
+					peer.fetch(fetcher)
 						.then(function () {
 							fetchOK = true;
 						});
@@ -789,36 +805,35 @@ var portBase = 4345;
 							});
 						}
 						expect(fetchSpy.callCount).to.equal(1);
-						expect(fetchSpy.calledWith(expectedChanges, 10, fetcher)).to.be.true;
+						expect(fetchSpy.calledWith(expectedChanges, 10)).to.be.true;
 						expect(fetchOK).to.be.true;
 						fetcher.unfetch();
 						done();
 					}, waitTime * 2);
-				};
-				states.addAll(peer, initialStates, fetchAndTest);
+				});
 
 			});
 
 			it('from / to works', function (done) {
-				var initialStates = [];
 				for (var i = 10; i < 30; ++i) {
 
-					initialStates.push({
+					states.push({
 						path: i.toString(),
 						value: i
 					});
 				}
 
-				var fetchAndTest = function () {
+				states.addAll().then(function () {
+
 
 					var fetchSpy = sinon.spy();
 
-					var fetcher = peer.fetch()
+					var fetcher = new jet.Fetcher()
 						.sortByPath()
 						.range(11, 13)
 						.differential()
-						.run(fetchSpy);
-
+						.on('data', fetchSpy);
+					peer.fetch(fetcher);
 					setTimeout(function () {
 						var expectedChanges = [];
 						for (var i = 20; i < 23; ++i) {
@@ -835,29 +850,30 @@ var portBase = 4345;
 						});
 					}, waitTime * 2);
 
-				};
-				states.addAll(peer, initialStates, fetchAndTest);
+				});
 
 			});
 
 			it('n callback param indicates number of matches within from/to', function (done) {
-				var initialStates = [];
 				for (var i = 10; i < 13; ++i) {
-					initialStates.push({
+					states.push({
 						path: i.toString(),
 						value: i
 					});
 				}
 
-				var fetchAndTest = function () {
+				states.addAll().then(function () {
 
 					var fetchSpy = sinon.spy();
 
-					var fetcher = peer.fetch()
+					var fetcher = new jet.Fetcher()
 						.sortByPath()
 						.range(2, 5)
 						.differential()
-						.run(fetchSpy);
+						.on('data', fetchSpy);
+
+
+					peer.fetch(fetcher);
 
 					setTimeout(function () {
 						var expectedChanges = [];
@@ -870,13 +886,12 @@ var portBase = 4345;
 						}
 
 						expect(fetchSpy.callCount).to.equal(1);
-						expect(fetchSpy.calledWith(expectedChanges, 2, fetcher)).to.be.true;
+						expect(fetchSpy.calledWith(expectedChanges, 2)).to.be.true;
 
 						// insert path between '11' and '12'
-						states.push(peer.state({
-							path: '112',
-							value: 123
-						}));
+						var s = new jet.State('112', 123);
+						peer.add(s);
+
 
 						setTimeout(function () {
 							expectedChanges = [
@@ -894,14 +909,13 @@ var portBase = 4345;
 							expect(fetchSpy.callCount).to.equal(2);
 							expect(fetchSpy.calledWith(expectedChanges, 3)).to.be.true;
 							fetcher.unfetch().then(function () {
+								s.remove();
 								done();
 							});
 						}, waitTime);
 
 					}, waitTime * 2);
-				};
-
-				states.addAll(peer, initialStates, fetchAndTest);
+				});
 
 			});
 
@@ -1251,7 +1265,7 @@ var portBase = 4345;
 			var states;
 
 			beforeEach(function () {
-				states = new StateArray();
+				states = new StateArray(peer);
 			})
 
 			afterEach(function (done) {
