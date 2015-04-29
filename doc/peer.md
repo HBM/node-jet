@@ -6,7 +6,9 @@ Load the module "node-jet":
 var jet = require('node-jet');
 ```
 
-## `peer = new jet.Peer([config])`
+# Peer
+
+## `jet.Peer([config]) -> peer`
 
 Creates and returns a new Jet Peer instance with the specified connection config.
 The supported config fields are:
@@ -14,11 +16,15 @@ The supported config fields are:
 - `url`: {String} The Jet Daemon Websocket URL, e.g. `ws://localhost:11123`
 - `ip`: {String} The Jet Daemon TCP trivial protocol ip (default: `localhost`)
 - `port`: {String} The Jet Daemon TCP trivial protocol port (default: `11122`)
+- `user`: {String, Optional} The user name used for authentication
+- `password`: {String, Optional} The password used for authentication
 
 The peer uses either the Websocket protocol or the TCP trivial protocol (default) as transport.
 When specifying the `url` field, the peer uses the Websocket protocol as transport.
 If no `config` is provided, the Peer connects to the local ('localhost') Daemon using the trivial protocol.
 Browsers do only support the Websocket transport and must provided a `config` with `url` field.
+
+Authentication is optional and is explained separately.
 
 ```javascript
 var jet = require('node-jet');
@@ -27,22 +33,19 @@ var peer = new jet.Peer({
   url: 'ws://jet.nodejitsu.com:80'
 });
 
-peer.on('open', function(daemonInfo) {
+peer.connect().then() {
     console.log('connection to Daemon established');
-    console.log('Daemon Info: ', daemonInfo);
+    console.log('Daemon Info: ', peer.daemonInfo);
 });
 ```
-### Events
- 
-The Jet Peer is an EventEmitter and emits the events:
- - "close" (argument: `reason` {any})
- - "open" (argument: `daemonInfo` {Object})
- - "error" (argument: `error` {any})
 
-The `daemonInfo` argument to the "open" event is as follows:
+## `peer.connect() -> Promise`
+
+Connects to the Daemon and returns a Promise which gets resolved as the connection is established.
+After the connect Promise has been resolved, the peer provides `peer.daemonInfo`.
 
 ```javascript
-peer.on('open', function(daemonInfo) {
+peer.connect().then(function() {
    console.log('name', daemonInfo.name); // string
    console.log('version', daemonInfo.version); // string
    console.log('protocolVersion', daemonInfo.protocolVersion); // number
@@ -51,21 +54,15 @@ peer.on('open', function(daemonInfo) {
    console.log('fetch-mode', daemonInfo.features.fetch); // string: 'full' or 'simple'
 });
 ```
-## `peer.authenticate(user, password, [callbacks])`
-
-Authenticates the `peer` as `user` if the `password` is correct. The peer gains the access rights 
-as defined in the daemon's `users` object.
-
-Must be called before calling `peer.fetch`. Unauthenticated peers will have access to all States and Methods
-which did not specify an `access` field.
 
 ## `peer.close()`
 
 Closes the connection to the Daemon.
 
-## `peer.set(path, value, [callbacks])`
+## `peer.set(path, value, [options]) -> Promise`
 
-Tries to set the Jet State specified by `path` to `value`. `callbacks` is an optional parameter of type Object, which may hold `success` and/or `error` callback functions.  
+Tries to set the Jet State specified by `path` to `value`. Returns a Promise which gets resolved as
+the specified state has been setted successfully to the specified value. 
 
 ```javascript
 peer.set('foo', 123, {
@@ -80,6 +77,10 @@ peer.set('foo', 123, {
 // dont care about the result
 peer.set('foo', 12341);
 ```
+
+`options` is an optional argument, 
+which supports the following fields
+
 
 The `callbacks` Object may also specify a `timeout` in seconds and set the `valueAsResult` flag, which causes the new "real" value to be provided as argument to `success`.
 
