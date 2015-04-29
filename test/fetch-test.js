@@ -6,37 +6,34 @@ var MessageSocket = require('../lib/jet/message-socket').MessageSocket;
 
 var waitTime = process.env.TRAVIS && 100 || 40;
 
-StateArray = function () {};
+StateArray = function (peer) {
+	this.peer = peer;
+};
 
 util.inherits(StateArray, Array);
 
-StateArray.prototype.addAll = function (peer, initialStates, done) {
-	initialStates = initialStates || [];
-	var last = initialStates.pop();
+StateArray.prototype.addAll = function (initialStates) {
 	var that = this;
-	if (last) {
-		initialStates.forEach(function (state) {
-			that.push(peer.state(state));
-		});
-		that.push(peer.state(last).then(done));
-	} else {
-		if (done) {
-			done();
-		}
+	initialStates = initialStates || [];
+	initialStates.forEach(function (state) {
+		that.push(state);
+	});
+	for (var i = 0; i < this.length; ++i) {
+		this[i] = new jet.State(this[i].path, this[i].value);
 	}
+	return jet.Promise.all(this.map(function (state) {
+		return that.peer.add(state);
+	}));
 };
 
 
 StateArray.prototype.removeAll = function (done) {
-	var last = this.pop();
-	this.forEach(function (state) {
-		state.remove();
-	});
-	if (last) {
-		last.remove().then(done);
-	} else {
+	jet.Promise.all(this.map(function (state) {
+		return state.remove();
+	})).then(function () {
 		done();
-	}
+	}).catch(done);
+
 };
 
 var portBase = 4345;
@@ -77,7 +74,7 @@ var portBase = 4345;
 			var states;
 
 			beforeEach(function () {
-				states = new StateArray();
+				states = new StateArray(peer);
 			})
 
 			afterEach(function (done) {
@@ -86,66 +83,47 @@ var portBase = 4345;
 				});
 			});
 
-			/*	it('can fetch unfetch and fetch', function (done) {
-					var setupOK;
-					var fetcher = peer.fetch()
-						.path('contains', 'bla')
-						.run(function () {})
-						.then(function () {
-							expect(fetcher.isFetching()).to.be.true;
-							fetcher.unfetch().then(function () {
-								expect(fetcher.isFetching()).to.be.false;
-								fetcher.fetch().then(function () {
-									expect(fetcher.isFetching()).to.be.true;
-									done();
-								});
-							});
-						});
-				}); */
-
 			it('fetch().path("startsWith", ...).run(cb)', function (done) {
-				states.push(peer.state({
+				states.push({
 					path: 'abc',
 					value: 1
-				}));
+				});
 
-				states.push(peer.state({
+				states.push({
 					path: 'Aa',
 					value: 2
-				}));
+				});
 
-				states.push(peer.state({
+				states.push({
 					path: 'ca',
-					value: 3
-				}));
-
-				var fetchSpy = sinon.spy();
-
-				var a2 = peer.state({
-					path: 'aXXX',
 					value: 3
 				});
 
-				try {
-					var fetcher = peer.fetch()
+				states.addAll().then(function () {
+					var fetchSpy = sinon.spy();
+
+					var a2 = new jet.State('aXXX', 3);
+					peer.add(a2);
+
+					var fetcher = new jet.Fetcher()
 						.path('startsWith', 'a')
-						.run(fetchSpy)
+						.on('data', fetchSpy);
+
+					peer.fetch(fetcher)
 						.then(function () {
 							a2.remove();
 						});
 
 					setTimeout(function () {
 						expect(fetchSpy.callCount).to.equal(3);
-						expect(fetchSpy.calledWith('abc', 'add', 1, fetcher)).to.be.true;
-						expect(fetchSpy.calledWith('aXXX', 'add', 3, fetcher)).to.be.true;
-						expect(fetchSpy.calledWith('aXXX', 'remove', 3, fetcher)).to.be.true;
+						expect(fetchSpy.calledWith('abc', 'add', 1)).to.be.true;
+						expect(fetchSpy.calledWith('aXXX', 'add', 3)).to.be.true;
+						expect(fetchSpy.calledWith('aXXX', 'remove', 3)).to.be.true;
 						fetcher.unfetch().then(function () {
 							done();
 						});
 					}, waitTime);
-				} catch (e) {
-					console.log(e)
-				}
+				}).catch(done);
 			});
 
 			it('immediate value changes are fetch in correct order', function (done) {
