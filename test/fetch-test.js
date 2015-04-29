@@ -12,10 +12,10 @@ StateArray = function (peer) {
 
 util.inherits(StateArray, Array);
 
-StateArray.prototype.addAll = function (initialStates) {
+StateArray.prototype.addAll = function (states) {
 	var that = this;
-	initialStates = initialStates || [];
-	initialStates.forEach(function (state) {
+	states = states || [];
+	states.forEach(function (state) {
 		that.push(state);
 	});
 	for (var i = 0; i < this.length; ++i) {
@@ -111,19 +111,20 @@ var portBase = 4345;
 
 					peer.fetch(fetcher)
 						.then(function () {
-							a2.remove();
-						});
+							a2.remove().then(function () {
 
-					setTimeout(function () {
-						expect(fetchSpy.callCount).to.equal(3);
-						expect(fetchSpy.calledWith('abc', 'add', 1)).to.be.true;
-						expect(fetchSpy.calledWith('aXXX', 'add', 3)).to.be.true;
-						expect(fetchSpy.calledWith('aXXX', 'remove', 3)).to.be.true;
-						fetcher.unfetch().then(function () {
-							done();
-						});
-					}, waitTime);
-				}).catch(done);
+								setTimeout(function () {
+									expect(fetchSpy.callCount).to.equal(3);
+									expect(fetchSpy.calledWith('abc', 'add', 1)).to.be.true;
+									expect(fetchSpy.calledWith('aXXX', 'add', 3)).to.be.true;
+									expect(fetchSpy.calledWith('aXXX', 'remove', 3)).to.be.true;
+									fetcher.unfetch().then(function () {
+										done();
+									});
+								}, waitTime);
+							});
+						}).catch(done);
+				});
 			});
 
 			it('immediate value changes are fetch in correct order', function (done) {
@@ -702,7 +703,7 @@ var portBase = 4345;
 				});
 
 				states.push({
-					path: 'a',
+					path: 'ab',
 					value: {
 						age: 40,
 						name: 'John',
@@ -731,7 +732,7 @@ var portBase = 4345;
 					value: '1'
 				});
 
-				state.addAll().then(function () {
+				states.addAll().then(function () {
 
 					var fetchSpy = sinon.spy();
 
@@ -919,23 +920,24 @@ var portBase = 4345;
 
 			});
 
-			it('sort.asArray feeds callback with complete array', function (done) {
-				var initialStates = [];
+			it('sort standard (non-differential) feeds callback with complete array', function (done) {
 				for (var i = 10; i < 13; ++i) {
-					initialStates.push({
+					states.push({
 						path: i.toString(),
 						value: i
 					});
 				}
 
-				var fetchAndTest = function () {
+				states.addAll().then(function () {
 
 					var fetchSpy = sinon.spy();
 
-					var fetcher = peer.fetch()
+					var fetcher = new jet.Fetcher()
 						.sortByPath()
 						.range(2, 5)
-						.run(fetchSpy);
+						.on('data', fetchSpy);
+
+					peer.fetch(fetcher);
 
 					setTimeout(function () {
 						var expectedArray = [];
@@ -948,13 +950,11 @@ var portBase = 4345;
 						}
 
 						expect(fetchSpy.callCount).to.equal(1);
-						expect(fetchSpy.calledWith(expectedArray, fetcher)).to.be.true;
+						expect(fetchSpy.calledWith(expectedArray)).to.be.true;
 
 						// insert path between '11' and '12'
-						states.push(peer.state({
-							path: '112',
-							value: 123
-						}));
+						var s = new jet.State('112', 123);
+						peer.add(s);
 
 						setTimeout(function () {
 							expectedArray[1] = {
@@ -970,82 +970,84 @@ var portBase = 4345;
 							expect(fetchSpy.callCount).to.equal(2);
 							expect(fetchSpy.calledWith(expectedArray)).to.be.true;
 							fetcher.unfetch();
+							s.remove();
 							done();
 						}, waitTime);
 
 					}, waitTime * 2);
-				};
+				});
 
-				states.addAll(peer, initialStates, fetchAndTest);
 			});
 
 
 			it('byValue works', function (done) {
-				var initialStates = [];
 				for (var i = 10; i < 30; ++i) {
-					initialStates.push({
+					states.push({
 						path: i.toString(),
 						value: i * i
 					});
 				}
 
-				initialStates.push({
+				states.push({
 					path: '50',
 					value: 'asd'
 				});
 
-				var fetchAndTest = function () {
+				states.addAll().then(function () {
+
 
 					var fetchSpy = sinon.spy();
 
-					var fetcher = peer.fetch()
+					var fetcher = new jet.Fetcher()
 						.sortByValue('number')
 						.range(11, 13)
 						.differential()
-						.run(fetchSpy);
+						.on('data', fetchSpy);
 
-					setTimeout(function () {
-						var expectedChanges = [];
-						for (var i = 20; i < 23; ++i) {
-							expectedChanges.push({
-								path: i.toString(),
-								value: i * i,
-								index: i - 9
-							});
-						}
-						expect(fetchSpy.callCount).to.equal(1);
-						expect(fetchSpy.calledWith(expectedChanges, 3)).to.be.true;
-						fetcher.unfetch();
-						done();
-					}, waitTime);
-				};
+					peer.fetch(fetcher).then(function () {
 
-				states.addAll(peer, initialStates, fetchAndTest);
+						setTimeout(function () {
+							var expectedChanges = [];
+							for (var i = 20; i < 23; ++i) {
+								expectedChanges.push({
+									path: i.toString(),
+									value: i * i,
+									index: i - 9
+								});
+							}
+							expect(fetchSpy.callCount).to.equal(1);
+							expect(fetchSpy.calledWith(expectedChanges, 3)).to.be.true;
+							fetcher.unfetch();
+							done();
+						}, waitTime);
+					});
+				});
+
 			});
 
 			it('byValue works when state is removed', function (done) {
-				var initialStates = [];
 				for (var i = 10; i < 30; ++i) {
-					initialStates.push({
+					states.push({
 						path: i.toString(),
 						value: i * i
 					});
 				}
 
-				initialStates.push({
+				states.push({
 					path: '50',
 					value: 'asd'
 				});
 
-				var fetchAndTest = function () {
-
+				states.addAll().then(function () {
 					var fetchSpy = sinon.spy();
 
-					var fetcher = peer.fetch()
+					var fetcher = new jet.Fetcher()
 						.sortByValue('number')
 						.range(11, 13)
 						.differential()
-						.run(fetchSpy)
+						.on('data', fetchSpy);
+
+					peer.fetch(fetcher)
 						.then(function () {
 
 							// change value type --> type mismatch --> element removed
@@ -1074,143 +1076,141 @@ var portBase = 4345;
 						expect(fetchSpy.calledWith(expectedChanges, 3)).to.be.true;
 						done();
 					}, waitTime);
-				};
+				});
 
-				states.addAll(peer, initialStates, fetchAndTest);
 			});
 
 
 			it('byValueField works', function (done) {
-				var initialStates = [];
 
-				initialStates.push({
+				states.push({
 					path: 'aaa',
 					value: {
 						age: 3
 					}
 				});
 
-				initialStates.push({
+				states.push({
 					path: 'b',
 					value: {
 						age: 2
 					}
 				});
 
-				initialStates.push({
+				states.push({
 					path: 'c',
 					value: {
 						age: 10
 					}
 				});
 
-				initialStates.push({
+				states.push({
 					path: 'ddd',
 					value: {
 						age: 11
 					}
 				});
 
-				initialStates.push({
+				states.push({
 					path: 'e',
 					value: {
 						age: 1
 					}
 				});
 
-				initialStates.push({
+				states.push({
 					path: '50',
 					value: 'asd'
 				});
 
-				var fetchAndTest = function () {
-
+				states.addAll().then(function () {
 					var fetchSpy = sinon.spy();
 
-					var fetcher = peer.fetch()
+					var fetcher = new jet.Fetcher()
 						.sortByKey('age', 'number')
 						.range(2, 4)
 						.differential()
-						.run(fetchSpy);
+						.on('data', fetchSpy);
 
-					setTimeout(function () {
-						var expectedChanges = [];
-						expectedChanges.push({
-							path: 'b',
-							value: {
-								age: 2
-							},
-							index: 2
-						});
-						expectedChanges.push({
-							path: 'aaa',
-							value: {
-								age: 3
-							},
-							index: 3
-						});
-
-						expectedChanges.push({
-							path: 'c',
-							value: {
-								age: 10
-							},
-							index: 4
-						});
-						expect(fetchSpy.callCount).to.equal(1);
-						expect(fetchSpy.calledWith(expectedChanges, 3, fetcher)).to.be.true;
-
-						// change value, order stays same
-						states[0].value({
-							age: 4
-						});
+					peer.fetch(fetcher).then(function () {
 
 						setTimeout(function () {
-							expect(fetchSpy.callCount).to.equal(2);
-							expect(fetchSpy.calledWith([{
+							var expectedChanges = [];
+							expectedChanges.push({
+								path: 'b',
+								value: {
+									age: 2
+								},
+								index: 2
+							});
+							expectedChanges.push({
 								path: 'aaa',
 								value: {
-									age: 4
+									age: 3
 								},
 								index: 3
-					}], 3, fetcher)).to.be.true;
+							});
 
-							// change value -> change order
-							states[2].value({
-								age: 3
+							expectedChanges.push({
+								path: 'c',
+								value: {
+									age: 10
+								},
+								index: 4
+							});
+							expect(fetchSpy.callCount).to.equal(1);
+							expect(fetchSpy.calledWith(expectedChanges, 3)).to.be.true;
+
+							// change value, order stays same
+							states[0].value({
+								age: 4
 							});
 
 							setTimeout(function () {
-								expect(fetchSpy.callCount).to.equal(3);
+								expect(fetchSpy.callCount).to.equal(2);
 								expect(fetchSpy.calledWith([{
-									path: 'c',
-									value: {
-										age: 3
-									},
-									index: 3
-          }, {
 									path: 'aaa',
 									value: {
 										age: 4
 									},
-									index: 4
-					}], 3, fetcher)).to.be.true;
-								fetcher.unfetch();
-								done();
+									index: 3
+					}], 3)).to.be.true;
+
+								// change value -> change order
+								states[2].value({
+									age: 3
+								});
+
+								setTimeout(function () {
+									expect(fetchSpy.callCount).to.equal(3);
+									expect(fetchSpy.calledWith([{
+										path: 'c',
+										value: {
+											age: 3
+										},
+										index: 3
+          }, {
+										path: 'aaa',
+										value: {
+											age: 4
+										},
+										index: 4
+					}], 3)).to.be.true;
+									fetcher.unfetch();
+									done();
+								}, waitTime);
+
 							}, waitTime);
 
 						}, waitTime);
+					});
+				});
 
-					}, waitTime);
-				};
-
-				states.addAll(peer, initialStates, fetchAndTest);
 			});
 
 			it('byValueField nested works', function (done) {
-				var initialStates = [];
 				for (var i = 10; i < 30; ++i) {
-					initialStates.push({
+					states.push({
 						path: i.toString(),
 						value: {
 							deep: {
@@ -1220,20 +1220,22 @@ var portBase = 4345;
 					});
 				}
 
-				initialStates.push({
+				states.push({
 					path: '50',
 					value: 'asd'
 				});
 
-				var fetchAndTest = function () {
+				states.addAll().then(function () {
 
 					var fetchSpy = sinon.spy();
 
-					var fetcher = peer.fetch()
+					var fetcher = new jet.Fetcher()
 						.sortByKey('deep.age', 'number')
 						.differential()
 						.range(11, 13)
-						.run(fetchSpy);
+						.on('data', fetchSpy);
+
+					peer.fetch(fetcher);
 
 					setTimeout(function () {
 						var expectedChanges = [];
@@ -1253,9 +1255,8 @@ var portBase = 4345;
 						fetcher.unfetch();
 						done();
 					}, waitTime);
-				};
+				});
 
-				states.addAll(peer, initialStates, fetchAndTest);
 			});
 
 		});
@@ -1275,62 +1276,72 @@ var portBase = 4345;
 			});
 
 			it('chain .path().value()', function (done) {
-				states.push(peer.state({
+				states.push({
 					path: 'abc',
 					value: 1
-				}));
-				states.push(peer.state({
+				});
+				states.push({
 					path: 'abde',
 					value: 3
-				}));
-				states.push(peer.state({
+				});
+				states.push({
 					path: 'aca',
 					value: 1
-				}));
+				});
 
-				var fetchSpy = sinon.spy();
+				states.addAll().then(function () {
 
-				var fetcher = peer.fetch()
-					.path('startsWith', 'ab')
-					.value('lessThan', 3)
-					.run(fetchSpy);
+					var fetchSpy = sinon.spy();
 
-				setTimeout(function () {
-					expect(fetchSpy.callCount).to.equal(1);
-					expect(fetchSpy.calledWith('abc', 'add', 1)).to.be.true;
-					fetcher.unfetch();
-					done();
-				}, waitTime);
+					var fetcher = new jet.Fetcher()
+						.path('startsWith', 'ab')
+						.value('lessThan', 3)
+						.on('data', fetchSpy);
+
+					peer.fetch(fetcher);
+
+					setTimeout(function () {
+						expect(fetchSpy.callCount).to.equal(1);
+						expect(fetchSpy.calledWith('abc', 'add', 1)).to.be.true;
+						fetcher.unfetch();
+						done();
+					}, waitTime);
+				});
 			});
 
 
 			it('startsWith and lessThan', function (done) {
-				states.push(peer.state({
+				states.push({
 					path: 'abc',
 					value: 1
-				}));
-				states.push(peer.state({
+				});
+				states.push({
 					path: 'abde',
 					value: 3
-				}));
-				states.push(peer.state({
+				});
+				states.push({
 					path: 'aca',
 					value: 1
-				}));
+				});
 
-				var fetchSpy = sinon.spy();
+				states.addAll().then(function () {
 
-				var fetcher = peer.fetch()
-					.path('startsWith', 'ab')
-					.value('lessThan', 3)
-					.run(fetchSpy);
+					var fetchSpy = sinon.spy();
 
-				setTimeout(function () {
-					expect(fetchSpy.callCount).to.equal(1);
-					expect(fetchSpy.calledWith('abc', 'add', 1)).to.be.true;
-					fetcher.unfetch();
-					done();
-				}, waitTime);
+					var fetcher = new jet.Fetcher()
+						.path('startsWith', 'ab')
+						.value('lessThan', 3)
+						.on('data', fetchSpy);
+
+					peer.fetch(fetcher);
+
+					setTimeout(function () {
+						expect(fetchSpy.callCount).to.equal(1);
+						expect(fetchSpy.calledWith('abc', 'add', 1)).to.be.true;
+						fetcher.unfetch();
+						done();
+					}, waitTime);
+				});
 			});
 		});
 
@@ -1358,20 +1369,14 @@ describe('A Daemon with features.fetch = "simple" and two states', function () {
 			port: port
 		});
 
-		peer.connect().then(function () {
+		jet.Promise.all([
+			peer.connect(),
+			peer.add(new jet.State('abc', 123)),
+			peer.add(new jet.State('def', 123))
+		]).then(function () {
+			done()
+		}).catch(done);
 
-			peer.state({
-				path: 'abc',
-				value: 123
-			});
-
-			peer.state({
-				path: 'def',
-				value: 123
-			}).then(function () {
-				done();
-			});
-		});
 	});
 
 	after(function () {
