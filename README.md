@@ -10,7 +10,7 @@ This is [Jet](http://jetbus.io/) for Javasript. Jet is the hybrid of an **In-Mem
 
 # Synopsis
 
-Provide Content:
+## Provide Content:
 
 ```javascript
 var jet = require('node-jet');
@@ -21,28 +21,26 @@ var peer = new jet.Peer({
 });
 
 // provide methods/factories/services/actions/etc
-peer.method({
-  path: 'greet', // unique path/id
-  call: function(who) { // callback/action to perform if someone "calls"
-    console.log('Hello', who);
-  }
+var greet = new jet.Method('greet');
+greet.on('call', function(who) {
+  console.log('Hello', who);
 });
+
+peer.add(greet);
 
 // provide documents/realtime-status/configuration/etc
-peer.state({
-  path: 'person/#123', // unique path/id
-  value: getPerson('#123'), // initial value
-  set: function(changedPerson) { // callback which processes the requested new value
-    setPerson('#123', changedPerson);
-    // changes are propageted automatically
-  }
+var jim = new jet.State('persons/#123', getPerson('#123'));
+jim.on('set', function(changedPerson) {
+  setPerson('#123', changedPerson);
+  // changes are propageted automatically
 });
 
+peer.add(jim);
+
 // provide read-only stuff
-var nowState = peer.state({
-  path: 'time/now',
-  value: new Date().getTime()
-});
+var nowState = new jet.State('time/now', new Date().getTime());
+
+peer.add(nowState);
 
 // change async
 setInterval(function() {
@@ -50,21 +48,24 @@ setInterval(function() {
 }, 100);
 ```
 
-Consume Content:
+## Consume Content:
 
 ```javascript
 // fetch/query content
-otherPeer.fetch()
-  .path('startsWith', 'person/')
-  .run(function(path, event, value) {
+var persons = new jet.Fetcher()
+  .path('startsWith', 'persons/')
+  .on('data', function(path, event, value) {
     ...  // events can be 'add', 'change', 'remove'
-});
+  });
+
+peer.fetch(persons);
 
 // call methods
-otherPeer.call('greet', ['Steve']);
+peer.call('greet', ['Steve']).then(function(greeting) {
+});
 
 // set states
-otherPeer.set('person/#123', {name: 'Jose', age: 33});
+peer.set('person/#123', {name: 'Jose', age: 33});
 ```
 
 Read the [Todo-App Tutorial](https://github.com/lipp/node-jet/tree/master/examples/todo/README.md) for building a simple collaborative realtime app.
@@ -123,27 +124,7 @@ The package provides an example Peer, which adds some States and Methods to play
 with:
 
      $ node_modules/.bin/some-service.js
-     
-Or just write your own:
 
-```javascript
-var jet = require('node-jet');
-
-var peer = new jet.Peer({
-  url: 'ws://localhost:11123'
-});
-
-peer.state({
-  path: 'me/friends',
-  value: ['John', 'Mike', 'Horst'],
-  set: function(newFriends) {
-    if (!likeFriends(newFriends)) {
-      throw new Error('sorry, don't like you guys');
-    }
-  }
-});
-
-```
 
 # Radar
 
@@ -152,11 +133,15 @@ Open [Radar on jetbus.io](http://jetbus.io/radar.html), which allows you to see/
 
 # Doc
 
-For documentation refer to the [API docs](https://github.com/lipp/node-jet/tree/master/doc)
-and the [Jet Homepage](http://jetbus.io).
+ - [Peer](./doc/peer.md)
+ - [Daemon](./doc/daemon.md)
+
+For further info and documentation refer to the [Jet Homepage](http://jetbus.io).
+
+# Todo-App
 
 There is also the canonical ToDo-App available:
 
+   - [Client + Server Tutorial](./examples/todo/README.md)
    - [Client code](https://github.com/lipp/todomvc/blob/add-jet-angular/examples/jet-angular/js/controllers/todoCtrl.js)
    - [Client code (using angular-jet)](https://github.com/lipp/angular-jet/blob/master/tests/protractor/todo/todo.js)
-   - [Server code](https://github.com/lipp/node-jet/blob/master/examples/todo-server.js)
