@@ -118,14 +118,6 @@ daemon.listen({
 });
 ```
 
-# Add content
-
-The package provides an example Peer, which adds some States and Methods to play
-with:
-
-     $ node_modules/.bin/some-service.js
-
-
 # Radar
 
 Open [Radar on jetbus.io](http://jetbus.io/radar.html), which allows you to see/observe Your Jet States and Methods. Your local Jet Daemon's default WebSocket address is `ws://localhost:11123`.
