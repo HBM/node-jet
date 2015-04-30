@@ -113,12 +113,12 @@ which gets invoked when the Method is called by another Peer. This snippet adds 
 two arguments to the console:
 
 ```javascript
-peer.method({
-  path: 'print',
-  call: function(a, b) {
-    console.log(a, b);
-  }
+var print = new jet.Method('print');
+print.on('call', function(a, b) {
+  console.log(a, b);
 });
+
+peer.add(print);
 ```
 
 Another Peer may now consume the "print" service like this:
@@ -137,21 +137,16 @@ be of any JSON-compatible type. A **set callback** can be specified, which allow
 If the set function does not throw, **a State-Change is posted automatically**.
 
 ```javascript
-var francis = {
-  name: 'Francis',
-  age: 33
-};
 
-var frank = peer.state({
-  path: 'persons/#52A92d',
-  value: francis,
-  set: function(requestedValue) {
-    if (requestedValue.age < francis.age) {
-      throw new Error('Sorry, this is not possible');
-	}
-	francis = requestedValue;
+var francis = new jet.State('persons/#12342',{name: 'Francis', age: 33});
+
+francis.on('set', function(requestedValue) {
+  if (requestedValue.age < this.value().age) {
+    throw new Error('Sorry, this is not possible');
   }
 });
+
+peer.add(francis);
 ```
 
 Another Peer may try to modify States:
@@ -159,14 +154,12 @@ Another Peer may try to modify States:
 ```javascript
 peer.set('persons/#52A92d', {name: 'Francis U.', age: 34});
 
-peer.set('persons/#52A92d', {name: 'Francis U.', age: 20}, {
-  success: function() {
+peer.set('persons/#52A92d', {name: 'Francis U.', age: 20})
+  .then(function() {
     console.log('Francis just unaged');
-  },
-  error: function(err) {
+  }).catch(function(err) {
     console.log('Damn', err);
-  }
-});
+  });
 ```
 
 This is just a simple uncomplete example to show custom validation for change requests. Jet allows you to do anything
@@ -177,7 +170,7 @@ appropriate inside the set callback, like:
    - adapting the request value
 
 No matter what you do, all Peers will have the correct value of the State and **stay in sync**. 
-
+ 
 ### Implement the Todo-Service Peer
 
 The following implementation also goes into the todo-server.js file.
@@ -217,41 +210,40 @@ Todo.prototype.id = function() {
 Provide the **todo/add** Method, which will create a new Todo State when called.
 
 ```javascript
-peer.method({
-	path: 'todo/add',
-	call: function (title) {
-		var todo = new Todo(title);
-		// create a new todo state and store ref
-		todoStates[todo.id] = peer.state({
-			path: 'todo/#' + todo.id,
-			value: todo,
-			set: function (requestedTodo) {
-			  	todo.merge(requestedTodo);
-				// tell jet the actually new "value"
-				return {
-					value: todo
-				};
-			}
-		});
-	}
+var addTodo = new jet.Method('todo/add');
+
+addTodo.on('call', function (title) {
+	var todo = new Todo(title);
+
+	// create a new todo state and store ref.
+	var todoState = new jet.State('todo/#' + todo.id, todo);
+	todoState.on('set', function (requestedTodo) {
+		todo.merge(requestedTodo);
+		return {
+			value: todo
+		};
+
+	});
+	todoStates[todo.id] = todoState;
+	peer.add(todoState);
 });
 ```
 
 To be able to delete a Todo, I will implement **todo/remove**. If no Todo ID is provided, the Method will delete all Todos at once:
 
 ```javascript
-peer.method({
-	path: 'todo/remove',
-	call: function (todoId) {
-	    if (typeof todoId === 'undefined') {
-			for (var id in todos) {
-				todoStates[id].remove();
-				delete todoStates[id];
-			}
-		} else {
-			todoStates[todoId].remove();
-			delete todoStates[todoId];
+var removeTodo = new jet.Method('todo/remove');
+
+removeTodo.on('call', function (todoId) {
+	if (typeof todoId === 'undefined') {
+		for (var id in todos) {
+			todoStates[id].remove();
+			delete todoStates[id];
 		}
+
+	} else {
+		todoStates[todoId].remove();
+		delete todoStates[todoId];
 	}
 });
 ```
@@ -279,13 +271,15 @@ The Jet Daemon is able to filter and sort your fetch query based on **paths** an
 that will be invoked everytime something relevant happens. A fetch for getting the **top ten female players** could look like this:
 
 ```javascript
-peer.fetch()
+var topFemalePlayers = new jet.Fetcher()
   .path('startsWith', 'player/')
   .key('gender', 'equals', 'female')
   .sortByKey('score', 'number')
   .range(1, 10)
   .descending()
-  .run(function(topFemalePlayers) {});
+  .on('data', function(topFemalePlayersArray) {});
+
+peer.fetch(topFemalePlayers);
 ```
 
 Fetch is very powerful and is exmplained in more detail in the API [doc](https://github.com/lipp/node-jet/blob/master/doc/peer.md#fetch--peerfetchrule-fetchcb-callbacks). Note that there is no **get** call at all! That is because Jet wants to keep pollers out, since they may decrease system performance.
@@ -322,11 +316,13 @@ var renderTodos = function(todos) {
   ...
 };
 
-peer.fetch()
+var todos = new jet.Fetcher()
   .path('startsWith', 'todo/#')
   .sortByKey('id', 'number')
   .range(1, 30)
-  .run(renderTodos);
+  .on('data', renderTodos);
+
+peer.fetch(todos);
 ```
 
 # Conclusion
