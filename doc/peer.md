@@ -136,10 +136,30 @@ peer.call('greet', {first: 'John', last: 'Mitchell'});
 Registers a `jet.State` or a `jet.Method` instance at the Daemon. The returned Promise gets resolved
 when the Daemon has accepted the request and `set` (States) or `call` (Methods) events may be emitted. 
 
+```javascript
+var jim = new jet.State('persons/a4362d', {name: 'jim'});
+
+peer.add(jim).then(function() {
+  console.log('jim has been added');
+});
+```
+
 ## `peer.remove(state|method) -> Promise`
 
 Unregisters a `jet.State` or a `jet.Method` instance at the Daemon.
 As soon as the returned Promise gets resolved, no `set` or `call` events for the state/method are emitted anymore.
+
+```javascript
+var jim = new jet.State('persons/a4362d', {name: 'jim'});
+
+peer.add(jim).then(function() {
+  console.log('jim has been added');
+  peer.remove(jim).then(function() {
+	console.log('jim has been removed');
+  });
+});
+
+```
 
 ## `peer.fetch(fetcher) -> Promise`
 
@@ -489,5 +509,7 @@ to the respective peer!
 ## `method.remove() -> Promise`
 
 Unregister the method from the Daemon. Is the same as calling `peer.remove(method)`.
+
+
 
 
