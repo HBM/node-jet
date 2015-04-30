@@ -83,14 +83,12 @@ Tries to set the Jet State specified by `path` to `value`. Returns a Promise whi
 the specified state has been setted successfully to the specified value. 
 
 ```javascript
-peer.set('foo', 123, {
-  success: function() {
-    console.log('set finished successfully');
-  },
-  error: function(e) {
-    console.log('set failed', e);
-  }
-});
+peer.set('foo', 123)
+	.then(function() {
+    	console.log('set finished successfully');
+  	}).catch(function(err) {
+    	console.log('set failed', err);
+	});
 
 // dont care about the result
 peer.set('foo', 12341);
