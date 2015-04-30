@@ -6,7 +6,22 @@ Load the module "node-jet":
 var jet = require('node-jet');
 ```
 
-## `peer = new jet.Peer([config])`
+# `jet.Peer`
+
+The Jet Peer is able to to **consume** content provided by (other) peers:
+
+  - **set** States to new values, see `peer.set`
+  - **call** Methods, see `peer.call`
+  - **fetch** States and Methods as a realtime query, see `jet.Fetcher`
+
+
+The Jet Peer is also able to **create** content:
+
+  - register **States** , see `jet.State`
+  - register **Methods** , see `jet.Method`
+
+
+## `jet.Peer([config]) -> peer`
 
 Creates and returns a new Jet Peer instance with the specified connection config.
 The supported config fields are:
@@ -14,11 +29,15 @@ The supported config fields are:
 - `url`: {String} The Jet Daemon Websocket URL, e.g. `ws://localhost:11123`
 - `ip`: {String} The Jet Daemon TCP trivial protocol ip (default: `localhost`)
 - `port`: {String} The Jet Daemon TCP trivial protocol port (default: `11122`)
+- `user`: {String, Optional} The user name used for authentication
+- `password`: {String, Optional} The password used for authentication
 
 The peer uses either the Websocket protocol or the TCP trivial protocol (default) as transport.
 When specifying the `url` field, the peer uses the Websocket protocol as transport.
 If no `config` is provided, the Peer connects to the local ('localhost') Daemon using the trivial protocol.
 Browsers do only support the Websocket transport and must provided a `config` with `url` field.
+
+Authentication is optional and is explained separately.
 
 ```javascript
 var jet = require('node-jet');
@@ -27,22 +46,20 @@ var peer = new jet.Peer({
   url: 'ws://jet.nodejitsu.com:80'
 });
 
-peer.on('open', function(daemonInfo) {
+peer.connect().then() {
     console.log('connection to Daemon established');
-    console.log('Daemon Info: ', daemonInfo);
+    console.log('Daemon Info: ', peer.daemonInfo);
 });
 ```
-### Events
- 
-The Jet Peer is an EventEmitter and emits the events:
- - "close" (argument: `reason` {any})
- - "open" (argument: `daemonInfo` {Object})
- - "error" (argument: `error` {any})
 
-The `daemonInfo` argument to the "open" event is as follows:
+## `peer.connect() -> Promise`
+
+Connects to the Daemon and returns a Promise which gets resolved as the connection is established.
+After the connect Promise has been resolved, the peer provides `peer.daemonInfo`.
 
 ```javascript
-peer.on('open', function(daemonInfo) {
+peer.connect().then(function() {
+   var daemonInfo = peer.daemonInfo;
    console.log('name', daemonInfo.name); // string
    console.log('version', daemonInfo.version); // string
    console.log('protocolVersion', daemonInfo.protocolVersion); // number
@@ -51,119 +68,279 @@ peer.on('open', function(daemonInfo) {
    console.log('fetch-mode', daemonInfo.features.fetch); // string: 'full' or 'simple'
 });
 ```
-## `peer.authenticate(user, password, [callbacks])`
-
-Authenticates the `peer` as `user` if the `password` is correct. The peer gains the access rights 
-as defined in the daemon's `users` object.
-
-Must be called before calling `peer.fetch`. Unauthenticated peers will have access to all States and Methods
-which did not specify an `access` field.
 
 ## `peer.close()`
 
 Closes the connection to the Daemon.
 
-## `peer.set(path, value, [callbacks])`
+## `peer.isClosed() -> Promise`
 
-Tries to set the Jet State specified by `path` to `value`. `callbacks` is an optional parameter of type Object, which may hold `success` and/or `error` callback functions.  
+Returns a promise which gets resolved when the connection to the Daemon has been closed.
+
+## `peer.set(path, value, [options]) -> Promise`
+
+Tries to set the Jet State specified by `path` to `value`. Returns a Promise which gets resolved as
+the specified state has been setted successfully to the specified value. 
 
 ```javascript
-peer.set('foo', 123, {
-  success: function() {
-    console.log('set finished successfully');
-  },
-  error: function(e) {
-    console.log('set failed', e);
-  }
-});
+peer.set('foo', 123)
+	.then(function() {
+    	console.log('set finished successfully');
+  	}).catch(function(err) {
+    	console.log('set failed', err);
+	});
 
 // dont care about the result
 peer.set('foo', 12341);
 ```
 
-The `callbacks` Object may also specify a `timeout` in seconds and set the `valueAsResult` flag, which causes the new "real" value to be provided as argument to `success`.
+`options` is an optional argument, which supports the following fields:
+
+ - `timeout` in seconds. Time to wait before rejecting with a timeout error
+ - `valueAsResult` boolean flag. If set `true` the returned Promise get the "real" new value as argument.
+
 
 ```javascript
 peer.set('magic', 123, {
   timeout: 7,
-  valueAsResult: true,
-  success: function(realNewValue) {
+  valueAsResult: true
+}).then(function(realNewValue) {
     console.log('magic is now', realNewValue);
-  },
-  error: function(e) {
-    console.log('set failed', e);
-  }
+}).catch(function(err) {
+    console.log('set failed', err);
 });
 ```
 
-## `peer.call(path, args, [callbacks])`
+## `peer.call(path, args, [options]) -> Promise`
 
-Calls the Jet Method specified by `path` with `args` as arguments.
-`args` must be an Object or an Array. `callbacks` is an optional parameter of type Object, which may hold `success` and/or `error` callback functions. A `timeout` can also be specified.
+Calls the Jet Method specified by `path` with `args` as arguments. Returns a Promise which may get resolved with the 
+Method call's `result`. An `options` object may be specified which may define a
+
+ - `timeout` in seconds. Time to wait before rejecting with a timeout error
+
 
 ```javascript
-peer.call('sum', [1,2,3,4,5], {
-  success: function(result) {
+peer.call('sum', [1,2,3,4,5]).then(function(result) {
     console.log('sum is', result);
-  },
-  error: function(e) {
+}).catch(function(err) {
     console.log('could not calc the sum', e);
-  },
-  timeout: 0.5
 });
+
 
 // dont care about the result
 peer.call('greet', {first: 'John', last: 'Mitchell'});
 ```
 
-## `fetchChain = peer.fetch()`
+## `peer.add(state|method) -> Promise`
 
-Creates and returns a FetchChain instance. Use it like this:
+Registers a `jet.State` or a `jet.Method` instance at the Daemon. The returned Promise gets resolved
+when the Daemon has accepted the request and `set` (States) or `call` (Methods) events may be emitted. 
 
 ```javascript
-fetchRef = peer.fetch()
+var jim = new jet.State('persons/a4362d', {name: 'jim'});
+
+peer.add(jim).then(function() {
+  console.log('jim has been added');
+});
+```
+
+## `peer.remove(state|method) -> Promise`
+
+Unregisters a `jet.State` or a `jet.Method` instance at the Daemon.
+As soon as the returned Promise gets resolved, no `set` or `call` events for the state/method are emitted anymore.
+
+```javascript
+var jim = new jet.State('persons/a4362d', {name: 'jim'});
+
+peer.add(jim).then(function() {
+  console.log('jim has been added');
+  peer.remove(jim).then(function() {
+	console.log('jim has been removed');
+  });
+});
+
+```
+
+## `peer.fetch(fetcher) -> Promise`
+
+Registers the fetcher at the Daemon. A `jet.Fetcher` must be created first. The returned Promise gets resolved 
+when the Daemon has accepted the fetcher and `data` event may be emitted.
+
+```javascript
+var topPlayers = new jet.Fetcher()
   .path('startsWith', 'players/')
   .sortByKey('score', 'number')
   .range(1, 10)
-  .run(function(topTenPlayers, fetchRef) {
+  .on('data', function(playersArray) {
   });
+
+peer.fetch(topPlayers);
 ```
 
-## `fetchChain.run(fetchCb, [callbacks])`
+## `peer.unfetch(fetcher) -> Promise`
 
-Runs (starts) the fetch rule defined by the FetchChain instance. Optionally executes `callbacks.success` or `callbacks.error`.
+Unregisters the fetcher at the Daemon. 
+As soon as the returned Promise gets resolved, no `data` events for the fetcher are emitted anymore.
+
+# `jet.State`
+
+## `new jet.State(path, value, [access])`
+
+- `path`: {String} The unique path of the State
+- `value`: {Any} The initial value of the State
+- `access`: {Object, Optional} Containing `fetchGroups` and `setGroups`
+
+Creates a new State (but does NOT register it at the Daemon).
+To register the State call `peer.add`!
+
+```javascript
+var john = new jet.State('peoples/25261', {age: 43, name: 'john'}, {
+    fetchGroups: ['public'],
+	setGroups: ['admin']
+});
+
+peer.add(john).then(function() {
+});
+```
+
+## `state.on('set', cb)`
+
+Registers a `set` event handler. Should be called before the state is actually added (`peer.add(state)`).
+The `cb` callback gets the new requested value passed in.
+
+The function is free to:
+
+- return nothing, a State change is posted automatically with the `newValue`
+- throw an Error, the Error should be a String or an Object with `code` and `message`
+- return on Object with the supported fields:
+  - `value`: {Any, Optional} the "real/adjusted" new value. This is posted as the
+     new value.
+  - `dontNotify`: {Boolean, Optional} Don't auto-send a change Notification
+
+
+```javascript
+
+john.on('set', function(newValue) {
+	var prev = this.value();
+    if (newValue.age < prev.age){
+      throw 'invalid age';
+    }
+    return {
+		value: {
+		  age: newValue.age,
+		  name: newValue.name || prev.name
+		}
+	};
+});
+
+```
+
+To provide an async `set` event handler, provide two arguments to the callback.
+
+- The requested `newValue`
+- `reply`: {Function} Method for sending the result/error.
+
+```javascript
+
+john.on('set', function(newValue, reply) {
+	setTimeout(function() {
+		var prev = this.value();
+    	if (newValue.age < prev.age){
+      		reply({
+				error: 'invalid age'
+			});
+    	} else {
+    		reply({
+				value: {
+		  			age: newValue.age,
+		  			name: newValue.name || prev.name
+			}});
+		}
+	}, 200);
+});
+
+```
+
+The arguments to `reply` can be:
+
+  - `value`: {Any} The new value of the state. 
+  - `dontNotify`: {Boolean} Dont auto notify a state change.
+  - `error`: {String/JSON-RPC Error, Optional} Operation failed
+
+## `state.value([newValue])`
+
+If `newValue` is `undefined`, returns the current value. Else posts a value
+change Notification that the State's value is now `newValue`.
+Use this for spontaneouos changes of a State which were not initially triggered
+by the `set` event handler invokation.
+
+```javascript
+var ticker = new jet.State('ticker', 1);
+
+peer.add(ticker).then(function() {
+  setTimeout(function() {
+    var old = ticker.value();
+    ticker.value(++old);
+  },1000);
+});
+
+```
+
+## `state.add() -> Promise`
+
+Register the state from the Daemon convenience function. `peer.add(state)` must have been called before to initially bind the state
+to the respective peer!
+
+## `state.remove() -> Promise`
+
+Unregister the state from the Daemon. Is the same as calling `peer.remove(state)`.
+
+
+# `jet.Fetcher`
+
+## `new jet.Fetcher()`
+
+Creates a new fetcher. All fetcher calls are chainable.
+Register the fetcher instance with a call to `peer.fetch(fetcher)`.
+
+
+## `fetcher.on('data', fetchCb) -> Fetcher`
+
+Installs a callback handler for the `data` event. 
 The `fetchCb` arguments for non-sorting fetches are:
 
 - `path`: {String} The path of the State / Method which triggered the Fetch Notification
 - `event`: {String} The event which triggered the Fetch Notification ('add', 'remove',
    'change')
 - `value`: {Any | undefined} The current value of the State or `undefined` for Methods
-- `fetchRef`: {Object} The reference of the fetch (for unfetching)
 
 ```javascript
-fetchRef = peer.fetch()
-  .path('startsWith', 'movie)
-  .run(function(path, event, value, fetchRef) {
+var movies = new Fetcher()
+  .path('startsWith', 'movies')
+  .on('data', function(path, event, value) {
   });
+
+peer.fetch(movies);
 ```
 
 For sorting fetch rules, the `fetchCb` arguments are: 
 
 - `sortedStatesArray`: {Array} The sorted states/methods
-- `fetchRef`: {Object} The reference of the fetch (for unfetching)
 
 ```javascript
-fetchRef = peer.fetch()
+var topTenPlayers = new jet.Fetcher()
   .path('startsWith', 'players/')
   .sortByKey('score', 'number')
   .range(1, 10)
-  .run(function(topTenPlayers, fetchRef) {
+  .on('data', function(topTenPlayersArray) {
   });
+
+peer.fetch(topTenPlayers);
 ```
 
-## `fetchChain.path(predicate, comp)`
+## `fetcher.path(predicate, comp) -> Fetcher`
 
-Adds a path matching rule to the fetchChain.
+Adds a path matching rule to the fetcher.
 
 [Implemented](https://github.com/lipp/node-jet/blob/master/lib/jet/path_matcher.js#L6) `path` predicates are:
 
@@ -180,9 +357,9 @@ Adds a path matching rule to the fetchChain.
 - `equalsOneOf` {Array of Strings}
 - `equalsNotOneOf` {Array of Strings}
 
-## `fetchChain.value(predicate, comp)`
+## `fetcher.value(predicate, comp) -> Fetcher`
 
-Adds a value matching rule for **primitive type** values to the fetchChain.
+Adds a value matching rule for **primitive type** values to the fetcher.
 
 [Implemented](https://github.com/lipp/node-jet/blob/master/lib/jet/value_matcher.js#L7) predicates are:
 
@@ -192,9 +369,9 @@ Adds a value matching rule for **primitive type** values to the fetchChain.
 - `equalsNot` {any primitive type}
 - `isType` {String}
 
-## `fetchChain.key(keyString, predicate, comp)`
+## `fetcher.key(keyString, predicate, comp) -> Fetcher`
 
-Adds a key matching rule for **Object type** values to the fetchChain. 
+Adds a key matching rule for **Object type** values to the fetcher. 
 Nested keys can be specified like this: `relatives.father.age`.
 
 [Implemented](https://github.com/lipp/node-jet/blob/master/lib/jet/value_matcher.js#L7)  predicates are:
@@ -205,337 +382,134 @@ Nested keys can be specified like this: `relatives.father.age`.
 - `equalsNot` {any primitive type}
 - `isType` {String}
 
-## `fetchChain.sortByPath()`
+## `fetcher.sortByPath() -> Fetcher`
 
-Adds a sort by path rule to the fetchChain.
+Adds a sort by path rule to the fetcher.
 
-## `fetchChain.sortByValue(type)
+## `fetcher.sortByValue(type) -> Fetcher`
 
-Adds a sort by value for **primitive types** to the fetchChain. Type can be either:
+Adds a sort by value for **primitive types** to the fetcher. Type can be either:
 
 - `number`
 - `string`
 
-## `fetchChain.sortByKey(keyString, type)
+## `fetcher.sortByKey(keyString, type) -> Fetcher`
 
-Adds a sort by key for **Object types** to the fetchChain. Type can be either:
+Adds a sort by key for **Object types** to the fetcher. Type can be either:
 
 - `number`
 - `string`
 
 Nested keys can be specified like this: `relatives.father.age`.
 
-## `fetchChain.range(from, to)`
+## `fetcher.range(from, to) -> Fetcher`
 
-Adds a sort range to the fetchChain. Note that **the first index is 1**. from-to is a closed interval, that
-means `fetchChain.range(1,10)` gives you up to ten matching states/methods.
+Adds a sort range to the fetcher. Note that **the first index is 1**. from-to is a closed interval, that
+means `fetcher.range(1,10)` gives you up to ten matching states/methods.
 
-## `fetchChain.descending()`
+## `fetcher.descending() -> Fetcher`
 
-Adds a sort descending rule to the fetchChain.
+Adds a sort descending rule to the fetcher.
 
-## `fetchChain.ascending()`
+## `fetcher.ascending() -> Fetcher`
 
-Adds a sort ascending rule to the fetchChain.
+Adds a sort ascending rule to the fetcher.
 
-
-## `method = peer.method(desc, [callbacks])`
-
-Creates and returns a Jet Method given the information provided by `desc`.
-The supported `desc` fields are:
-
-- `path`: {String} The unique path of the Method
-- `access`: {Object, Optional} Containing `fetchGroups` and `callGroups`
-- `call`: {Function, Optional} The Function which "executes" the method (synchronous)
-- `callAsync`: {Function, Optional} The Function which "executes" the method
-  (asychronously)
-
-Don't specify `call` and `callAsync` at the same time.
-
-The arguments to the `call` Function are:
-
-- An Object with the forwarded "args" field from of original "call" Request
-- An unpacked Array, if the forwarded "args" of the original "call" Request
-  field was an Array
-
-The `call` method can return anything or throw an Error (String/JSON-RPC error)
-if required.
-
-```javascript
-var greet = peer.method({
-  path: 'greet',
-  access: {
-    fetchGroups: ['public'],
-	callGroups: ['public']
-  },
-  call: function(who) {
-    if (who.first === 'John') {
-      throw 'John is dismissed';
-    }
-    var greet = 'Hello Mr. ' + who.last;
-    console.log(greet);
-    return greet;
-  }
-})
-
-var sum = peer.method({
-  path: `sum`,
-  call: function(a,b,c,d,e) {
-    var sum = a + b +c + d + e;
-    return sum;
-  }
-}, {
-  success: function() {
-    console.log('method added successfully');
-  },
-  error: function(e) {
-    console.log('method adding failed', e);
-  }
-})
-```
-
-The arguments to the `callAsync` Function are:
-
-- `reply`: {Function} Method for sending the result/error.
-- __Either__ An Object with the forwarded "args" field from of original "call" Request
-- __Or__ An unpacked Array, if the forwarded "args" of the original "call" Request
-  field was an Array
-
-The `callAsync` method can return anything or throw an Error (String/JSON-RPC error)
-if required.
-
-```javascript
-var greet = peer.method({
-  path: `greet`,
-  callAsync: function(reply, who) {
-    if (who.first === 'John') {
-      throw 'John is dismissed';
-    }
-    setTimeout(function() {
-      if (allOk) {
-        var greet = 'Hello Mr. ' + who.last;
-        console.log(greet);
-        reply({
-          result: greet
-        });
-      } else {
-        reply({
-          error: 'something went wrong'
-        });
-      }
-    }, 100);
-  }
-})
-```
-
-
-## `state = peer.state(desc, [callbacks])`
-
-Creates and returns a State given the information provided by `desc`.
-The supported `desc` fields are:
-
-- `path`: {String} The unique path of the State
-- `value`: {Any} The initial value of the State
-- `access`: {Object, Optional} Containing `fetchGroups` and `setGroups`
-- `set`: {Function, Optional} The callback Function, that handles State "set"
-  messages (synchronously)
-- `setAsync`: {Function, Optional} The callback Function, that handles State "set"
-  messages (asynchronously)
-
-Don't specify `set` and `setAsync` at the same time. If neither one is provided,
-the State is considered read-only and an appropriate response is replied when
-someone tries to `set` the State.
-
-The argument to the `set` is the requested `newValue`. The function is free to:
-
-- return nothing, a State change is posted automatically with the `newValue`
-- throw an Error, the Error should be a String or an Object with `code` and `message`
-- return on Object with the supported fields:
-  - `value`: {Any, Optional} the "real/adjusted" new value. This is posted as the
-     new value.
-  - `dontNotify`: {Boolean, Optional} Don't auto-send a change Notification
-
-
-```javascript
-var test = peer.state({
-  path: 'test',
-  value: 123,
-  access: {
-    fetchGroups: ['public'],
-	setGroups: ['admin']
-  },
-  set: function(newValue) {
-    if (newValue > 999999){
-      throw 'too big';
-    }
-    setTest(newValue);
-  }
-},{
-  success: function() {
-    console.log('state added successfully');
-  },
-  error: function(e) {
-    console.log('state adding failed', e);
-  }
-});
-
-var testAdjust = peer.state({
-  path: 'testAdjust',
-  value: 123,
-  set: function(newValue) {
-    if (newValue > 999999){
-      throw 'too big';
-    } else if (newValue < 1000) {
-      newValue = 1000; // adjust the request value
-    }
-    setTest(newValue);
-    return {
-      value: newValue
-    };
-  }
-});
-```
-
-The arguments to the `setAsync` is a `reply` Function and the requested `newValue`.
-The Function is free to:
-
-- return nothing, the implementation MUST call the `reply` Function with
-  - `result`: {Truish, Optional} Operation was success
-  - `error`: {String/JSON-RPC Error, Optional} Operation failed
-  - `dontNotify`: {Boolean, Optional} Don't auto-send a change Notification
-- throw an Error, the Error should be a String or an Object with `code` and `message`
-
-The `callbacks` object is optional. When specified, the supported fields are:
-
-- `success`: {Function, Optional} Called, when adding the State to the Daemon was
-  ok
-- `error`: {Function, Optional} Called, when adding the State to the Daemon was not
-  ok
-
-```javascript
-var testAsync = peer.state({
-  path: 'testAsync',
-  value: 123,
-  setAsync: function(reply, newValue) {
-    if (newValue > 999999){
-      throw 'too big';
-    }
-    setTimeout(function() {
-      if (allOk) {
-        setTest(newValue);
-        reply({
-          result: true
-        });
-      } else {
-        reply({
-          error: 'something went wrong'
-        });
-      }
-    },100);
-  }
-});
-
-var testAsyncAdjust = peer.state({
-  path: 'testAsyncAdjust',
-  value: 123,
-  setAsync: function(newValue) {
-    if (newValue > 999999){
-      throw 'too big';
-    }
-    setTimeout(function() {
-      if (allOk) {
-        if (newValue < 1000) {
-          newValue = 1000;
-        }
-        setTest(newValue);
-        reply({
-          result: true,
-          value: newValue
-        });
-      } else {
-        reply({
-          error: 'something went wrong'
-        });
-      }
-    },100);
-  }
-});
-```
-
-## `fetcher.unfetch([callbacks])`
+## `fetcher.unfetch() -> Promise`
 
 Unfetches (removes) the Fetcher. `callbacks` is optional.
 
 ```javascript
 // setup some fetcher
-var fetcher = peer.fetch({},function(){});
+var fetcher = new jet.Fetcher();
 
-// unfetch it
-fetcher.unfetch();
-```
-
-## `state.remove([callbacks])`
-
-Removes the State. `callbacks` is optional.
-
-```javascript
-// create some state
-var state = peer.state({
-  path: 'test',
-  value: 123
-});
-
-// remove it
-state.remove({
-  success: function() {
-    console.log('state is now removed');
-  },
-  error: function(e) {
-    console.log('could not remove state', e);
+fetcher.on('data', function(path, event, value) {
+  if (event === 'remove') {
+    this.unfetch();
   }
 });
 
-// or just
-state.remove();
+peer.fetch(fetcher);
 ```
 
-## `method.remove([callbacks])`
 
-Removes the method. `callbacks` is optional.
+# `jet.Method`
+
+## `new jet.Method(path, [access])`
+
+Creates and returns a Jet Method. To register the Method at the Daemon call `peer.add(method)`.
+
+- `path`: {String} The unique path of the Method
+- `access`: {Object, Optional} Containing `fetchGroups` and `callGroups`
 
 ```javascript
-// create some method
-var method = peer.method({
-  path: 'test',
-  value: 123
+var greet = new jet.Method('greet', {
+    fetchGroups: ['public'],
+	callGroups: ['public']
 });
 
-// remove it
-method.remove({
-  success: function() {
-    console.log('method is now removed');
-  },
-  error: function(e) {
-    console.log('could not remove method', e);
-  }
+peer.add(greet).then(function() {
 });
 ```
 
-## `state.value([newValue])`
+## `method.on('call', cb)`
 
-If `newValue` is `undefined`, returns the current value. Else posts a value
-change Notification that the State's value is now `newValue`.
-Use this for spontaneouos changes of a State which were not initially triggered
-by a `set` or `setAsync` invokation.
+Installs a `call` event handler, which gets executed whenever some peer issues a call request (`peer.call`).
+
+The arguments to the `call` Function are the forwarded "args" field from of original "call" Request.
+Either an Array or an Object.
+
+The `call` method can return anything or throw an Error (String/JSON-RPC error)
+if required.
 
 ```javascript
-var ticker = peer.state({
-  path: 'ticker',
-  value: 1
+greet.on('call', function(who) {
+    if (who.first === 'John') {
+      throw 'John is dismissed';
+    }
+    var greeting = 'Hello Mr. ' + who.last;
+    console.log(greeting);
+    return greeting;
 });
-
-setTimeout(function() {
-  var old = ticker.value();
-  ticker.value(++old);
-},1000);
 ```
+
+To provide an async `call` event handler, provide two arguments to the callback.
+
+- The forwarded args (Array or Object)
+- `reply`: {Function} Method for sending the result/error.
+
+
+```javascript
+greet.on('call', function(who, reply) {
+    if (who.first === 'John') {
+      throw 'John is dismissed';
+    }
+    setTimeout(function() {
+      var greeting = 'Hello Mr. ' + who.last;
+      console.log(greeting);
+      reply({
+        result: greeting
+      });
+    }, 100);
+});
+```
+
+
+The arguments to `reply` can be:
+
+  - `result`: {Truish, Optional} Operation was success
+  - `error`: {String/JSON-RPC Error, Optional} Operation failed
+
+
+## `method.add() -> Promise`
+
+Register the method from the Daemon convenience function. `peer.add(method)` must have been called before to initially bind the method
+to the respective peer!
+
+## `method.remove() -> Promise`
+
+Unregister the method from the Daemon. Is the same as calling `peer.remove(method)`.
+
+
+
+

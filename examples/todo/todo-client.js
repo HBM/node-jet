@@ -72,8 +72,10 @@ document.getElementById('add-button').addEventListener('click', function () {
 	titleInput.value = '';
 });
 
-peer.fetch()
+var todos = new jet.Fetcher()
 	.path('startsWith', 'todo/#')
 	.sortByKey('id', 'number')
 	.range(1, 30)
-	.run(renderTodos);
+	.on('data', renderTodos);
+
+peer.fetch(todos);

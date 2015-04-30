@@ -46,55 +46,49 @@ before(function () {
 
 
 describe('Jet authentication', function () {
-	var peer;
+	var url = 'ws://localhost:' + testWsPort;
 
-	beforeEach(function (done) {
-		peer = new jet.Peer({
-			url: 'ws://localhost:' + testWsPort
+	it('can authenticate with a valid user/password', function (done) {
+		var peer = new jet.Peer({
+			url: url,
+			user: 'John Doe',
+			password: '12345'
 		});
 
-		peer.on('open', function () {
+		peer.connect().then(function () {
+			expect(peer.access).to.deep.equal(users['John Doe'].auth);
+			peer.close();
 			done();
 		});
 	});
 
-	it('can authenticate with a valid user/password', function (done) {
-		peer.authenticate('John Doe', '12345', {
-			success: function (result) {
-				expect(result).to.deep.equal(users['John Doe'].auth);
-				done();
-			},
-			error: function (err) {
-				expect(err).to.be.an('undefined');
-			}
-		});
-	});
-
 	it('cannot authenticate with a valid user and invalid password', function (done) {
-		peer.authenticate('John Doe', 'foo2', {
-			success: function (result) {
-				expect(result).to.be.an('undefined');
-				done();
-			},
-			error: function (err) {
-				expect(err.message).to.equal('Invalid params');
-				expect(err.data).to.equal('invalid password');
-				done();
-			}
+		var peer = new jet.Peer({
+			url: url,
+			user: 'John Doe',
+			password: 'wrongpass'
+		});
+
+		peer.connect().catch(function (err) {
+			expect(err.message).to.equal('Invalid params');
+			expect(err.data).to.equal('invalid password');
+			peer.close();
+			done();
 		});
 	});
 
 	it('cannot authenticate with a invalid user and invalid password', function (done) {
-		peer.authenticate('John Doex', '12345', {
-			success: function (result) {
-				expect(result).to.be.an('undefined');
-				done();
-			},
-			error: function (err) {
-				expect(err.message).to.equal('Invalid params');
-				expect(err.data).to.equal('invalid user');
-				done();
-			}
+		var peer = new jet.Peer({
+			url: url,
+			user: 'foo',
+			password: 'wrongpass'
+		});
+
+		peer.connect().catch(function (err) {
+			expect(err.message).to.equal('Invalid params');
+			expect(err.data).to.equal('invalid user');
+			peer.close();
+			done();
 		});
 	});
 
@@ -102,108 +96,106 @@ describe('Jet authentication', function () {
 
 
 describe('access tests', function () {
-	var peer, peer2;
+	var provider, consumer;
 	var everyoneState, pubApiState, pubAdminState;
+	var url = 'ws://localhost:' + testWsPort;
 
 	beforeEach(function (done) {
-		peer2 = new jet.Peer({
-			url: 'ws://localhost:' + testWsPort
+		provider = new jet.Peer({
+			url: url
 		});
-		peer2.on('open', function () {
+
+		everyoneState = new jet.State('everyone', 333);
+
+		pubAdminState = new jet.State('pub-admin', 123, {
+			fetchGroups: ['public', 'admin'],
+			setGroups: ['admin']
+		});
+		pubAdminState.on('set', jet.State.acceptAny);
+
+
+		pubApiState = new jet.State('pub-api', 234, {
+			fetchGroups: ['public', 'api']
+		});
+
+		var squareMethod = new jet.Method('square', {
+			fetchGroups: [],
+			callGroups: ['admin']
+		});
+		squareMethod.on('call', function (a) {
+			return a * a;
+		});
+
+		jet.Promise.all([
+					provider.connect(),
+					provider.add(everyoneState),
+					provider.add(pubAdminState),
+					provider.add(pubApiState),
+					provider.add(squareMethod)
+			]).then(function () {
 			done();
-		});
+		}).catch(done);
 	});
 
 	afterEach(function () {
-		peer2.close();
-	});
-
-	before(function () {
-		peer = new jet.Peer({
-			url: 'ws://localhost:' + testWsPort
-		});
-
-		pubAdminState = peer.state({
-			path: 'pub-admin',
-			value: 123,
-			set: function () {},
-			access: {
-				fetchGroups: ['public', 'admin'],
-				setGroups: ['admin']
-			}
-		});
-
-		pubApiState = peer.state({
-			path: 'pub-api',
-			value: 234,
-			access: {
-				fetchGroups: ['public', 'api']
-			}
-		});
-
-		everyoneState = peer.state({
-			path: 'everyone',
-			value: 333,
-		});
-
-		peer.method({
-			path: 'square',
-			call: function (a) {
-				return a * a;
-			},
-			access: {
-				fetchGroups: [],
-				callGroups: ['admin']
-			}
-		});
+		consumer.close();
+		provider.close();
 	});
 
 	it('John Doe can fetch everyone, pub-admin and pub-api', function (done) {
-		peer2.authenticate('John Doe', '12345');
-		peer2.fetch({
-			sort: {
-				byPath: true,
-				asArray: true,
-				from: 1,
-				to: 10
-			}
-		}, function (states) {
+		consumer = new jet.Peer({
+			url: url,
+			user: 'John Doe',
+			password: '12345'
+		});
+
+		var all = new jet.Fetcher();
+		all.sortByPath().range(1, 10);
+		all.on('data', function (states) {
 			expect(states[0].path).to.equal('everyone');
 			expect(states[1].path).to.equal('pub-admin');
 			expect(states[2].path).to.equal('pub-api');
 			expect(states).to.has.length(3);
 			done();
 		});
+
+		consumer.connect();
+		consumer.fetch(all);
 	});
 
 	it('Linus can fetch everyone and pub-admin', function (done) {
-		peer2.authenticate('Linus', '12345');
-		peer2.fetch({
-			sort: {
-				byPath: true,
-				asArray: true,
-				from: 1,
-				to: 10
-			}
-		}, function (states) {
+		consumer = new jet.Peer({
+			url: url,
+			user: 'Linus',
+			password: '12345'
+		});
+
+
+		var all = new jet.Fetcher();
+		all.sortByPath().range(1, 10);
+		all.on('data', function (states) {
 			expect(states[0].path).to.equal('everyone');
 			expect(states[1].path).to.equal('pub-admin');
 			expect(states).to.has.length(2);
 			done();
 		});
+
+		consumer.connect();
+		consumer.fetch(all);
 	});
 
 	it('Linus can fetch everyone and pub-admin and gets correct updates', function (done) {
 		var callCount = 0;
-		peer2.authenticate('Linus', '12345');
-		peer2.fetch({
-			sort: {
-				byPath: true,
-				asArray: true,
-				from: 1,
-				to: 10
-			}
-		}, function (states) {
+		consumer = new jet.Peer({
+			url: url,
+			user: 'Linus',
+			password: '12345'
+		});
+
+
+		var all = new jet.Fetcher();
+		all.sortByPath().range(1, 10);
+		all.on('data', function (states) {
 			callCount++;
 			expect(states[0].path).to.equal('everyone');
 			expect(states[1].path).to.equal('pub-admin');
@@ -213,69 +205,90 @@ describe('access tests', function () {
 				expect(states[1].value).to.equal('bar');
 				done();
 			}
-		}, {
-			success: function () {
-				everyoneState.value('foo');
-				pubApiState.value('foo'); // should not trigger fetch callback
-				pubAdminState.value('bar');
-			}
+		});
+
+		jet.Promise.all([
+			consumer.connect(),
+			consumer.fetch(all)
+		]).then(function () {
+			return jet.Promise.all([
+			everyoneState.value('foo'),
+			pubApiState.value('foo'), // should not trigger fetch callback
+			pubAdminState.value('bar')
+		]);
+		}).catch(function (err) {
+			console.log('arg', err);
+			done(err);
 		});
 	});
 
+
 	it('Horst can fetch everyone and not more', function (done) {
-		peer2.authenticate('Horst', '12345');
-		peer2.fetch({
-			sort: {
-				byPath: true,
-				asArray: true,
-				from: 1,
-				to: 10
-			}
-		}, function (states) {
+		consumer = new jet.Peer({
+			url: url,
+			user: 'Horst',
+			password: '12345'
+		});
+
+		var all = new jet.Fetcher().sortByPath().range(1, 10);
+		all.on('data', function (states) {
 			expect(states[0].path).to.equal('everyone');
 			expect(states).to.has.length(1);
 			done();
 		});
+		consumer.fetch(all);
 	});
 
 	it('Linus can set the pub-admin state', function (done) {
-		peer2.authenticate('Linus', '12345');
-		peer2.set('pub-admin', 'master', {
-			valueAsResult: true,
-			success: function (result) {
-				expect(result).to.equal('master');
-				done();
-			}
+		consumer = new jet.Peer({
+			url: url,
+			user: 'Linus',
+			password: '12345'
 		});
+
+		consumer.set('pub-admin', 'master', {
+			valueAsResult: true
+		}).then(function (result) {
+			expect(result).to.equal('master');
+			done();
+		}).catch(done);
 	});
 
 	it('Horst cannot set the pub-admin state', function (done) {
-		peer2.authenticate('Horst', '12345');
-		peer2.set('pub-admin', 'master', {
-			error: function (err) {
-				expect(err.data).to.equal('no access');
-				done();
-			}
+		consumer = new jet.Peer({
+			url: url,
+			user: 'Horst',
+			password: '12345'
+		});
+
+		consumer.set('pub-admin', 'master').catch(function (err) {
+			expect(err.data).to.equal('no access');
+			done();
 		});
 	});
 
 	it('Linus can call the square method', function (done) {
-		peer2.authenticate('Linus', '12345');
-		peer2.call('square', [2], {
-			success: function (result) {
-				expect(result).to.equal(4);
-				done();
-			}
+		consumer = new jet.Peer({
+			url: url,
+			user: 'Linus',
+			password: '12345'
+		});
+		consumer.call('square', [2]).then(function (result) {
+			expect(result).to.equal(4);
+			done();
 		});
 	});
 
 	it('Horst cannot call the square method', function (done) {
-		peer2.authenticate('Horst', '12345');
-		peer2.call('square', [2], {
-			error: function (err) {
-				expect(err.data).to.equal('no access');
-				done();
-			}
+		consumer = new jet.Peer({
+			url: url,
+			user: 'Horst',
+			password: '12345'
+		});
+
+		consumer.call('square', [2]).catch(function (err) {
+			expect(err.data).to.equal('no access');
+			done();
 		});
 	});
 

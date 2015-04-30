@@ -18,11 +18,10 @@ describe('The jet.peer.fetch-chainer module', function () {
 		expect(fc.rule).to.deep.equal({});
 	});
 
-	it('.run(cb) calls peer.fetchCall({}, cb)', function () {
+	it('.run("data", cb) does not throw and is chaining', function () {
 		var cb = function () {};
-		fc.run(cb);
-		expect(fakePeer.fetchCall.callCount).to.equal(1);
-		expect(fakePeer.fetchCall.calledWith(fc.rule, cb)).to.be.true;
+		var ret = fc.on('data', cb);
+		expect(ret).to.equal(fc);
 	});
 
 	it('.path() adds path rules', function () {
@@ -31,6 +30,15 @@ describe('The jet.peer.fetch-chainer module', function () {
 			path: {
 				startsWith: 'foo',
 				endsWith: 'bar'
+			}
+		});
+	});
+
+	it('.pathCaseInsensitive() adds path rules caseInsensitive', function () {
+		fc.pathCaseInsensitive();
+		expect(fc.rule).to.deep.equal({
+			path: {
+				caseInsensitive: true
 			}
 		});
 	});

@@ -10,3 +10,7 @@ coverage
 npm-debug.log
 *.swp
 *.swo
+bundle*
+bundle.*
+
+examples/todo/bundle.js
