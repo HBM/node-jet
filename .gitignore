@@ -12,3 +12,5 @@ npm-debug.log
 *.swo
 bundle*
 bundle.*
+
+examples/todo/bundle.js
