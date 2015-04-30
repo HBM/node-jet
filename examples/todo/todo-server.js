@@ -6,6 +6,7 @@ var http = require('http')
 var serveStatic = require('serve-static')
 
 var port = parseInt(process.argv[2]) || 80;
+var internalPort = 11128;
 
 // Serve this dir as static content 
 var serve = serveStatic('./');
@@ -21,7 +22,8 @@ httpServer.listen(port);
 // Create Jet Daemon
 var daemon = new jet.Daemon();
 daemon.listen({
-	server: httpServer // embed jet websocket upgrade handler
+	server: httpServer, // embed jet websocket upgrade handler
+	tcpPort: internalPort // nodejitsu prevents internal websocket connections
 });
 
 // Declare Todo Class
@@ -45,7 +47,7 @@ Todo.prototype.merge = function (other) {
 
 // Create Jet Peer
 var peer = new jet.Peer({
-	url: 'ws://localhost:' + port
+	port: internalPort
 });
 
 var todoStates = {};
