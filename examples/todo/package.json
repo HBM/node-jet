@@ -12,7 +12,7 @@
   "license": "MIT",
   "dependencies": {
     "finalhandler": "^0.3.4",
-    "node-jet": "^0.2.0",
+    "node-jet": "^0.3.0",
     "serve-static": "^1.9.2"
   },
   "devDependencies": {
