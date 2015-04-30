@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-var jet = require('node-jet');
+var jet = require('../../lib/jet');
 var finalhandler = require('finalhandler')
 var http = require('http')
 var serveStatic = require('serve-static')
@@ -50,40 +50,47 @@ var peer = new jet.Peer({
 
 var todoStates = {};
 
-// Provide a "todo/add" method to create new todos
-peer.method({
-	path: 'todo/add',
-	call: function (title) {
-		var todo = new Todo(title);
 
-		// create a new todo state and store ref.
-		todoStates[todo.id] = peer.state({
-			path: 'todo/#' + todo.id,
-			value: todo,
-			set: function (requestedTodo) {
-				todo.merge(requestedTodo);
-				return {
-					value: todo
-				};
-			}
-		});
-	}
+// Provide a "todo/add" method to create new todos
+var addTodo = new jet.Method('todo/add');
+addTodo.on('call', function (title) {
+	var todo = new Todo(title);
+
+	// create a new todo state and store ref.
+	var todoState = new jet.State('todo/#' + todo.id, todo);
+	todoState.on('set', function (requestedTodo) {
+		todo.merge(requestedTodo);
+		return {
+			value: todo
+		};
+
+	});
+	todoStates[todo.id] = todoState;
+	peer.add(todoState);
 });
 
 
 // Provide a "todo/remove" method to either delete one or all todos
-peer.method({
-	path: 'todo/remove',
-	call: function (todoId) {
-		if (typeof todoId === 'undefined') {
-			for (var id in todos) {
-				todoStates[id].remove();
-				delete todoStates[id];
-			}
-
-		} else {
-			todoStates[todoId].remove();
-			delete todoStates[todoId];
+var removeTodo = new jet.Method('todo/remove');
+removeTodo.on('call', function (todoId) {
+	if (typeof todoId === 'undefined') {
+		for (var id in todos) {
+			todoStates[id].remove();
+			delete todoStates[id];
 		}
+
+	} else {
+		todoStates[todoId].remove();
+		delete todoStates[todoId];
 	}
+});
+
+// connect peer and register methods
+jet.Promise.all([
+	peer.connect(),
+	peer.add(addTodo),
+	peer.add(removeTodo)
+]).then(function () {
+	console.log('todo-server ready');
+	console.log('listening on port', port);
 });
