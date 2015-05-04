@@ -11,6 +11,17 @@ Working simlutaneously means, that multiple users can edit the todo-list
 at the same time and everyone sees each other's changes instantly.
 
 The complete project source is available [here](https://github.com/lipp/node-jet/tree/master/examples/todo).
+To build and run this project run:
+
+```sh
+git clone http://github.com/lipp/node-jet
+cd node-jet/examples/todo
+npm install
+npm run build
+npm start 8090
+```
+
+Open some Browser tabs on [localhost port 8090](http://localhost:8090) and watch realtime changes.
 
 ## What is Jet?
  
