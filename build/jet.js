@@ -3,7 +3,7 @@
  * Export Peer only for browserify
  */
 
-exports = {
+module.exports = {
 	Peer: require('./jet/peer'),
 	State: require('./jet/peer/state'),
 	Method: require('./jet/peer/method'),
