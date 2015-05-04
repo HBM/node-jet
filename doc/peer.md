@@ -10,15 +10,15 @@ var jet = require('node-jet');
 
 The Jet Peer is able to to **consume** content provided by (other) peers:
 
-  - **set** States to new values, see `peer.set`
-  - **call** Methods, see `peer.call`
-  - **fetch** States and Methods as a realtime query, see `jet.Fetcher`
+  - **set** States to new values, see [`peer.set`](https://github.com/lipp/node-jet/blob/master/doc/peer.md#peersetpath-value-options---promise)
+  - **call** Methods, see [`peer.call`](https://github.com/lipp/node-jet/blob/master/doc/peer.md#peercallpath-args-options---promise)
+  - **fetch** States and Methods as a realtime query, see [`jet.Fetcher`](https://github.com/lipp/node-jet/blob/master/doc/peer.md#jetfetcher)
 
 
 The Jet Peer is also able to **create** content:
 
-  - register **States** , see `jet.State`
-  - register **Methods** , see `jet.Method`
+  - register **States** , see [`jet.State`](https://github.com/lipp/node-jet/blob/master/doc/peer.md#jetstate)
+  - register **Methods** , see [`jet.Method`](https://github.com/lipp/node-jet/blob/master/doc/peer.md#jetmethod)
 
 
 ## `jet.Peer([config]) -> peer`
