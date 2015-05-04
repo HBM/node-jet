@@ -1,6 +1,5 @@
 {
   "name": "node-jet",
-  "subdomain": "jet",
   "description": "Jet Realtime Message Bus for the Web. Daemon and Peer implementation.",
   "url": "https://github.com/lipp/node-jet",
   "keywords": [
@@ -37,10 +36,9 @@
   "main": "./lib/jet.js",
   "bin": {
     "jetd.js": "./bin/jetd.js",
-    "fetch.js": "./bin/fetch.js",
-    "some-service.js": "./bin/some-service.js"
+    "fetch.js": "./bin/fetch.js"
   },
-  "version": "0.3.0",
+  "version": "0.3.1",
   "repository": {
     "type": "git",
     "url": "https://github.com/lipp/node-jet"
@@ -49,7 +47,7 @@
   "scripts": {
     "test": "istanbul cover _mocha -- --recursive test",
     "test_nocover": "mocha  test",
-    "start": "./examples/todo/todo-server.js"
+    "start": "./bin/jetd.js"
   },
   "engines": {
     "node": ">0.8.0"
