@@ -10,8 +10,6 @@ module.exports = {
 	Fetcher: require('./jet/peer/fetch-chainer').FetchChainer,
 	Promise: require('bluebird')
 };
-
-
 },{"./jet/peer":8,"./jet/peer/fetch-chainer":9,"./jet/peer/method":12,"./jet/peer/state":13,"bluebird":17}],2:[function(require,module,exports){
 var jetUtils = require('../utils');
 var isDefined = jetUtils.isDefined;
@@ -1494,6 +1492,10 @@ JsonRPC.prototype.service = function (method, params, complete, asNotification) 
 		if (that.willFlush) {
 			that.queue(message);
 		} else {
+			var encoded = encode(message);
+			if (that.config.onSend) {
+				that.config.onSend(encoded, [message]);
+			}
 			that.sock.send(encode(message));
 		}
 		if (asNotification) {
