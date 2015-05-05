@@ -349,6 +349,6 @@ and we are constantly working to improve it.
 
 If you want to read more, checkout the [Jet Homepage](http://jetbus.io) or the github repositories:
 
-   - [Node.js + Browser](http://github.com/lipp/node-jet)
-   - [Lua](http://github.com/lipp/lua-jet)
-   - [Arduino](https://github.com/lipp/Arduino-Jet)
+   - [Jet for Node.js + Browser](http://github.com/lipp/node-jet)
+   - [Jet for Lua](http://github.com/lipp/lua-jet)
+   - [Jet for Arduino](https://github.com/lipp/Arduino-Jet)
