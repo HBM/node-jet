@@ -240,22 +240,15 @@ addTodo.on('call', function (title) {
 });
 ```
 
-To be able to delete a Todo, I will implement **todo/remove**. If no Todo ID is provided, the Method will delete all Todos at once:
+To be able to delete a Todo, I will implement **todo/remove**, which removes
+the todo with the specified id.
 
 ```javascript
 var removeTodo = new jet.Method('todo/remove');
 
 removeTodo.on('call', function (todoId) {
-	if (typeof todoId === 'undefined') {
-		for (var id in todos) {
-			todoStates[id].remove();
-			delete todoStates[id];
-		}
-
-	} else {
-		todoStates[todoId].remove();
-		delete todoStates[todoId];
-	}
+	todoStates[todoId].remove();
+	delete todoStates[todoId];
 });
 ```
 
