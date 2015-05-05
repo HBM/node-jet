@@ -1,3 +1,7 @@
+/*
+ * Jet client-server communications:
+ */
+
 var jet = require('node-jet');
 
 var peer = new jet.Peer({
@@ -12,10 +16,6 @@ var removeTodo = function (id) {
 	peer.call('todo/remove', [id]);
 };
 
-var removeAllTodos = function () {
-	peer.call('todo/remove', []);
-};
-
 var setTodoTitle = function (id, title) {
 	peer.set('todo/#' + id, {
 		title: title
@@ -28,54 +28,103 @@ var setTodoCompleted = function (id, completed) {
 	});
 };
 
-var renderTodo = function (todo) {
-	var container = document.createElement('div');
-
-	var input = document.createElement('input');
-	input.type = 'text';
-	input.value = todo.value.title;
-
-	var changeButton = document.createElement('input');
-	changeButton.type = 'button';
-	changeButton.value = 'change title';
-	changeButton.addEventListener('click', function () {
-		setTodoTitle(todo.value.id, input.value);
+var todos = new jet.Fetcher()
+	.path('startsWith', 'todo/#')
+	.sortByKey('id', 'number')
+	.range(1, 30)
+	.on('data', function (todos) {
+		renderTodos(todos);
 	});
 
-	var completedCheckbox = document.createElement('input');
-	completedCheckbox.type = 'checkbox';
-	completedCheckbox.checked = todo.value.completed;
-	completedCheckbox.addEventListener('click', function () {
+peer.fetch(todos);
+
+/*
+ * GUI Logic: 
+ */
+
+var renderTodo = function (todo) {
+	var container = document.createElement('li');
+	if (todo.value.completed) {
+		container.className = 'completed';
+	}
+	var view = document.createElement('div');
+	var toggleCompleted = document.createElement('input');
+	toggleCompleted.type = 'checkbox';
+	toggleCompleted.className = 'toggle';
+	toggleCompleted.checked = todo.value.completed;
+	toggleCompleted.addEventListener('change', function () {
 		setTodoCompleted(todo.value.id, !todo.value.completed);
 	});
+	view.appendChild(toggleCompleted);
 
-	container.appendChild(input);
-	container.appendChild(changeButton);
-	container.appendChild(completedCheckbox);
+	var title = document.createElement('label');
+	title.innerHTML = todo.value.title;
+	view.appendChild(title);
+
+	var removeButton = document.createElement('button');
+	removeButton.className = 'destroy';
+	removeButton.addEventListener('click', function () {
+		removeTodo(todo.value.id);
+	});
+	view.appendChild(removeButton);
+
+
+	container.appendChild(view);
 
 	return container;
 };
 
+var getCompleted;
+var getUncompleted;
+
 var renderTodos = function (todos) {
-	var root = document.getElementById('todos');
+	var root = document.getElementById('todo-list');
 	while (root.firstChild) {
 		root.removeChild(root.firstChild);
 	}
 	todos.forEach(function (todo) {
 		root.appendChild(renderTodo(todo));
 	});
+
+	getCompleted = function () {
+		return todos.filter(function (todo) {
+			return todo.value.completed === true;
+		});
+	};
+
+	getUncompleted = function () {
+		return todos.filter(function (todo) {
+			return todo.value.completed === false;
+		});
+	};
+
+	var itemsLeft = document.getElementById('todo-count');
+	itemsLeft.innerHTML = '' + getUncompleted().length + ' left';
+
 };
 
-document.getElementById('add-button').addEventListener('click', function () {
-	var titleInput = document.getElementById('title-input');
-	addTodo(titleInput.value);
-	titleInput.value = '';
+document.getElementById('clear-completed').addEventListener('click', function () {
+	getCompleted().forEach(function (todo) {
+		removeTodo(todo.value.id);
+	});
 });
 
-var todos = new jet.Fetcher()
-	.path('startsWith', 'todo/#')
-	.sortByKey('id', 'number')
-	.range(1, 30)
-	.on('data', renderTodos);
+document.getElementById('toggle-all').addEventListener('click', function () {
+	var uncompleted = getUncompleted();
+	if (uncompleted.length > 0) {
+		uncompleted.forEach(function (todo) {
+			setTodoCompleted(todo.value.id, true);
+		});
+	} else {
+		getCompleted().forEach(function (todo) {
+			setTodoCompleted(todo.value.id, false);
+		});
+	}
+});
 
-peer.fetch(todos);
+document.getElementById('todo-form').addEventListener('submit', function (event) {
+	var titleInput = document.getElementById('new-todo');
+	addTodo(titleInput.value);
+	titleInput.value = '';
+	event.preventDefault();
+});
