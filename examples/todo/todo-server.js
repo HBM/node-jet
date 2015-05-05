@@ -72,19 +72,11 @@ addTodo.on('call', function (title) {
 });
 
 
-// Provide a "todo/remove" method to either delete one or all todos
+// Provide a "todo/remove" method to delete a certain todo
 var removeTodo = new jet.Method('todo/remove');
 removeTodo.on('call', function (todoId) {
-	if (typeof todoId === 'undefined') {
-		for (var id in todos) {
-			todoStates[id].remove();
-			delete todoStates[id];
-		}
-
-	} else {
-		todoStates[todoId].remove();
-		delete todoStates[todoId];
-	}
+	todoStates[todoId].remove();
+	delete todoStates[todoId];
 });
 
 // connect peer and register methods
