@@ -23,6 +23,10 @@ npm start 8090
 
 Open some Browser tabs on [localhost port 8090](http://localhost:8090) and watch realtime changes.
 
+If everything works fine, you should see something like this:
+
+<iframe width="100%" height="800px" style="border: none" src="http://jetbus.io:8080"></iframe>
+
 ## What is Jet?
  
 In many ways Jet is similar to [Pusher](http://pusher.com) or [Firebase](http://firebase.com) as it
