@@ -73,7 +73,7 @@ describe('Jet module', function () {
 			expect(daemonInfo.version).to.be.a('string');
 			expect(daemonInfo.protocolVersion).to.equal(2);
 			expect(daemonInfo.features.fetch).to.equal('full');
-			expect(daemonInfo.features.authentication).to.equal(false);
+			expect(daemonInfo.features.authentication).to.equal(true);
 			expect(daemonInfo.features.batches).to.equal(true);
 			peer.close();
 			done();
