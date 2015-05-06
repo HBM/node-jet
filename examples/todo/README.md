@@ -47,9 +47,9 @@ Node.js based webserver.
 Realtime filtering and sorting can save you a lot of bandwidth. Imagine you have records of 5000 players, but you
 want to display only the ten female players with the highest score: **Jet only transmits the relevant data** (10 records!)
 and updates in realtime.
-You don't have to transmit all players over the wire and filter them on the client.
+You don't have to transmit all players over the wire and filter them at the client.
 
-In fact, Jet is more than a Node.js framework. It is an open protocol with compatible implementations for
+In fact, Jet is more than a Javascript framework for realtime communication. It is an open protocol with compatible implementations for
 
    - [Node.js + Browser](http://github.com/lipp/node-jet)
    - [Lua](http://github.com/lipp/lua-jet)
@@ -78,12 +78,11 @@ Subsequently I will create these files:
 
 ## The webserver
 
-The todo-server.js will provide a webserver for serving static files and Jet Daemon
-for routing. A Jet Peer will finally add the Todo-App logic be providing means for:
+The todo-server.js will provide a webserver for serving static files and Jet Daemon as communication center. A Jet Peer will finally add the Todo-App logic be providing means for:
 
-   - create/delete single Todos
+   - create Todos
+   - delete Todos
    - let Todos change
-   - delete all Todos at once
 
 
 ### Static file server and Jet Daemon
@@ -112,7 +111,7 @@ daemon.listen({
 ```
 
 The Jet [Daemon](https://github.com/lipp/node-jet/blob/master/doc/daemon.md) uses Websockets 
-for communication and is hooked up into the webserver so that
+for communication and is hooked up to the webserver so that
 both listen on the same port. If required, the Daemon may run on a different port or even on another
 machine.
 
@@ -182,13 +181,14 @@ appropriate inside the set callback, like:
 
    - interpolating the requested value (partial changes)
    - custom validation
-   - adapting the request value
+   - adapting the requested value
 
-No matter what you do, all Peers will have the correct value of the State and **stay in sync**. 
+No matter what you do, all Peers will have the actual value of the State and **stay in sync**. 
  
 ### Implement the Todo-Service Peer
 
-The following implementation also goes into the todo-server.js file.
+The following implementation also goes to the todo-server.js file. To group the Todo-App functionality
+in a "namespace" I prefix all State and Method paths with "todo/". 
 
 Create a Peer which connects to the local Daemon, an Object to store all Todo States and a simple Todo class.
 
@@ -244,8 +244,7 @@ addTodo.on('call', function (title) {
 });
 ```
 
-To be able to delete a Todo, I will implement **todo/remove**, which removes
-the todo with the specified id.
+The **todo/remove** Method will remove the Todo with specified id.
 
 ```javascript
 var removeTodo = new jet.Method('todo/remove');
