@@ -25,7 +25,7 @@ Open some Browser tabs on [localhost port 8090](http://localhost:8090) and watch
 
 If everything works fine, you should see something like this:
 
-<iframe width="100%" height="800px" style="border: none" src="http://jetbus.io:8080"></iframe>
+[![Jet Todo-App](./jet-todo.png)](http://jetbus.io:8080)
 
 ## What is Jet?
  
