@@ -74,7 +74,7 @@ peer.set('person/#123', {name: 'Jose', age: 33});
 
 Read the [Todo-App Tutorial](https://github.com/lipp/node-jet/tree/master/examples/todo/README.md) for building this simple collaborative realtime app:
 
-<iframe width="100%" height="800px" style="border: none" src="http://jetbus.io:8080"></iframe>
+[![Jet Todo-App](./jet-todo.png)](http://jetbus.io:8080)
 
 # Install
 
