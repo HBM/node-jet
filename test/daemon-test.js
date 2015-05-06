@@ -79,11 +79,11 @@ describe('A Daemon', function () {
 
 		commandRequestTest(testPort, 'info', {}, function (result) {
 			expect(result.name).to.equal('node-jet');
-			expect(result.version).to.equal('0.2.3');
+			expect(result.version).to.equal('0.3.4');
 			expect(result.protocolVersion).to.equal(2);
 			expect(result.features.fetch).to.equal('full');
 			expect(result.features.batches).to.be.true;
-			expect(result.features.authentication).to.be.false;
+			expect(result.features.authentication).to.be.true;
 		});
 
 		commandRequestTest(testPort, 'authenticate', {
@@ -222,11 +222,11 @@ describe('A Daemon with simple fetching', function () {
 
 		commandRequestTest(testPort + 1, 'info', {}, function (result) {
 			expect(result.name).to.equal('simple-jet');
-			expect(result.version).to.equal('0.2.3');
+			expect(result.version).to.equal('0.3.4');
 			expect(result.protocolVersion).to.equal(2);
 			expect(result.features.fetch).to.equal('simple');
 			expect(result.features.batches).to.be.true;
-			expect(result.features.authentication).to.be.false;
+			expect(result.features.authentication).to.be.true;
 		});
 	});
 });
