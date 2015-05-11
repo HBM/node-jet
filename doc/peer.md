@@ -46,9 +46,9 @@ var peer = new jet.Peer({
   url: 'ws://jet.nodejitsu.com:80'
 });
 
-peer.connect().then() {
-    console.log('connection to Daemon established');
-    console.log('Daemon Info: ', peer.daemonInfo);
+peer.connect().then(function() {
+  console.log('connection to Daemon established');
+  console.log('Daemon Info: ', peer.daemonInfo);
 });
 ```
 
