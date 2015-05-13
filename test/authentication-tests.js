@@ -105,7 +105,10 @@ describe('access tests', function () {
 			url: url
 		});
 
-		everyoneState = new jet.State('everyone', 333);
+		everyoneState = new jet.State('everyone', 333, {
+			setGroups: ['admin']
+		});
+		everyoneState.on('set', jet.State.acceptAny);
 
 		pubAdminState = new jet.State('pub-admin', 123, {
 			fetchGroups: ['public', 'admin'],
@@ -217,7 +220,6 @@ describe('access tests', function () {
 			pubAdminState.value('bar')
 		]);
 		}).catch(function (err) {
-			console.log('arg', err);
 			done(err);
 		});
 	});
@@ -261,7 +263,20 @@ describe('access tests', function () {
 			password: '12345'
 		});
 
-		consumer.set('pub-admin', 'master').catch(function (err) {
+		consumer.set('pub-admin', ['master']).catch(function (err) {
+			expect(err.data).to.equal('no access');
+			done();
+		});
+	});
+
+	it('Horst cannot set the everybody state', function (done) {
+		consumer = new jet.Peer({
+			url: url,
+			user: 'Horst',
+			password: '12345'
+		});
+
+		consumer.set('everyone', [532]).catch(function (err) {
 			expect(err.data).to.equal('no access');
 			done();
 		});
@@ -275,6 +290,20 @@ describe('access tests', function () {
 		});
 		consumer.call('square', [2]).then(function (result) {
 			expect(result).to.equal(4);
+			done();
+		});
+	});
+
+	it('Linus can set the everyone state', function (done) {
+		consumer = new jet.Peer({
+			url: url,
+			user: 'Linus',
+			password: '12345'
+		});
+		consumer.set('everyone', 334).then(function () {
+			done();
+		}).catch(function (err) {
+			console.log(err);
 			done();
 		});
 	});
