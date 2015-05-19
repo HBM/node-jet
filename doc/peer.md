@@ -307,7 +307,7 @@ Register the fetcher instance with a call to `peer.fetch(fetcher)`.
 ## `fetcher.on('data', fetchCb) -> Fetcher`
 
 Installs a callback handler for the `data` event. 
-The `fetchCb` arguments for non-sorting fetches are:
+The `fetchCb` argument for non-sorting fetches is an Object with:
 
 - `path`: {String} The path of the State / Method which triggered the Fetch Notification
 - `event`: {String} The event which triggered the Fetch Notification ('add', 'remove',
@@ -317,7 +317,8 @@ The `fetchCb` arguments for non-sorting fetches are:
 ```javascript
 var movies = new Fetcher()
   .path('startsWith', 'movies')
-  .on('data', function(path, event, value) {
+  .on('data', function(data) {
+    console.log(data.path, data.event, data.value);
   });
 
 peer.fetch(movies);
