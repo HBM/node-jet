@@ -115,9 +115,21 @@ var portBase = 4345;
 
 								setTimeout(function () {
 									expect(fetchSpy.callCount).to.equal(3);
-									expect(fetchSpy.calledWith('abc', 'add', 1)).to.be.true;
-									expect(fetchSpy.calledWith('aXXX', 'add', 3)).to.be.true;
-									expect(fetchSpy.calledWith('aXXX', 'remove', 3)).to.be.true;
+									expect(fetchSpy.calledWith({
+										path: 'abc',
+										event: 'add',
+										value: 1
+									})).to.be.true;
+									expect(fetchSpy.calledWith({
+										path: 'aXXX',
+										event: 'add',
+										value: 3
+									})).to.be.true;
+									expect(fetchSpy.calledWith({
+										path: 'aXXX',
+										event: 'remove',
+										value: 3
+									})).to.be.true;
 									fetcher.unfetch().then(function () {
 										done();
 									});
@@ -145,8 +157,16 @@ var portBase = 4345;
 
 					setTimeout(function () {
 						expect(fetchSpy.callCount).to.equal(2);
-						expect(fetchSpy.calledWith('abc', 'add', 1)).to.be.true;
-						expect(fetchSpy.calledWith('abc', 'change', 2)).to.be.true;
+						expect(fetchSpy.calledWith({
+							path: 'abc',
+							event: 'add',
+							value: 1
+						})).to.be.true;
+						expect(fetchSpy.calledWith({
+							path: 'abc',
+							event: 'change',
+							value: 2
+						})).to.be.true;
 						fetcher.unfetch().then(function () {
 							done();
 						});
@@ -182,8 +202,16 @@ var portBase = 4345;
 
 					setTimeout(function () {
 						expect(fetchSpy.callCount).to.equal(2);
-						expect(fetchSpy.calledWith('abc', 'add', 1)).to.be.true;
-						expect(fetchSpy.calledWith('Aa', 'add', 2)).to.be.true;
+						expect(fetchSpy.calledWith({
+							path: 'abc',
+							event: 'add',
+							value: 1
+						})).to.be.true;
+						expect(fetchSpy.calledWith({
+							path: 'Aa',
+							event: 'add',
+							value: 2
+						})).to.be.true;
 						fetcher.unfetch().then(function () {
 							done();
 						});
@@ -226,10 +254,26 @@ var portBase = 4345;
 
 					setTimeout(function () {
 						expect(fetchSpy.callCount).to.equal(4);
-						expect(fetchSpy.calledWith('Aa', 'add', 2)).to.be.true;
-						expect(fetchSpy.calledWith('abc', 'add', 1)).to.be.true;
-						expect(fetchSpy.calledWith('aXXX', 'add', 3)).to.be.true;
-						expect(fetchSpy.calledWith('aXXX', 'remove', 3)).to.be.true;
+						expect(fetchSpy.calledWith({
+							path: 'Aa',
+							event: 'add',
+							value: 2
+						})).to.be.true;
+						expect(fetchSpy.calledWith({
+							path: 'abc',
+							event: 'add',
+							value: 1
+						})).to.be.true;
+						expect(fetchSpy.calledWith({
+							path: 'aXXX',
+							event: 'add',
+							value: 3
+						})).to.be.true;
+						expect(fetchSpy.calledWith({
+							path: 'aXXX',
+							event: 'remove',
+							value: 3
+						})).to.be.true;
 						fetcher.unfetch().then(function () {
 							done();
 						});
@@ -264,8 +308,16 @@ var portBase = 4345;
 
 					setTimeout(function () {
 						expect(fetchSpy.callCount).to.equal(2);
-						expect(fetchSpy.calledWith('Abcd', 'add', 2)).to.be.true;
-						expect(fetchSpy.calledWith('abc', 'add', 1)).to.be.true;
+						expect(fetchSpy.calledWith({
+							path: 'Abcd',
+							event: 'add',
+							value: 2
+						})).to.be.true;
+						expect(fetchSpy.calledWith({
+							path: 'abc',
+							event: 'add',
+							value: 1
+						})).to.be.true;
 						fetcher.unfetch().then(function () {
 							done();
 						});
@@ -295,7 +347,11 @@ var portBase = 4345;
 					peer.fetch(fetcher);
 					setTimeout(function () {
 						expect(fetchSpy.callCount).to.equal(1);
-						expect(fetchSpy.calledWith('abc', 'add', 1)).to.be.true;
+						expect(fetchSpy.calledWith({
+							path: 'abc',
+							event: 'add',
+							value: 1
+						})).to.be.true;
 						fetcher.unfetch().then(function () {
 							done();
 						});
@@ -324,7 +380,11 @@ var portBase = 4345;
 					peer.fetch(fetcher);
 					setTimeout(function () {
 						expect(fetchSpy.callCount).to.equal(1);
-						expect(fetchSpy.calledWith('Abcd', 'add', 2)).to.be.true;
+						expect(fetchSpy.calledWith({
+							path: 'Abcd',
+							event: 'add',
+							value: 2
+						})).to.be.true;
 						fetcher.unfetch().then(function () {
 							done();
 						});
@@ -358,8 +418,16 @@ var portBase = 4345;
 					peer.fetch(fetcher);
 					setTimeout(function () {
 						expect(fetchSpy.callCount).to.equal(2);
-						expect(fetchSpy.calledWith('Abcd', 'add', 2)).to.be.true;
-						expect(fetchSpy.calledWith('abc', 'add', 1)).to.be.true;
+						expect(fetchSpy.calledWith({
+							path: 'Abcd',
+							event: 'add',
+							value: 2
+						})).to.be.true;
+						expect(fetchSpy.calledWith({
+							path: 'abc',
+							event: 'add',
+							value: 1
+						})).to.be.true;
 						fetcher.unfetch().then(function () {
 							done();
 						});
@@ -398,8 +466,16 @@ var portBase = 4345;
 					peer.fetch(fetcher);
 					setTimeout(function () {
 						expect(fetchSpy.callCount).to.equal(2);
-						expect(fetchSpy.calledWith('1Abcd', 'add', 2)).to.be.true;
-						expect(fetchSpy.calledWith('1abc', 'add', 1)).to.be.true;
+						expect(fetchSpy.calledWith({
+							path: '1Abcd',
+							event: 'add',
+							value: 2
+						})).to.be.true;
+						expect(fetchSpy.calledWith({
+							path: '1abc',
+							event: 'add',
+							value: 1
+						})).to.be.true;
 						fetcher.unfetch().then(function () {
 							done();
 						});
@@ -445,7 +521,11 @@ var portBase = 4345;
 					peer.fetch(fetcher);
 					setTimeout(function () {
 						expect(fetchSpy.callCount).to.equal(1);
-						expect(fetchSpy.calledWith('a', 'add', 1)).to.be.true;
+						expect(fetchSpy.calledWith({
+							path: 'a',
+							event: 'add',
+							value: 1
+						})).to.be.true;
 						fetcher.unfetch().then(function () {
 							done();
 						});
@@ -478,7 +558,11 @@ var portBase = 4345;
 
 					setTimeout(function () {
 						expect(fetchSpy.callCount).to.equal(1);
-						expect(fetchSpy.calledWith('a', 'add', 3)).to.be.true;
+						expect(fetchSpy.calledWith({
+							path: 'a',
+							event: 'add',
+							value: 3
+						})).to.be.true;
 						fetcher.unfetch().then(function () {
 							done();
 						});
@@ -511,7 +595,11 @@ var portBase = 4345;
 
 					setTimeout(function () {
 						expect(fetchSpy.callCount).to.equal(1);
-						expect(fetchSpy.calledWith('b', 'add', 2)).to.be.true;
+						expect(fetchSpy.calledWith({
+							path: 'b',
+							event: 'add',
+							value: 2
+						})).to.be.true;
 						fetcher.unfetch().then(function () {
 							done();
 						});
@@ -544,7 +632,11 @@ var portBase = 4345;
 
 					setTimeout(function () {
 						expect(fetchSpy.callCount).to.equal(1);
-						expect(fetchSpy.calledWith('b', 'add', '1')).to.be.true;
+						expect(fetchSpy.calledWith({
+							path: 'b',
+							event: 'add',
+							value: '1'
+						})).to.be.true;
 						fetcher.unfetch().then(function () {
 							done();
 						});
@@ -573,16 +665,18 @@ var portBase = 4345;
 
 			it('equals', function (done) {
 
+				var john = {
+					age: 35,
+					name: 'John',
+					parents: {
+						mom: 'Liz',
+						dad: 'Paul'
+					}
+				};
+
 				states.push({
 					path: 'a',
-					value: {
-						age: 35,
-						name: 'John',
-						parents: {
-							mom: 'Liz',
-							dad: 'Paul'
-						}
-					}
+					value: john
 				});
 
 				states.push({
@@ -613,7 +707,11 @@ var portBase = 4345;
 
 					setTimeout(function () {
 						expect(fetchSpy.callCount).to.equal(1);
-						expect(fetchSpy.calledWith('a', 'add')).to.be.true;
+						expect(fetchSpy.calledWith({
+							path: 'a',
+							event: 'add',
+							value: john
+						})).to.be.true;
 						fetcher.unfetch().then(function () {
 							done();
 						});
@@ -623,19 +721,19 @@ var portBase = 4345;
 			});
 
 			it('greaterThan', function (done) {
+				var john = {
+					age: 35,
+					name: 'John',
+					parents: {
+						mom: 'Liz',
+						dad: 'Paul'
+					}
+				};
 
 				states.push({
 					path: 'a',
-					value: {
-						age: 35,
-						name: 'John',
-						parents: {
-							mom: 'Liz',
-							dad: 'Paul'
-						}
-					}
+					value: john
 				});
-
 
 				states.push({
 					path: 'b',
@@ -666,7 +764,11 @@ var portBase = 4345;
 
 					setTimeout(function () {
 						expect(fetchSpy.callCount).to.equal(1);
-						expect(fetchSpy.calledWith('a', 'add')).to.be.true;
+						expect(fetchSpy.calledWith({
+							path: 'a',
+							event: 'add',
+							value: john
+						})).to.be.true;
 						states[1].value({
 							name: 'Nick',
 							age: 32,
@@ -675,9 +777,14 @@ var portBase = 4345;
 								dad: 'Paul'
 							}
 						});
+						var nick = states[1].value();
 						setTimeout(function () {
 							expect(fetchSpy.callCount).to.equal(2);
-							expect(fetchSpy.calledWith('b', 'add')).to.be.true;
+							expect(fetchSpy.calledWith({
+								path: 'b',
+								event: 'add',
+								value: nick
+							})).to.be.true;
 							fetcher.unfetch().then(function () {
 								done();
 							});
@@ -690,16 +797,18 @@ var portBase = 4345;
 
 			it('equals and lessThan', function (done) {
 
+				var john = {
+					age: 35,
+					name: 'John',
+					parents: {
+						mom: 'Liz',
+						dad: 'Paul'
+					}
+				};
+
 				states.push({
 					path: 'a',
-					value: {
-						age: 35,
-						name: 'John',
-						parents: {
-							mom: 'Liz',
-							dad: 'Paul'
-						}
-					}
+					value: john
 				});
 
 				states.push({
@@ -745,7 +854,11 @@ var portBase = 4345;
 
 					setTimeout(function () {
 						expect(fetchSpy.callCount).to.equal(1);
-						expect(fetchSpy.calledWith('a', 'add')).to.be.true;
+						expect(fetchSpy.calledWith({
+							path: 'a',
+							event: 'add',
+							value: john
+						})).to.be.true;
 						fetcher.unfetch().then(function () {
 							done();
 						});
@@ -834,7 +947,9 @@ var portBase = 4345;
 						.range(11, 13)
 						.differential()
 						.on('data', fetchSpy);
+
 					peer.fetch(fetcher);
+
 					setTimeout(function () {
 						var expectedChanges = [];
 						for (var i = 20; i < 23; ++i) {
@@ -1302,7 +1417,11 @@ var portBase = 4345;
 
 					setTimeout(function () {
 						expect(fetchSpy.callCount).to.equal(1);
-						expect(fetchSpy.calledWith('abc', 'add', 1)).to.be.true;
+						expect(fetchSpy.calledWith({
+							path: 'abc',
+							event: 'add',
+							value: 1
+						})).to.be.true;
 						fetcher.unfetch();
 						done();
 					}, waitTime);
@@ -1337,7 +1456,11 @@ var portBase = 4345;
 
 					setTimeout(function () {
 						expect(fetchSpy.callCount).to.equal(1);
-						expect(fetchSpy.calledWith('abc', 'add', 1)).to.be.true;
+						expect(fetchSpy.calledWith({
+							path: 'abc',
+							event: 'add',
+							value: 1
+						})).to.be.true;
 						fetcher.unfetch();
 						done();
 					}, waitTime);

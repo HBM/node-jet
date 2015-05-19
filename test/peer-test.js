@@ -144,10 +144,10 @@ describe('Jet module', function () {
 
 			var fetcher = new jet.Fetcher();
 			fetcher.path('contains', random);
-			fetcher.on('data', function (path, event, value) {
-				expect(path).to.equal(random);
-				expect(event).to.equal('add');
-				expect(value).to.equal(123);
+			fetcher.on('data', function (data) {
+				expect(data.path).to.equal(random);
+				expect(data.event).to.equal('add');
+				expect(data.value).to.equal(123);
 				jet.Promise.all([
 					this.unfetch(),
 					peer.set(random, 876).then(function () {
@@ -237,10 +237,10 @@ describe('Jet module', function () {
 			});
 
 			var fetcher = new jet.Fetcher().path('contains', random);
-			fetcher.on('data', function (path, event, value) {
-				expect(path).to.equal(random);
-				expect(event).to.equal('add');
-				expect(value).to.equal(123);
+			fetcher.on('data', function (data) {
+				expect(data.path).to.equal(random);
+				expect(data.event).to.equal('add');
+				expect(data.value).to.equal(123);
 				peer.set(random, 876).then(function () {
 					done();
 				}).catch(function (err) {
@@ -337,8 +337,8 @@ describe('Jet module', function () {
 			var random = randomPath();
 			var state = new jet.State(random, 'asd');
 			var fetcher = new jet.Fetcher().path('equals', random);
-			fetcher.on('data', function (path, event, value) {
-				expect(value).to.equal('asd');
+			fetcher.on('data', function (data) {
+				expect(data.value).to.equal('asd');
 				done();
 			});
 
@@ -361,8 +361,8 @@ describe('Jet module', function () {
 				state.value(123);
 				state.add().then(function () {
 					var fetcher = new jet.Fetcher().path('equals', random);
-					fetcher.on('data', function (path, event, value) {
-						expect(value).to.equal(123);
+					fetcher.on('data', function (data) {
+						expect(data.value).to.equal(123);
 						done();
 					});
 					peer.fetch(fetcher);
@@ -375,9 +375,9 @@ describe('Jet module', function () {
 			var random = randomPath();
 			var state = new jet.State(random, 675);
 			var fetcher = new jet.Fetcher().path('contains', random);
-			fetcher.on('data', function (path, event, value) {
-				if (event === 'change') {
-					expect(value).to.equal('foobarX');
+			fetcher.on('data', function (data) {
+				if (data.event === 'change') {
+					expect(data.value).to.equal('foobarX');
 					expect(state.value()).to.equal('foobarX');
 					done();
 				}
