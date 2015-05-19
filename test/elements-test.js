@@ -25,7 +25,12 @@ describe('The jet.element module', function () {
 
 
 	it('elements.add', function () {
-		elements.add(fetchIterator, fakePeer, 'asd', 123);
+		var state = {
+			path: 'asd',
+			value: 123,
+			readOnly: true
+		};
+		elements.add(fetchIterator, fakePeer, state);
 		expect(elements.get('asd')).to.be.an.instanceof(element.Element);
 	});
 
