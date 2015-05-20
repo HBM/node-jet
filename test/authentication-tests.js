@@ -282,6 +282,42 @@ describe('access tests', function () {
 		});
 	});
 
+	it('John Doe can fetch the pub-admin state which is marked readOnly (for him)', function (done) {
+		consumer = new jet.Peer({
+			url: url,
+			user: 'John Doe',
+			password: '12345'
+		});
+
+		var fetcher = new jet.Fetcher()
+			.path('equals', 'pub-admin')
+			.on('data', function (data) {
+				expect(data.path).to.equal('pub-admin');
+				expect(data.readOnly).to.be.true;
+				done();
+			});
+
+		consumer.fetch(fetcher);
+	});
+
+	it('Linus can fetch the pub-admin state which is NOT marked readOnly (for him)', function (done) {
+		consumer = new jet.Peer({
+			url: url,
+			user: 'Linus',
+			password: '12345'
+		});
+
+		var fetcher = new jet.Fetcher()
+			.path('equals', 'pub-admin')
+			.on('data', function (data) {
+				expect(data.path).to.equal('pub-admin');
+				expect(!data.readOnly).to.be.true;
+				done();
+			});
+
+		consumer.fetch(fetcher);
+	});
+
 	it('Linus can call the square method', function (done) {
 		consumer = new jet.Peer({
 			url: url,
