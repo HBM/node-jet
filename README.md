@@ -6,6 +6,12 @@ This is [Jet](http://jetbus.io/) for Javasript. Jet is the hybrid of an **In-Mem
 
 # Synopsis
 
+## Start a Daemon:
+
+```sh
+$ jetd.js
+```
+
 ## Provide Content:
 
 ```javascript
