@@ -30,6 +30,7 @@
   },
   "dependencies": {
     "bluebird": "^2.9.24",
+    "optimist": "^0.6.1",
     "uuid": "~2.0.1",
     "ws": "^0.7.1"
   },
