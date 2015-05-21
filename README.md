@@ -48,16 +48,20 @@ setInterval(function() {
 
 ```javascript
 // fetch/query content
-var persons = new jet.Fetcher()
+var youngestPersons = new jet.Fetcher()
   .path('startsWith', 'persons/')
-  .on('data', function(path, event, value) {
-    ...  // events can be 'add', 'change', 'remove'
+  .sortByKey('age', 'number')
+  .ascending()
+  .range(1, 20)
+  .on('data', function(persons) {
+    console.log(persons);
   });
 
-peer.fetch(persons);
+peer.fetch(youngestPersons);
 
 // call methods
-peer.call('greet', ['Steve']).then(function(greeting) {
+peer.call('greet', ['Steve']).then(function(response) {
+  console.log(response);
 });
 
 // set states
