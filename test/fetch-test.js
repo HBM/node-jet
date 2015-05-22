@@ -119,13 +119,13 @@ var portBase = 4345;
 										path: 'abc',
 										event: 'add',
 										value: 1,
-										readOnly: true
+										fetchOnly: true
 									})).to.be.true;
 									expect(fetchSpy.calledWith({
 										path: 'aXXX',
 										event: 'add',
 										value: 3,
-										readOnly: true
+										fetchOnly: true
 									})).to.be.true;
 									expect(fetchSpy.calledWith({
 										path: 'aXXX',
@@ -163,7 +163,7 @@ var portBase = 4345;
 							path: 'abc',
 							event: 'add',
 							value: 1,
-							readOnly: true
+							fetchOnly: true
 						})).to.be.true;
 						expect(fetchSpy.calledWith({
 							path: 'abc',
@@ -209,13 +209,13 @@ var portBase = 4345;
 							path: 'abc',
 							event: 'add',
 							value: 1,
-							readOnly: true
+							fetchOnly: true
 						})).to.be.true;
 						expect(fetchSpy.calledWith({
 							path: 'Aa',
 							event: 'add',
 							value: 2,
-							readOnly: true
+							fetchOnly: true
 						})).to.be.true;
 						fetcher.unfetch().then(function () {
 							done();
@@ -263,19 +263,19 @@ var portBase = 4345;
 							path: 'Aa',
 							event: 'add',
 							value: 2,
-							readOnly: true
+							fetchOnly: true
 						})).to.be.true;
 						expect(fetchSpy.calledWith({
 							path: 'abc',
 							event: 'add',
 							value: 1,
-							readOnly: true
+							fetchOnly: true
 						})).to.be.true;
 						expect(fetchSpy.calledWith({
 							path: 'aXXX',
 							event: 'add',
 							value: 3,
-							readOnly: true
+							fetchOnly: true
 						})).to.be.true;
 						expect(fetchSpy.calledWith({
 							path: 'aXXX',
@@ -320,13 +320,13 @@ var portBase = 4345;
 							path: 'Abcd',
 							event: 'add',
 							value: 2,
-							readOnly: true
+							fetchOnly: true
 						})).to.be.true;
 						expect(fetchSpy.calledWith({
 							path: 'abc',
 							event: 'add',
 							value: 1,
-							readOnly: true
+							fetchOnly: true
 						})).to.be.true;
 						fetcher.unfetch().then(function () {
 							done();
@@ -361,7 +361,7 @@ var portBase = 4345;
 							path: 'abc',
 							event: 'add',
 							value: 1,
-							readOnly: true
+							fetchOnly: true
 						})).to.be.true;
 						fetcher.unfetch().then(function () {
 							done();
@@ -395,7 +395,7 @@ var portBase = 4345;
 							path: 'Abcd',
 							event: 'add',
 							value: 2,
-							readOnly: true
+							fetchOnly: true
 						})).to.be.true;
 						fetcher.unfetch().then(function () {
 							done();
@@ -434,13 +434,13 @@ var portBase = 4345;
 							path: 'Abcd',
 							event: 'add',
 							value: 2,
-							readOnly: true
+							fetchOnly: true
 						})).to.be.true;
 						expect(fetchSpy.calledWith({
 							path: 'abc',
 							event: 'add',
 							value: 1,
-							readOnly: true
+							fetchOnly: true
 						})).to.be.true;
 						fetcher.unfetch().then(function () {
 							done();
@@ -484,13 +484,13 @@ var portBase = 4345;
 							path: '1Abcd',
 							event: 'add',
 							value: 2,
-							readOnly: true
+							fetchOnly: true
 						})).to.be.true;
 						expect(fetchSpy.calledWith({
 							path: '1abc',
 							event: 'add',
 							value: 1,
-							readOnly: true
+							fetchOnly: true
 						})).to.be.true;
 						fetcher.unfetch().then(function () {
 							done();
@@ -541,7 +541,7 @@ var portBase = 4345;
 							path: 'a',
 							event: 'add',
 							value: 1,
-							readOnly: true
+							fetchOnly: true
 						})).to.be.true;
 						fetcher.unfetch().then(function () {
 							done();
@@ -579,7 +579,7 @@ var portBase = 4345;
 							path: 'a',
 							event: 'add',
 							value: 3,
-							readOnly: true
+							fetchOnly: true
 						})).to.be.true;
 						fetcher.unfetch().then(function () {
 							done();
@@ -617,7 +617,7 @@ var portBase = 4345;
 							path: 'b',
 							event: 'add',
 							value: 2,
-							readOnly: true
+							fetchOnly: true
 						})).to.be.true;
 						fetcher.unfetch().then(function () {
 							done();
@@ -655,7 +655,7 @@ var portBase = 4345;
 							path: 'b',
 							event: 'add',
 							value: '1',
-							readOnly: true
+							fetchOnly: true
 						})).to.be.true;
 						fetcher.unfetch().then(function () {
 							done();
@@ -731,7 +731,7 @@ var portBase = 4345;
 							path: 'a',
 							event: 'add',
 							value: john,
-							readOnly: true
+							fetchOnly: true
 						})).to.be.true;
 						fetcher.unfetch().then(function () {
 							done();
@@ -789,7 +789,7 @@ var portBase = 4345;
 							path: 'a',
 							event: 'add',
 							value: john,
-							readOnly: true
+							fetchOnly: true
 						})).to.be.true;
 						states[1].value({
 							name: 'Nick',
@@ -806,7 +806,7 @@ var portBase = 4345;
 								path: 'b',
 								event: 'add',
 								value: nick,
-								readOnly: true
+								fetchOnly: true
 							})).to.be.true;
 							fetcher.unfetch().then(function () {
 								done();
@@ -881,7 +881,7 @@ var portBase = 4345;
 							path: 'a',
 							event: 'add',
 							value: john,
-							readOnly: true
+							fetchOnly: true
 						})).to.be.true;
 						fetcher.unfetch().then(function () {
 							done();
@@ -940,7 +940,7 @@ var portBase = 4345;
 								path: i.toString(),
 								value: i,
 								index: i - 9,
-								readOnly: true
+								fetchOnly: true
 							});
 						}
 						expect(fetchSpy.callCount).to.equal(1);
@@ -982,7 +982,7 @@ var portBase = 4345;
 								path: i.toString(),
 								value: i,
 								index: i - 9,
-								readOnly: true
+								fetchOnly: true
 							});
 						}
 						expect(fetchSpy.callCount).to.equal(1);
@@ -1024,7 +1024,7 @@ var portBase = 4345;
 								path: i.toString(),
 								value: i,
 								index: i - 9,
-								readOnly: true
+								fetchOnly: true
 							});
 						}
 
@@ -1042,13 +1042,13 @@ var portBase = 4345;
 									path: '112',
 									value: 123,
 									index: 3,
-									readOnly: true
+									fetchOnly: true
               },
 								{
 									path: '12',
 									value: 12,
 									index: 4,
-									readOnly: true
+									fetchOnly: true
               }
             ];
 							expect(fetchSpy.callCount).to.equal(2);
@@ -1090,7 +1090,7 @@ var portBase = 4345;
 								path: i.toString(),
 								value: i,
 								index: i - 9,
-								readOnly: true
+								fetchOnly: true
 							});
 						}
 
@@ -1106,13 +1106,13 @@ var portBase = 4345;
 								path: '112',
 								value: 123,
 								index: 3,
-								readOnly: true
+								fetchOnly: true
 							};
 							expectedArray[2] = {
 								path: '12',
 								value: 12,
 								index: 4,
-								readOnly: true
+								fetchOnly: true
 							};
 							expect(fetchSpy.callCount).to.equal(2);
 							expect(fetchSpy.calledWith(expectedArray)).to.be.true;
@@ -1160,7 +1160,7 @@ var portBase = 4345;
 									path: i.toString(),
 									value: i * i,
 									index: i - 9,
-									readOnly: true
+									fetchOnly: true
 								});
 							}
 							expect(fetchSpy.callCount).to.equal(1);
@@ -1209,7 +1209,7 @@ var portBase = 4345;
 								path: i.toString(),
 								value: i * i,
 								index: i - 9,
-								readOnly: true
+								fetchOnly: true
 							});
 						}
 						expect(fetchSpy.callCount).to.equal(2);
@@ -1220,7 +1220,7 @@ var portBase = 4345;
 								path: i.toString(),
 								value: i * i,
 								index: i - 10,
-								readOnly: true
+								fetchOnly: true
 							});
 						}
 						expect(fetchSpy.calledWith(expectedChanges, 3)).to.be.true;
@@ -1292,7 +1292,7 @@ var portBase = 4345;
 									age: 2
 								},
 								index: 2,
-								readOnly: true
+								fetchOnly: true
 							});
 							expectedChanges.push({
 								path: 'aaa',
@@ -1300,7 +1300,7 @@ var portBase = 4345;
 									age: 3
 								},
 								index: 3,
-								readOnly: true
+								fetchOnly: true
 							});
 
 							expectedChanges.push({
@@ -1309,7 +1309,7 @@ var portBase = 4345;
 									age: 10
 								},
 								index: 4,
-								readOnly: true
+								fetchOnly: true
 							});
 							expect(fetchSpy.callCount).to.equal(1);
 							expect(fetchSpy.calledWith(expectedChanges, 3)).to.be.true;
@@ -1327,7 +1327,7 @@ var portBase = 4345;
 										age: 4
 									},
 									index: 3,
-									readOnly: true
+									fetchOnly: true
 					}], 3)).to.be.true;
 
 								// change value -> change order
@@ -1343,14 +1343,14 @@ var portBase = 4345;
 											age: 3
 										},
 										index: 3,
-										readOnly: true
+										fetchOnly: true
           }, {
 										path: 'aaa',
 										value: {
 											age: 4
 										},
 										index: 4,
-										readOnly: true
+										fetchOnly: true
 					}], 3)).to.be.true;
 									fetcher.unfetch();
 									done();
@@ -1404,7 +1404,7 @@ var portBase = 4345;
 									}
 								},
 								index: i - 9,
-								readOnly: true
+								fetchOnly: true
 							});
 						}
 						expect(fetchSpy.callCount).to.equal(1);
@@ -1463,7 +1463,7 @@ var portBase = 4345;
 							path: 'abc',
 							event: 'add',
 							value: 1,
-							readOnly: true
+							fetchOnly: true
 						})).to.be.true;
 						fetcher.unfetch();
 						done();
@@ -1503,7 +1503,7 @@ var portBase = 4345;
 							path: 'abc',
 							event: 'add',
 							value: 1,
-							readOnly: true
+							fetchOnly: true
 						})).to.be.true;
 						fetcher.unfetch();
 						done();

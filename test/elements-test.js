@@ -27,7 +27,7 @@ describe('The jet.element module', function () {
 		var state = {
 			path: 'asd2',
 			value: 123,
-			readOnly: true
+			fetchOnly: true
 		};
 		elements.add(fetchIterator, fakePeer, state);
 	});
@@ -37,7 +37,7 @@ describe('The jet.element module', function () {
 		var state = {
 			path: 'asd',
 			value: 123,
-			readOnly: true
+			fetchOnly: true
 		};
 		elements.add(fetchIterator, fakePeer, state);
 		var el = elements.get('asd');
