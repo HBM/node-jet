@@ -318,6 +318,36 @@ describe('Jet module', function () {
 			});
 		});
 
+		it('can add and remove a method', function (done) {
+			var random = randomPath();
+			var method = new jet.Method(random);
+			method.on('call', function () {});
+			jet.Promise.all([
+			peer.add(method),
+			peer.remove(method),
+			peer.add(method)
+			]).then(function () {
+				expect(method.isAdded()).to.be.true;
+				done();
+			}).catch(function (err) {
+				done(err);
+			});
+		});
+
+		it('events other than "call" are not available for Method', function () {
+			var method = new jet.Method('test');
+			expect(function () {
+				method.on('bla', function () {});
+			}).to.throw();
+		});
+
+		it('events other than "set" are not available for State', function () {
+			var state = new jet.State('test');
+			expect(function () {
+				state.on('bla', function () {});
+			}).to.throw();
+		});
+
 		it('remove a state twice fails', function (done) {
 			var random = randomPath();
 			var removed;
