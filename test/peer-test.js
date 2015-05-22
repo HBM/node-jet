@@ -148,7 +148,7 @@ describe('Jet module', function () {
 				expect(data.path).to.equal(random);
 				expect(data.event).to.equal('add');
 				expect(data.value).to.equal(123);
-				expect(!data.readOnly).to.equal(true);
+				expect(!data.fetchOnly).to.equal(true);
 				jet.Promise.all([
 					this.unfetch(),
 					peer.set(random, 876).then(function () {
@@ -167,7 +167,7 @@ describe('Jet module', function () {
 			]).catch(done);
 		});
 
-		it('can add and fetch and a readOnly state', function (done) {
+		it('can add and fetch and a fetchOnly state', function (done) {
 			var random = randomPath();
 			var state = new jet.State(random, 123);
 
@@ -177,7 +177,7 @@ describe('Jet module', function () {
 				expect(data.path).to.equal(random);
 				expect(data.event).to.equal('add');
 				expect(data.value).to.equal(123);
-				expect(data.readOnly).to.equal(true);
+				expect(data.fetchOnly).to.equal(true);
 				done();
 			});
 
@@ -187,13 +187,13 @@ describe('Jet module', function () {
 			]).catch(done);
 		});
 
-		it('can add a read-only state and setting it fails', function (done) {
+		it('can add a fetch-only state and setting it fails', function (done) {
 			var random = randomPath();
 			var state = new jet.State(random, 123);
 			peer.add(state);
 			peer.set(random, 6237).catch(function (err) {
 				expect(err).to.be.an.object;
-				expect(err.data).to.equal(random + ' is read-only');
+				expect(err.data).to.equal(random + ' is fetch-only');
 				done();
 			});
 		});

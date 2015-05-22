@@ -282,7 +282,7 @@ describe('access tests', function () {
 		});
 	});
 
-	it('John Doe can fetch the pub-admin state which is marked readOnly (for him)', function (done) {
+	it('John Doe can fetch the pub-admin state which is marked fetchOnly (for him)', function (done) {
 		consumer = new jet.Peer({
 			url: url,
 			user: 'John Doe',
@@ -293,14 +293,14 @@ describe('access tests', function () {
 			.path('equals', 'pub-admin')
 			.on('data', function (data) {
 				expect(data.path).to.equal('pub-admin');
-				expect(data.readOnly).to.be.true;
+				expect(data.fetchOnly).to.be.true;
 				done();
 			});
 
 		consumer.fetch(fetcher);
 	});
 
-	it('Linus can fetch the pub-admin state which is NOT marked readOnly (for him)', function (done) {
+	it('Linus can fetch the pub-admin state which is NOT marked fetchOnly (for him)', function (done) {
 		consumer = new jet.Peer({
 			url: url,
 			user: 'Linus',
@@ -311,7 +311,7 @@ describe('access tests', function () {
 			.path('equals', 'pub-admin')
 			.on('data', function (data) {
 				expect(data.path).to.equal('pub-admin');
-				expect(!data.readOnly).to.be.true;
+				expect(!data.fetchOnly).to.be.true;
 				done();
 			});
 
