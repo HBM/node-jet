@@ -31,6 +31,9 @@ var todoId = 0;
 
 var Todo = function (title) {
 	this.id = todoId++;
+	if (typeof title !== 'string') {
+		throw new Error('title must be a string');
+	}
 	this.title = title;
 	this.completed = false;
 };
@@ -55,7 +58,8 @@ var todoStates = {};
 
 // Provide a "todo/add" method to create new todos
 var addTodo = new jet.Method('todo/add');
-addTodo.on('call', function (title) {
+addTodo.on('call', function (args) {
+	var title = args[0];
 	var todo = new Todo(title);
 
 	// create a new todo state and store ref.
@@ -74,7 +78,8 @@ addTodo.on('call', function (title) {
 
 // Provide a "todo/remove" method to delete a certain todo
 var removeTodo = new jet.Method('todo/remove');
-removeTodo.on('call', function (todoId) {
+removeTodo.on('call', function (args) {
+	var todoId = args[0];
 	todoStates[todoId].remove();
 	delete todoStates[todoId];
 });

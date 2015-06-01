@@ -202,6 +202,9 @@ var todoStates = {};
 var todoId = 0;
 
 var Todo = function(title) {
+  if (typeof title !== 'string') {
+    throw new Error('title must be a string');
+  }
   this.id = todoId++;
   this.title = title;
   this.completed = false;
@@ -227,7 +230,8 @@ Provide the **todo/add** Method, which will create a new Todo State when called.
 ```javascript
 var addTodo = new jet.Method('todo/add');
 
-addTodo.on('call', function (title) {
+addTodo.on('call', function (args) {
+	var title = args[0];
 	var todo = new Todo(title);
 
 	// create a new todo state and store ref.
@@ -249,9 +253,12 @@ The **todo/remove** Method will remove the Todo with specified id.
 ```javascript
 var removeTodo = new jet.Method('todo/remove');
 
-removeTodo.on('call', function (todoId) {
-	todoStates[todoId].remove();
-	delete todoStates[todoId];
+removeTodo.on('call', function (args) {
+	var todoId = args[0];
+	if (todoStates[todoId]) {
+		todoStates[todoId].remove();
+		delete todoStates[todoId];
+	}
 });
 ```
 
