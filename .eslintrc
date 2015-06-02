@@ -18,3 +18,4 @@ rules:
   eol-last: 0
   strict: [2, "global"]
   no-underscore-dangle: 0
+  no-unused-vars: [2, {"vars": "all", "args": "none"}]
