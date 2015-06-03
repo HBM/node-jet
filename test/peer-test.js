@@ -374,13 +374,7 @@ describe('Jet module', function () {
 				expect(state.isAdded()).to.be.true;
 				state.add().catch(function (err) {
 					expect(state.isAdded()).to.be.true;
-					expect(err).to.deep.equal({
-						code: -32602,
-						message: 'Invalid params',
-						data: {
-							pathAlreadyExists: random
-						}
-					});
+					expect(err).is.instanceof(jet.Occupied);
 					done();
 				});
 			});
@@ -635,10 +629,7 @@ describe('Jet module', function () {
 
 			peer.add(state2)
 				.catch(function (err) {
-					expect(err).to.be.an.object;
-					expect(err.message).to.equal('Invalid params');
-					expect(err.code).to.equal(-32602);
-					expect(err.data.pathAlreadyExists).to.equal(path);
+					expect(err).is.instanceof(jet.Occupied);
 					done();
 				});
 		});

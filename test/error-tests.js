@@ -19,6 +19,10 @@ describe('The jet.errors module', function () {
 			message: 'No State/Method matching the specified path'
 			},
 		{
+			errName: 'Occupied',
+			message: 'A State/Method with the same path has already been added'
+			},
+		{
 			errName: 'InvalidArgument',
 			message: 'The provided argument(s) have been refused by the State/Method'
 			},
@@ -51,8 +55,8 @@ describe('The jet.errors module', function () {
 				expect(err).to.be.an.instanceof(Error);
 			});
 
-			it('is instance of errors.JetError', function () {
-				expect(err).to.be.an.instanceof(errors.JetError);
+			it('is instance of errors.BaseError', function () {
+				expect(err).to.be.an.instanceof(errors.BaseError);
 			});
 
 			it('.name is jet.' + errName, function () {
