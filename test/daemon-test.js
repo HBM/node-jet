@@ -92,7 +92,7 @@ describe('A Daemon', function () {
 		}, function (result, error) {
 			expect(result).to.be.an('undefined');
 			expect(error.message).to.equal('Invalid params');
-			expect(error.data).to.equal('invalid user');
+			expect(error.data.invalidUser).to.be.true;
 		});
 	});
 
