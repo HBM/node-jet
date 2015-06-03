@@ -2,33 +2,75 @@ var expect = require('chai').expect;
 var errors = require('../lib/jet/errors');
 
 describe('The jet.errors module', function () {
-	describe('DaemonError', function () {
+	[
+		{
+			errName: 'DaemonError'
+			},
+		{
+			errName: 'InvalidUser',
+			message: 'The specified user does not exist'
+			},
+		{
+			errName: 'InvalidPassword',
+			message: 'The specified password is wrong'
+			},
+		{
+			errName: 'InvalidPath',
+			message: 'No State/Method matching the specified path'
+			},
+		{
+			errName: 'InvalidArgument',
+			message: 'The provided argument(s) are invalid'
+			},
+		{
+			errName: 'ConnectionError'
+			},
+		{
+			errName: 'Timeout',
+			message: 'The operation timed out'
+			}
+	].forEach(function (errDesc) {
 
-		var err = new errors.DaemonError('bla');
+		var errName = errDesc.errName;
+		describe(errName, function () {
+			var ctor = errors[errDesc.errName];
+			var err;
+			var message;
+			if (errDesc.message) {
+				err = new ctor();
+				message = errDesc.message;
+			} else {
+				err = new ctor('bla');
+				message = 'bla';
+			}
 
-		it('is instance of Error', function () {
-			expect(err).to.be.an.instanceof(Error);
+
+			it('is instance of Error', function () {
+				expect(err).to.be.an.instanceof(Error);
+			});
+
+			it('is instance of errors.JetError', function () {
+				expect(err).to.be.an.instanceof(errors.JetError);
+			});
+
+			it('.name is jet.' + errName, function () {
+				expect(err.name).to.be.equal('jet.' + errName);
+			});
+
+			it('.message is correct', function () {
+				expect(err.message).to.be.equal(message);
+			});
+
+			it('.stack begins correct', function () {
+				var match = err.stack.match(/^jet\.(.*): /);
+				expect(match).to.be.an('array');
+				expect(match[1]).to.equal(errName);
+			});
+
+			it('.url begins with http', function () {
+				expect(err.url.match(/^http/)).not.to.equal(null);
+			});
+
 		});
-
-		it('is instance of errors.JetError', function () {
-			expect(err).to.be.an.instanceof(errors.JetError);
-		});
-
-		it('.name is jet.DaemonError', function () {
-			expect(err.name).to.be.equal('jet.DaemonError');
-		});
-
-		it('.message is correct', function () {
-			expect(err.message).to.be.equal('bla');
-		});
-
-		it('.stack begins correct', function () {
-			expect(err.stack.match(/^jet.DaemonError: bla/)).not.to.equal(null);
-		});
-
-		it('.url begins with http', function () {
-			expect(err.url.match(/^http/)).not.to.equal(null);
-		});
-
 	});
 });
