@@ -15,19 +15,19 @@ describe('The jet.errors module', function () {
 			message: 'The specified password is wrong'
 			},
 		{
-			errName: 'InvalidPath',
+			errName: 'NotFound',
 			message: 'No State/Method matching the specified path'
 			},
 		{
 			errName: 'InvalidArgument',
-			message: 'The provided argument(s) are invalid'
+			message: 'The provided argument(s) have been refused by the State/Method'
 			},
 		{
 			errName: 'ConnectionError'
 			},
 		{
-			errName: 'Timeout',
-			message: 'The operation timed out'
+			errName: 'PeerTimeout',
+			message: 'The peer processing the request did not respond within the specified timeout'
 			}
 	].forEach(function (errDesc) {
 
@@ -36,14 +36,16 @@ describe('The jet.errors module', function () {
 			var ctor = errors[errDesc.errName];
 			var err;
 			var message;
-			if (errDesc.message) {
-				err = new ctor();
-				message = errDesc.message;
-			} else {
-				err = new ctor('bla');
-				message = 'bla';
-			}
 
+			before(function () {
+				if (errDesc.message) {
+					err = new ctor();
+					message = errDesc.message;
+				} else {
+					err = new ctor('bla');
+					message = 'bla';
+				}
+			});
 
 			it('is instance of Error', function () {
 				expect(err).to.be.an.instanceof(Error);

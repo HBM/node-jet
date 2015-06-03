@@ -193,7 +193,7 @@ describe('Jet module', function () {
 			peer.add(state);
 			peer.set(random, 6237).catch(function (err) {
 				expect(err).to.be.an.object;
-				expect(err.data).to.equal(random + ' is fetch-only');
+				expect(err.data.fetchOnly).to.equal(random);
 				done();
 			});
 		});
@@ -357,7 +357,8 @@ describe('Jet module', function () {
 					expect(state.isAdded()).to.be.false;
 					removed = true;
 				});
-				state.remove().catch(function () {
+				state.remove().catch(function (err) {
+					expect(err).is.instanceof(jet.NotFound);
 					expect(removed).to.be.true;
 					expect(state.isAdded()).to.be.false;
 					done();
