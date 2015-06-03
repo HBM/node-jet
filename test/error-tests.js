@@ -32,7 +32,11 @@ describe('The jet.errors module', function () {
 		{
 			errName: 'PeerTimeout',
 			message: 'The peer processing the request did not respond within the specified timeout'
-			}
+		},
+		{
+			errName: 'FetchOnly',
+			message: 'The State cannot be modified'
+		}
 	].forEach(function (errDesc) {
 
 		var errName = errDesc.errName;

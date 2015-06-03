@@ -192,8 +192,7 @@ describe('Jet module', function () {
 			var state = new jet.State(random, 123);
 			peer.add(state);
 			peer.set(random, 6237).catch(function (err) {
-				expect(err).to.be.an.object;
-				expect(err.data.fetchOnly).to.equal(random);
+				expect(err).is.instanceof(jet.FetchOnly);
 				done();
 			});
 		});
