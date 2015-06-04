@@ -151,8 +151,7 @@ describe('A Daemon', function () {
 				timeout: 0.001
 			})
 		]).catch(function (err) {
-			expect(err.message).to.equal('Response Timeout');
-			expect(err.code).to.equal(-32001);
+			expect(err).is.instanceof(jet.PeerTimeout);
 			done();
 		});
 
