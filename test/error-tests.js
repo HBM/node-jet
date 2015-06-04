@@ -27,7 +27,7 @@ describe('The jet.errors module', function () {
 			message: 'The provided argument(s) have been refused by the State/Method'
 			},
 		{
-			errName: 'ConnectionError'
+			errName: 'ConnectionClosed'
 			},
 		{
 			errName: 'PeerTimeout',
