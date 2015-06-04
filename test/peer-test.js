@@ -286,6 +286,25 @@ describe('Jet module', function () {
 			peer.fetch(fetcher);
 		});
 
+		it('set may throw a PeerTimeout error', function (done) {
+			var random = randomPath();
+			var state = new jet.State(random, 123);
+			state.on('set', function (newval, reply) {
+				setTimeout(function () {
+					reply();
+				}, 10);
+			});
+
+			peer.add(state).then(function () {
+				peer.set(random, 333, {
+					timeout: 0.001
+				}).catch(function (err) {
+					expect(err).is.instanceof(jet.PeerTimeout);
+					done();
+				});
+			});
+		});
+
 		it('can add and set a state with async set handler that throws', function (done) {
 			var random = randomPath();
 			var state = new jet.State(random, 123);
