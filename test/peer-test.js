@@ -132,7 +132,7 @@ describe('Jet module', function () {
 		it('when closed, calling set fails with ConnectionClosed error', function (done) {
 			peer.close();
 			peer.set('asdlkd', 123).catch(function (err) {
-				expect(err).is.instanceof(jet.NotFound);
+				expect(err).is.instanceof(jet.ConnectionClosed);
 				done();
 			});
 		});

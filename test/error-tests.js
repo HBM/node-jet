@@ -59,6 +59,10 @@ describe('The jet.errors module', function () {
 				expect(err).to.be.an.instanceof(Error);
 			});
 
+			it('Error is not parent class', function () {
+				expect(new Error() instanceof ctor).to.be.false;
+			});
+
 			it('is instance of errors.BaseError', function () {
 				expect(err).to.be.an.instanceof(errors.BaseError);
 			});
