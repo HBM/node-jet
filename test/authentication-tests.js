@@ -70,8 +70,7 @@ describe('Jet authentication', function () {
 		});
 
 		peer.connect().catch(function (err) {
-			expect(err.message).to.equal('Invalid params');
-			expect(err.data.invalidPassword).to.be.true;
+			expect(err).is.instanceof(jet.InvalidPassword);
 			peer.close();
 			done();
 		});
@@ -85,8 +84,7 @@ describe('Jet authentication', function () {
 		});
 
 		peer.connect().catch(function (err) {
-			expect(err.message).to.equal('Invalid params');
-			expect(err.data.invalidUser).to.be.true;
+			expect(err).is.instanceof(jet.InvalidUser);
 			peer.close();
 			done();
 		});
