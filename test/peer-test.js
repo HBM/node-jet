@@ -43,7 +43,7 @@ describe('Jet module', function () {
 			port: testPort
 		});
 		peer.connect().catch(function (err) {
-			expect(err).to.deep.equal(new Error('Jet Websocket connection is closed'));
+			expect(err).is.instanceof(jet.ConnectionClosed);
 			done();
 		});
 		peer.close();
@@ -108,7 +108,7 @@ describe('Jet module', function () {
 			return 'jet-js/' + uuid.v1();
 		};
 
-		before(function (done) {
+		beforeEach(function (done) {
 			peer = new jet.Peer({
 				port: testPort,
 			});
@@ -118,10 +118,24 @@ describe('Jet module', function () {
 			});
 		});
 
-		after(function () {
+		afterEach(function () {
 			peer.close();
 		});
 
+		it('calling set fails with NotFound error', function (done) {
+			peer.set('asdlkd', 123).catch(function (err) {
+				expect(err).is.instanceof(jet.NotFound);
+				done();
+			});
+		});
+
+		it('when closed, calling set fails with ConnectionClosed error', function (done) {
+			peer.close();
+			peer.set('asdlkd', 123).catch(function (err) {
+				expect(err).is.instanceof(jet.NotFound);
+				done();
+			});
+		});
 
 		it('new jet.State() returns object with correct interface', function () {
 			var state = new jet.State(randomPath(), 123);
@@ -205,7 +219,7 @@ describe('Jet module', function () {
 				done();
 			});
 			peer.add(state);
-			peer.set(random, 6237);
+			peer.set(random, 6237).catch(function () {});
 		});
 
 		it('can add a state and error propagates', function (done) {
@@ -216,7 +230,6 @@ describe('Jet module', function () {
 					throw new Error('out of range');
 				}
 			});
-
 			peer.add(state);
 
 			peer.set(random, 6237).catch(function (err) {
