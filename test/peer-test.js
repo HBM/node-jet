@@ -222,7 +222,7 @@ describe('Jet module', function () {
 			peer.set(random, 6237).catch(function () {});
 		});
 
-		it('can add a state and error propagates', function (done) {
+		it('can add a state and non InvalidArgument error propagates as PeerError', function (done) {
 			var random = randomPath();
 			var state = new jet.State(random, 123);
 			state.on('set', function (newval) {
@@ -233,32 +233,26 @@ describe('Jet module', function () {
 			peer.add(state);
 
 			peer.set(random, 6237).catch(function (err) {
-				expect(err.message).to.equal('Internal error');
-				expect(err.data.message).to.equal('out of range');
+				expect(err).is.instanceof(jet.PeerError);
 				done();
 			});
 		});
 
-		it('can add a state and custom rpc error propagates', function (done) {
+		it('can add a state and non InvalidArgument error propagates as PeerError', function (done) {
 			var random = randomPath();
 			var state = new jet.State(random, 123);
 			state.on('set', function (newval) {
 				if (newval > 200) {
-					throw {
-						code: 1234,
-						message: 'out of range'
-					};
+					throw new jet.InvalidArgument('out of range');
 				}
 			});
-
 			peer.add(state);
+
 			peer.set(random, 6237).catch(function (err) {
-				expect(err.message).to.equal('out of range');
-				expect(err.code).to.equal(1234);
+				expect(err).is.instanceof(jet.InvalidArgument);
 				done();
 			});
 		});
-
 
 		it('can add, fetch and set a state with async set handler', function (done) {
 			var random = randomPath();
@@ -314,14 +308,7 @@ describe('Jet module', function () {
 
 			peer.add(state);
 			peer.set(random, 876).catch(function (err) {
-				expect(err).to.be.an.object;
-				expect(err).to.deep.equal({
-					code: -32602,
-					message: 'Internal error',
-					data: {
-						message: 'always fails'
-					}
-				});
+				expect(err).is.instanceof(jet.PeerError);
 				done();
 			});
 		});
@@ -532,8 +519,7 @@ describe('Jet module', function () {
 			peer.add(m);
 
 			peer.call(path, [1, 2, false]).catch(function (err) {
-				expect(err).to.be.an.object;
-				expect(err.data.message).to.equal('argh');
+				expect(err).is.instanceof(jet.PeerError);
 				done();
 			});
 		});
@@ -602,9 +588,8 @@ describe('Jet module', function () {
 
 			peer.add(m);
 			peer.call(path, [1, 2, false]).catch(function (err) {
-				expect(err.code).to.equal(-32602);
-				expect(err.message).to.equal('Internal error');
-				expect(err.data).to.equal('dont-like-this');
+				expect(err).is.instanceof(jet.PeerError);
+				expect(err.message).to.equal('dont-like-this');
 				done();
 			});
 		});
@@ -620,9 +605,7 @@ describe('Jet module', function () {
 
 			peer.add(m);
 			peer.call(path, [1, 2, false]).catch(function (err) {
-				expect(err.code).to.equal(-32602);
-				expect(err.message).to.equal('Internal error');
-				expect(err.data).to.contain('Invalid');
+				expect(err).is.instanceof(jet.PeerError);
 				done();
 			});
 		});
@@ -636,6 +619,7 @@ describe('Jet module', function () {
 
 			peer.add(m);
 			peer.call(path, [1, 2, false]).catch(function (err) {
+				console.log(err);
 				expect(err).to.be.an.object;
 				done();
 			});

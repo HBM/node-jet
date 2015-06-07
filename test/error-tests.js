@@ -36,6 +36,10 @@ describe('The jet.errors module', function () {
 		{
 			errName: 'FetchOnly',
 			message: 'The State cannot be modified'
+		},
+		{
+			errName: 'Unauthorized',
+			message: 'The request is not authorized for the user'
 		}
 	].forEach(function (errDesc) {
 
