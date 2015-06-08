@@ -10,15 +10,15 @@ var jet = require('node-jet');
 
 The Jet Peer is able to to **consume** content provided by (other) peers:
 
-  - **set** States to new values, see [`peer.set`](https://github.com/lipp/node-jet/blob/master/doc/peer.md#peersetpath-value-options---promise)
-  - **call** Methods, see [`peer.call`](https://github.com/lipp/node-jet/blob/master/doc/peer.md#peercallpath-args-options---promise)
-  - **fetch** States and Methods as a realtime query, see [`jet.Fetcher`](https://github.com/lipp/node-jet/blob/master/doc/peer.md#jetfetcher)
+  - **set** States to new values, see [`peer.set`](#peersetpath-value-options---promise)
+  - **call** Methods, see [`peer.call`](#peercallpath-args-options---promise)
+  - **fetch** States and Methods as a realtime query, see [`jet.Fetcher`](#jetfetcher)
 
 
 The Jet Peer is also able to **create** content:
 
-  - register **States** , see [`jet.State`](https://github.com/lipp/node-jet/blob/master/doc/peer.md#jetstate)
-  - register **Methods** , see [`jet.Method`](https://github.com/lipp/node-jet/blob/master/doc/peer.md#jetmethod)
+  - add **States** , see [`jet.State`](#jetstate)
+  - add **Methods** , see [`jet.Method`](#jetmethod)
 
 
 ## `jet.Peer([config]) -> peer`
@@ -51,7 +51,7 @@ peer.connect().then(function() {
   console.log('Daemon Info: ', peer.daemonInfo);
 });
 ```
-
+ 
 ## `peer.connect() -> Promise`
 
 Connects to the Daemon and returns a Promise which gets resolved as the connection is established.
@@ -69,23 +69,23 @@ peer.connect().then(function() {
 });
 ```
 
-The returned Promise nay be rejected with:
+The returned Promise may be rejected with:
 
-  - [`jet.ConnectionError`](#jetconnectionerror)
+  - [`jet.ConnectionClosed`](#jetconnectionclosed)
   - [`jet.InvalidUser`](#jetinvaliduser)
   - [`jet.InvalidPassword`](#jetinvalidpassword)
  
 
 ## `peer.close()`
-
-Closes the connection to the Daemon.
+ 
+Closes the connection to the Daemon. Returns a promise which resolves as the connection has been closed.
 
 ## `peer.isClosed() -> Promise`
 
 Returns a promise which gets resolved when the connection to the Daemon has been closed.
 
 ## `peer.set(path, value, [options]) -> Promise`
-
+ 
 Tries to set the Jet State specified by `path` to `value`. Returns a Promise which gets resolved as
 the specified state has been setted successfully to the specified value. 
 
@@ -118,6 +118,17 @@ peer.set('magic', 123, {
 });
 ```
 
+The returned Promise may be rejected with:
+
+  - [`jet.ConnectionClosed`](#jetconnectionclosed)
+  - [`jet.Unauthorized`](#jetunauthorized)
+  - [`jet.FetchOnly`](#jetfetchonly)
+  - [`jet.NotFound`](#jetnotfound)
+  - [`jet.PeerError`](#jetpeererror)
+  - [`jet.PeerTimeout`](#jetpeertimeout)
+  - [`jet.InvalidArgument`](#jetinvalidargument)
+
+
 ## `peer.call(path, args, [options]) -> Promise`
 
 Calls the Jet Method specified by `path` with `args` as arguments. Returns a Promise which may get resolved with the 
@@ -137,6 +148,14 @@ peer.call('sum', [1,2,3,4,5]).then(function(result) {
 // dont care about the result
 peer.call('greet', {first: 'John', last: 'Mitchell'});
 ```
+The returned Promise may be rejected with:
+
+  - [`jet.ConnectionClosed`](#jetconnectionclosed)
+  - [`jet.Unauthorized`](#jetunauthorized)
+  - [`jet.NotFound`](#jetnotfound)
+  - [`jet.PeerError`](#jetpeererror)
+  - [`jet.PeerTimeout`](#jetpeertimeout)
+  - [`jet.InvalidArgument`](#jetinvalidargument)
 
 ## `peer.add(state|method) -> Promise`
 
@@ -150,6 +169,12 @@ peer.add(jim).then(function() {
   console.log('jim has been added');
 });
 ```
+
+The returned Promise may be rejected with:
+
+  - [`jet.ConnectionClosed`](#jetconnectionclosed)
+  - [`jet.Unauthorized`](#jetunauthorized)
+  - [`jet.Occupied`](#jetoccupied)
 
 ## `peer.remove(state|method) -> Promise`
 
@@ -168,8 +193,13 @@ peer.add(jim).then(function() {
 
 ```
 
-## `peer.fetch(fetcher) -> Promise`
+The returned Promise may be rejected with:
 
+  - [`jet.ConnectionClosed`](#jetconnectionclosed)
+  - [`jet.NotFound`](#jetnotfound)
+
+## `peer.fetch(fetcher) -> Promise`
+ 
 Registers the fetcher at the Daemon. A `jet.Fetcher` must be created first. The returned Promise gets resolved 
 when the Daemon has accepted the fetcher and `data` event may be emitted.
 
@@ -184,15 +214,19 @@ var topPlayers = new jet.Fetcher()
 peer.fetch(topPlayers);
 ```
 
+The returned Promise may be rejected with:
+
+  - [`jet.ConnectionClosed`](#jetconnectionclosed)
+
 ## `peer.unfetch(fetcher) -> Promise`
 
 Unregisters the fetcher at the Daemon. 
 As soon as the returned Promise gets resolved, no `data` events for the fetcher are emitted anymore.
 
 # `jet.State`
-
+ 
 ## `new jet.State(path, value, [access])`
-
+ 
 - `path`: {String} The unique path of the State
 - `value`: {Any} The initial value of the State
 - `access`: {Object, Optional} Containing `fetchGroups` and `setGroups`
@@ -272,7 +306,7 @@ The arguments to `reply` can be:
 
   - `value`: {Any} The new value of the state. 
   - `dontNotify`: {Boolean} Dont auto notify a state change.
-  - `error`: {String/JSON-RPC Error, Optional} Operation failed
+  - `error`: {String/Error, Optional} Operation failed
 
 ## `state.value([newValue])`
 
@@ -298,11 +332,20 @@ peer.add(ticker).then(function() {
 Register the state from the Daemon convenience function. `peer.add(state)` must have been called before to initially bind the state
 to the respective peer!
 
+The returned Promise may be rejected with:
+
+  - [`jet.ConnectionClosed`](#jetconnectionclosed)
+  - [`jet.Occupied`](#jetoccupied)
+
 ## `state.remove() -> Promise`
 
 Unregister the state from the Daemon. Is the same as calling `peer.remove(state)`.
 
+The returned Promise may be rejected with:
 
+  - [`jet.ConnectionClosed`](#jetconnectionclosed)
+  - [`jet.NotFound`](#jetnotfound)
+ 
 # `jet.Fetcher`
 
 ## `new jet.Fetcher()`
@@ -440,7 +483,10 @@ fetcher.on('data', function(path, event, value) {
 peer.fetch(fetcher);
 ```
 
+The returned Promise may be rejected with:
 
+  - [`jet.ConnectionClosed`](#jetconnectionclosed)
+ 
 # `jet.Method`
 
 ## `new jet.Method(path, [access])`
@@ -506,7 +552,7 @@ greet.on('call', function(who, reply) {
 The arguments to `reply` can be:
 
   - `result`: {Truish, Optional} Operation was success
-  - `error`: {String/JSON-RPC Error, Optional} Operation failed
+  - `error`: {String/Error, Optional} Operation failed
 
 
 ## `method.add() -> Promise`
@@ -514,15 +560,57 @@ The arguments to `reply` can be:
 Register the method from the Daemon convenience function. `peer.add(method)` must have been called before to initially bind the method
 to the respective peer!
 
+The returned Promise may be rejected with:
+
+  - [`jet.ConnectionClosed`](#jetconnectionclosed)
+  - [`jet.Occupied`](#jetoccupied)
+
 ## `method.remove() -> Promise`
 
 Unregister the method from the Daemon. Is the same as calling `peer.remove(method)`.
 
+The returned Promise may be rejected with:
 
+  - [`jet.ConnectionClosed`](#jetconnectionclosed)
+  - [`jet.NotFound`](#jetnotfound)
+ 
 # Errors
 
-## `jet.ConnectionError`
+## `jet.BaseError`
 
+Base class for all jet Error types. For all error instances `err instanceof Error` and `err instanceof jet.BaseError` is `true`.
+ 
+## `jet.ConnectionError`
+ 
 The connection to the specified endpoint could not be established or has been closed.
 
+## `jet.InvalidUser`
 
+The user (name) provided is not registered at the Daemon.
+
+## `jet.InvalidPassword`
+
+The password provided for the user is not correct.
+
+## `jet.NotFound`
+
+The State or Method specified by `path` has not been added to the Daemon.
+One could `fetch` the respective State or Method to wait until it becomes available.
+
+## `jet.Occupied`
+
+A State or Method with the specified `path` can not be added, because another 
+State/Method with the same `path` already has been added.
+
+## `jet.PeerTimeout` 
+
+The Peer processing the `set` or `get` request has not answered within the specified timeout.
+
+## `jet.PeerError`
+
+The Peer processing the `set` ot `get` request threw an error during dispatching the request.
+
+## `jet.FetchOnly` 
+
+The State specified by `path` cannot be changed. Some States have strict "monitor" characteristics, as they can be observed,
+(by fetch) but not changed at will (by calling `peer.set`).
