@@ -85,6 +85,7 @@ describe('The jet.errors module', function () {
 			});
 
 			it('http.get(err.url) succeeds', function (done) {
+				this.timeout(4000); // github is sometime "slow".
 				https.get(err.url, function () {
 					done();
 				}).on('error', done);
