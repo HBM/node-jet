@@ -580,7 +580,7 @@ The returned Promise may be rejected with:
 
 Base class for all jet Error types. For all error instances `err instanceof Error` and `err instanceof jet.BaseError` is `true`.
  
-## `jet.ConnectionError`
+## `jet.ConnectionClosed`
  
 The connection to the specified endpoint could not be established or has been closed.
 
@@ -612,5 +612,9 @@ The Peer processing the `set` ot `get` request threw an error during dispatching
 
 ## `jet.FetchOnly` 
 
-The State specified by `path` cannot be changed. Some States have strict "monitor" characteristics, as they can be observed,
-(by fetch) but not changed at will (by calling `peer.set`).
+The State specified by `path` cannot be changed. Some States have strict "monitor" characteristics, as they can be observed 
+(by fetched), but not changed by calling `peer.set`.
+
+## `jet.Unauthorized`
+
+The peer instance (user/password) is not authorized to perform the requested action.
