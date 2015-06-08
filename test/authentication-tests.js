@@ -262,7 +262,7 @@ describe('access tests', function () {
 		});
 
 		consumer.set('pub-admin', ['master']).catch(function (err) {
-			expect(err.data.noAccess).to.equal('pub-admin');
+			expect(err).is.instanceof(jet.Unauthorized);
 			done();
 		});
 	});
@@ -275,7 +275,7 @@ describe('access tests', function () {
 		});
 
 		consumer.set('everyone', [532]).catch(function (err) {
-			expect(err.data.noAccess).to.equal('everyone');
+			expect(err).is.instanceof(jet.Unauthorized);
 			done();
 		});
 	});
@@ -350,7 +350,7 @@ describe('access tests', function () {
 		});
 
 		consumer.call('square', [2]).catch(function (err) {
-			expect(err.data.noAccess).to.equal('square');
+			expect(err).is.instanceof(jet.Unauthorized);
 			done();
 		});
 	});

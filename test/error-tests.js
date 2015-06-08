@@ -44,7 +44,7 @@ describe('The jet.errors module', function () {
 	].forEach(function (errDesc) {
 
 		var errName = errDesc.errName;
-		describe(errName, function () {
+		describe('a jet.' + errName, function () {
 			var ctor = errors[errDesc.errName];
 			var err;
 			var message;
@@ -79,10 +79,8 @@ describe('The jet.errors module', function () {
 				expect(err.message).to.be.equal(message);
 			});
 
-			it('.stack begins correct', function () {
-				var match = err.stack.match(/^jet\.(.*): /);
-				expect(match).to.be.an('array');
-				expect(match[1]).to.equal(errName);
+			it('.stack is a string', function () {
+				expect(err.stack).to.be.a('string');
 			});
 
 			it('.url begins with http', function () {

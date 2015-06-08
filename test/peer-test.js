@@ -619,8 +619,10 @@ describe('Jet module', function () {
 
 			peer.add(m);
 			peer.call(path, [1, 2, false]).catch(function (err) {
-				console.log(err);
-				expect(err).to.be.an.object;
+				expect(err).is.instanceof(jet.PeerError);
+				expect(err.message).to.equal('argh');
+				expect(err.stack).to.not.match(/no remote stack/);
+				expect(err.stack).to.match(/peer-test/);
 				done();
 			});
 		});
