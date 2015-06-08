@@ -92,7 +92,7 @@ describe('A Daemon', function () {
 		}, function (result, error) {
 			expect(result).to.be.an('undefined');
 			expect(error.message).to.equal('Invalid params');
-			expect(error.data.invalidUser).to.be.true;
+			expect(error.data).to.equal('invalid user');
 		});
 	});
 
@@ -151,7 +151,8 @@ describe('A Daemon', function () {
 				timeout: 0.001
 			})
 		]).catch(function (err) {
-			expect(err).is.instanceof(jet.PeerTimeout);
+			expect(err.message).to.equal('Response Timeout');
+			expect(err.code).to.equal(-32001);
 			done();
 		});
 
