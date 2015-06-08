@@ -1,5 +1,6 @@
 var expect = require('chai').expect;
 var errors = require('../lib/jet/errors');
+var https = require('https');
 
 describe('The jet.errors module', function () {
 	[
@@ -83,8 +84,8 @@ describe('The jet.errors module', function () {
 				expect(err.stack).to.be.a('string');
 			});
 
-			it('.url begins with http', function () {
-				expect(err.url.match(/^http/)).not.to.equal(null);
+			it('err.url points to github repo', function () {
+				expect(err.url).to.match(/^https:\/\/github\.com\/lipp\/node-jet\//);
 			});
 
 		});
