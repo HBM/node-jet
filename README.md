@@ -135,8 +135,8 @@ Open [Radar on jetbus.io](http://jetbus.io/radar.html), which allows you to see/
 
 # Doc
 
- - [Peer](./doc/peer.md)
- - [Daemon](./doc/daemon.md)
+ - [Peer](./doc/peer.markdown)
+ - [Daemon](./doc/daemon.markdown)
 
 For further info and documentation refer to the [Jet Homepage](http://jetbus.io).
 

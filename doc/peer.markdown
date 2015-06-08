@@ -69,6 +69,13 @@ peer.connect().then(function() {
 });
 ```
 
+The returned Promise nay be rejected with:
+
+  - [`jet.ConnectionError`](#jetconnectionerror)
+  - [`jet.InvalidUser`](#jetinvaliduser)
+  - [`jet.InvalidPassword`](#jetinvalidpassword)
+ 
+
 ## `peer.close()`
 
 Closes the connection to the Daemon.
@@ -512,5 +519,10 @@ to the respective peer!
 Unregister the method from the Daemon. Is the same as calling `peer.remove(method)`.
 
 
+# Errors
+
+## `jet.ConnectionError`
+
+The connection to the specified endpoint could not be established or has been closed.
 
 
