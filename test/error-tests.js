@@ -84,11 +84,8 @@ describe('The jet.errors module', function () {
 				expect(err.stack).to.be.a('string');
 			});
 
-			it('http.get(err.url) succeeds', function (done) {
-				this.timeout(4000); // github is sometime "slow".
-				https.get(err.url, function () {
-					done();
-				}).on('error', done);
+			it('err.url points to github repo', function () {
+				expect(err.url).to.match(/^https:\/\/github\.com\/lipp\/node-jet\//);
 			});
 
 		});
