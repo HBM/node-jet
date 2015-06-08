@@ -43,7 +43,7 @@ describe('Jet module', function () {
 			port: testPort
 		});
 		peer.connect().catch(function (err) {
-			expect(err).to.deep.equal(new Error('Jet Websocket connection is closed'));
+			expect(err).is.instanceof(jet.ConnectionClosed);
 			done();
 		});
 		peer.close();
@@ -108,7 +108,7 @@ describe('Jet module', function () {
 			return 'jet-js/' + uuid.v1();
 		};
 
-		before(function (done) {
+		beforeEach(function (done) {
 			peer = new jet.Peer({
 				port: testPort,
 			});
@@ -118,10 +118,24 @@ describe('Jet module', function () {
 			});
 		});
 
-		after(function () {
+		afterEach(function () {
 			peer.close();
 		});
 
+		it('calling set fails with NotFound error', function (done) {
+			peer.set('asdlkd', 123).catch(function (err) {
+				expect(err).is.instanceof(jet.NotFound);
+				done();
+			});
+		});
+
+		it('when closed, calling set fails with ConnectionClosed error', function (done) {
+			peer.close();
+			peer.set('asdlkd', 123).catch(function (err) {
+				expect(err).is.instanceof(jet.ConnectionClosed);
+				done();
+			});
+		});
 
 		it('new jet.State() returns object with correct interface', function () {
 			var state = new jet.State(randomPath(), 123);
@@ -192,8 +206,7 @@ describe('Jet module', function () {
 			var state = new jet.State(random, 123);
 			peer.add(state);
 			peer.set(random, 6237).catch(function (err) {
-				expect(err).to.be.an.object;
-				expect(err.data).to.equal(random + ' is fetch-only');
+				expect(err).is.instanceof(jet.FetchOnly);
 				done();
 			});
 		});
@@ -206,10 +219,10 @@ describe('Jet module', function () {
 				done();
 			});
 			peer.add(state);
-			peer.set(random, 6237);
+			peer.set(random, 6237).catch(function () {});
 		});
 
-		it('can add a state and error propagates', function (done) {
+		it('can add a state and non InvalidArgument error propagates as PeerError', function (done) {
 			var random = randomPath();
 			var state = new jet.State(random, 123);
 			state.on('set', function (newval) {
@@ -217,36 +230,29 @@ describe('Jet module', function () {
 					throw new Error('out of range');
 				}
 			});
-
 			peer.add(state);
 
 			peer.set(random, 6237).catch(function (err) {
-				expect(err.message).to.equal('Internal error');
-				expect(err.data.message).to.equal('out of range');
+				expect(err).is.instanceof(jet.PeerError);
 				done();
 			});
 		});
 
-		it('can add a state and custom rpc error propagates', function (done) {
+		it('can add a state and non InvalidArgument error propagates as PeerError', function (done) {
 			var random = randomPath();
 			var state = new jet.State(random, 123);
 			state.on('set', function (newval) {
 				if (newval > 200) {
-					throw {
-						code: 1234,
-						message: 'out of range'
-					};
+					throw new jet.InvalidArgument('out of range');
 				}
 			});
-
 			peer.add(state);
+
 			peer.set(random, 6237).catch(function (err) {
-				expect(err.message).to.equal('out of range');
-				expect(err.code).to.equal(1234);
+				expect(err).is.instanceof(jet.InvalidArgument);
 				done();
 			});
 		});
-
 
 		it('can add, fetch and set a state with async set handler', function (done) {
 			var random = randomPath();
@@ -274,6 +280,25 @@ describe('Jet module', function () {
 			peer.fetch(fetcher);
 		});
 
+		it('set may throw a PeerTimeout error', function (done) {
+			var random = randomPath();
+			var state = new jet.State(random, 123);
+			state.on('set', function (newval, reply) {
+				setTimeout(function () {
+					reply();
+				}, 10);
+			});
+
+			peer.add(state).then(function () {
+				peer.set(random, 333, {
+					timeout: 0.001
+				}).catch(function (err) {
+					expect(err).is.instanceof(jet.PeerTimeout);
+					done();
+				});
+			});
+		});
+
 		it('can add and set a state with async set handler that throws', function (done) {
 			var random = randomPath();
 			var state = new jet.State(random, 123);
@@ -283,14 +308,7 @@ describe('Jet module', function () {
 
 			peer.add(state);
 			peer.set(random, 876).catch(function (err) {
-				expect(err).to.be.an.object;
-				expect(err).to.deep.equal({
-					code: -32602,
-					message: 'Internal error',
-					data: {
-						message: 'always fails'
-					}
-				});
+				expect(err).is.instanceof(jet.PeerError);
 				done();
 			});
 		});
@@ -357,7 +375,8 @@ describe('Jet module', function () {
 					expect(state.isAdded()).to.be.false;
 					removed = true;
 				});
-				state.remove().catch(function () {
+				state.remove().catch(function (err) {
+					expect(err).is.instanceof(jet.NotFound);
 					expect(removed).to.be.true;
 					expect(state.isAdded()).to.be.false;
 					done();
@@ -373,13 +392,7 @@ describe('Jet module', function () {
 				expect(state.isAdded()).to.be.true;
 				state.add().catch(function (err) {
 					expect(state.isAdded()).to.be.true;
-					expect(err).to.deep.equal({
-						code: -32602,
-						message: 'Invalid params',
-						data: {
-							pathAlreadyExists: random
-						}
-					});
+					expect(err).is.instanceof(jet.Occupied);
 					done();
 				});
 			});
@@ -506,8 +519,7 @@ describe('Jet module', function () {
 			peer.add(m);
 
 			peer.call(path, [1, 2, false]).catch(function (err) {
-				expect(err).to.be.an.object;
-				expect(err.data.message).to.equal('argh');
+				expect(err).is.instanceof(jet.PeerError);
 				done();
 			});
 		});
@@ -576,9 +588,8 @@ describe('Jet module', function () {
 
 			peer.add(m);
 			peer.call(path, [1, 2, false]).catch(function (err) {
-				expect(err.code).to.equal(-32602);
-				expect(err.message).to.equal('Internal error');
-				expect(err.data).to.equal('dont-like-this');
+				expect(err).is.instanceof(jet.PeerError);
+				expect(err.message).to.equal('dont-like-this');
 				done();
 			});
 		});
@@ -594,9 +605,7 @@ describe('Jet module', function () {
 
 			peer.add(m);
 			peer.call(path, [1, 2, false]).catch(function (err) {
-				expect(err.code).to.equal(-32602);
-				expect(err.message).to.equal('Internal error');
-				expect(err.data).to.contain('Invalid');
+				expect(err).is.instanceof(jet.PeerError);
 				done();
 			});
 		});
@@ -610,7 +619,10 @@ describe('Jet module', function () {
 
 			peer.add(m);
 			peer.call(path, [1, 2, false]).catch(function (err) {
-				expect(err).to.be.an.object;
+				expect(err).is.instanceof(jet.PeerError);
+				expect(err.message).to.equal('argh');
+				expect(err.stack).to.not.match(/no remote stack/);
+				expect(err.stack).to.match(/peer-test/);
 				done();
 			});
 		});
@@ -634,10 +646,7 @@ describe('Jet module', function () {
 
 			peer.add(state2)
 				.catch(function (err) {
-					expect(err).to.be.an.object;
-					expect(err.message).to.equal('Invalid params');
-					expect(err.code).to.equal(-32602);
-					expect(err.data.pathAlreadyExists).to.equal(path);
+					expect(err).is.instanceof(jet.Occupied);
 					done();
 				});
 		});

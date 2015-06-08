@@ -70,8 +70,7 @@ describe('Jet authentication', function () {
 		});
 
 		peer.connect().catch(function (err) {
-			expect(err.message).to.equal('Invalid params');
-			expect(err.data).to.equal('invalid password');
+			expect(err).is.instanceof(jet.InvalidPassword);
 			peer.close();
 			done();
 		});
@@ -85,8 +84,7 @@ describe('Jet authentication', function () {
 		});
 
 		peer.connect().catch(function (err) {
-			expect(err.message).to.equal('Invalid params');
-			expect(err.data).to.equal('invalid user');
+			expect(err).is.instanceof(jet.InvalidUser);
 			peer.close();
 			done();
 		});
@@ -264,7 +262,7 @@ describe('access tests', function () {
 		});
 
 		consumer.set('pub-admin', ['master']).catch(function (err) {
-			expect(err.data).to.equal('no access');
+			expect(err).is.instanceof(jet.Unauthorized);
 			done();
 		});
 	});
@@ -277,7 +275,7 @@ describe('access tests', function () {
 		});
 
 		consumer.set('everyone', [532]).catch(function (err) {
-			expect(err.data).to.equal('no access');
+			expect(err).is.instanceof(jet.Unauthorized);
 			done();
 		});
 	});
@@ -352,7 +350,7 @@ describe('access tests', function () {
 		});
 
 		consumer.call('square', [2]).catch(function (err) {
-			expect(err.data).to.equal('no access');
+			expect(err).is.instanceof(jet.Unauthorized);
 			done();
 		});
 	});
