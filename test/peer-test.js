@@ -710,5 +710,38 @@ describe('Jet module', function () {
 			});
 		});
 
+		describe('error handling', function () {
+			it('filter by err.name', function (done) {
+				peer.set('this-path-does-not-exist', 123).catch(function (err) {
+					expect(err.name).to.equal('jet.NotFound');
+					done();
+				});
+			});
+
+			it('filter by instanceof', function (done) {
+				peer.set('this-path-does-not-exist', 123).catch(function (err) {
+					expect(err instanceof Error).to.be.true;
+					expect(err instanceof jet.BaseError).to.be.true;
+					expect(err instanceof jet.NotFound).to.be.true;
+					expect(err instanceof jet.Unauthorized).to.be.false;
+					done();
+				});
+			});
+
+			it('filter by bluebird catch', function (done) {
+				peer.set('this-path-does-not-exist', 123)
+					.catch(jet.Unauthorized, function (err) {
+						expect('this should not happen').to.be.false;
+					})
+					.catch(jet.NotFound, function (err) {
+						expect(err instanceof jet.NotFound).to.be.true;
+					})
+					.finally(function () {
+						done();
+					});
+
+			});
+		});
+
 	});
 });
