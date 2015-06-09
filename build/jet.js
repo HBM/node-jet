@@ -1,16 +1,33 @@
-!function(e){if("object"==typeof exports&&"undefined"!=typeof module)module.exports=e();else if("function"==typeof define&&define.amd)define([],e);else{var f;"undefined"!=typeof window?f=window:"undefined"!=typeof global?f=global:"undefined"!=typeof self&&(f=self),f.jet=e()}}(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+(function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.jet = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+'use strict';
+
 /**
  * Export Peer only for browserify
  */
+
+var errors = require('./jet/errors');
 
 module.exports = {
 	Peer: require('./jet/peer'),
 	State: require('./jet/peer/state'),
 	Method: require('./jet/peer/method'),
 	Fetcher: require('./jet/peer/fetch-chainer').FetchChainer,
+	BaseError: errors.BaseError,
+	NotFound: errors.NotFound,
+	Occupied: errors.Occupied,
+	FetchOnly: errors.FetchOnly,
+	ConnectionClosed: errors.ConnectionClosed,
+	InvalidUser: errors.InvalidUser,
+	InvalidPassword: errors.InvalidPassword,
+	PeerTimeout: errors.PeerTimeout,
+	InvalidArgument: errors.InvalidArgument,
+	PeerError: errors.PeerError,
+	Unauthorized: errors.Unauthorized,
 	Promise: require('bluebird')
 };
-},{"./jet/peer":8,"./jet/peer/fetch-chainer":9,"./jet/peer/method":12,"./jet/peer/state":13,"bluebird":17}],2:[function(require,module,exports){
+},{"./jet/errors":4,"./jet/peer":9,"./jet/peer/fetch-chainer":10,"./jet/peer/method":13,"./jet/peer/state":14,"bluebird":18}],2:[function(require,module,exports){
+'use strict';
+
 var jetUtils = require('../utils');
 var isDefined = jetUtils.isDefined;
 
@@ -19,16 +36,20 @@ var intersects = function (arrayA, arrayB) {
 		if (arrayB.indexOf(arrayA[i]) !== -1) {
 			return true;
 		}
-	};
+	}
 	return false;
 };
 
 var grantAccess = function (accessName, access, auth) {
 	var groupName = accessName + 'Groups';
-	return intersects(access[groupName], auth[groupName]);
+	if (access[groupName]) {
+		return intersects(access[groupName], auth[groupName]);
+	} else {
+		return true;
+	}
 };
 
-exports.hasAccess = function (accessName, peer, element) {
+var hasAccess = function (accessName, peer, element) {
 	if (!isDefined(element.access)) {
 		return true;
 	} else if (!isDefined(peer.auth)) {
@@ -38,78 +59,111 @@ exports.hasAccess = function (accessName, peer, element) {
 	}
 };
 
+exports.isFetchOnly = function (peer, element) {
+	if (element.fetchOnly) {
+		return true;
+	} else {
+		if (isDefined(element.value)) {
+			return !hasAccess('set', peer, element);
+		} else {
+			return !hasAccess('call', peer, element);
+		}
+	}
+};
+
 exports.intersects = intersects;
 exports.grantAccess = grantAccess;
-},{"../utils":15}],3:[function(require,module,exports){
+exports.hasAccess = hasAccess;
+},{"../utils":16}],3:[function(require,module,exports){
+'use strict';
+
 var jetUtils = require('./utils');
 var access = require('./daemon/access');
 
-var Element = function (eachPeerFetcherWithAccess, owningPeer, path, value, access) {
+
+var Element = function (eachPeerFetcherWithAccess, owningPeer, params, logError) {
 	this.fetchers = {};
+	this.fetcherIsReadOnly = {};
 	this.eachFetcher = jetUtils.eachKeyValue(this.fetchers);
-	this.path = path;
-	this.value = value;
+	var path = this.path = params.path;
+	var lowerPath = this.lowerPath = path.toLowerCase();
+	var value = this.value = params.value;
+	var fetchOnly = this.fetchOnly = params.fetchOnly;
 	this.peer = owningPeer;
-	this.access = access;
+	this.access = params.access;
 
 	var fetchers = this.fetchers;
-	var lowerPath = path.toLowerCase();
+	var fetcherIsReadOnly = this.fetcherIsReadOnly;
+	this.logError = logError;
 
-	eachPeerFetcherWithAccess(this, function (peerFetchId, fetcher) {
+	eachPeerFetcherWithAccess(this, function (peerFetchId, fetcher, hasSetAccess) {
 		try {
-			var mayHaveInterest = fetcher(path, lowerPath, 'add', value);
+			var isReadOnly = fetchOnly || !hasSetAccess;
+			var mayHaveInterest = fetcher(path, lowerPath, 'add', value, isReadOnly);
 			if (mayHaveInterest) {
 				fetchers[peerFetchId] = fetcher;
+				fetcherIsReadOnly[peerFetchId] = isReadOnly;
 			}
 		} catch (err) {
-			console.error('fetcher failed', err);
+			logError(err);
 		}
 	});
 };
 
 Element.prototype._publish = function (event) {
-	var lowerPath = this.path.toLowerCase();
+	var lowerPath = this.lowerPath;
 	var value = this.value;
 	var path = this.path;
-	this.eachFetcher(function (_, fetcher) {
+	var isReadOnly = this.fetcherIsReadOnly;
+	var logError = this.logError;
+	this.eachFetcher(function (id, fetcher) {
 		try {
-			fetcher(path, lowerPath, event, value);
+			fetcher(path, lowerPath, event, value, isReadOnly[id]);
 		} catch (err) {
-			console.error('fetcher failed', err);
+			logError(err);
 		}
 	});
 };
 
 Element.prototype.change = function (value) {
 	this.value = value;
-	this._publish('change', value);
-
+	this._publish('change');
 };
 
 Element.prototype.remove = function () {
 	this._publish('remove');
 };
 
-Element.prototype.addFetcher = function (id, fetcher) {
+Element.prototype.addFetcher = function (id, fetcher, isReadOnly) {
 	this.fetchers[id] = fetcher;
+	this.fetcherIsReadOnly[id] = isReadOnly;
 };
 
 Element.prototype.removeFetcher = function (id) {
 	delete this.fetchers[id];
+	delete this.fetcherIsReadOnly[id];
 };
 
-var Elements = function () {
+var Elements = function (log) {
 	this.instances = {};
+	this.log = log || console.log;
+	this.logError = this.logError.bind(this);
 	this.each = jetUtils.eachKeyValue(this.instances);
 };
 
-Elements.prototype.add = function (peers, owningPeer, path, value, access) {
+Elements.prototype.logError = function (err) {
+	this.log('fetcher failed:', err);
+	this.log('Trace:', err.stack);
+};
+
+Elements.prototype.add = function (peers, owningPeer, params) {
+	var path = params.path;
 	if (this.instances[path]) {
 		throw jetUtils.invalidParams({
 			pathAlreadyExists: path
 		});
 	} else {
-		this.instances[path] = new Element(peers, owningPeer, path, value, access);
+		this.instances[path] = new Element(peers, owningPeer, params, this.logError);
 	}
 };
 
@@ -161,21 +215,24 @@ Elements.prototype.remove = function (path, peer) {
 };
 
 Elements.prototype.addFetcher = function (id, fetcher, peer) {
+	var logError = this.logError;
 	this.each(function (path, element) {
 		if (access.hasAccess('fetch', peer, element)) {
 			var mayHaveInterest;
 			try {
+				var isReadOnly = access.isFetchOnly(peer, element);
 				mayHaveInterest = fetcher(
 					path,
 					path.toLowerCase(),
 					'add',
-					element.value
+					element.value,
+					isReadOnly
 				);
 				if (mayHaveInterest) {
-					element.addFetcher(id, fetcher);
+					element.addFetcher(id, fetcher, isReadOnly);
 				}
 			} catch (err) {
-				console.error('fetcher failed', err);
+				logError(err);
 			}
 		}
 	});
@@ -189,13 +246,185 @@ Elements.prototype.removeFetcher = function (id) {
 
 exports.Elements = Elements;
 exports.Element = Element;
-},{"./daemon/access":2,"./utils":15}],4:[function(require,module,exports){
+},{"./daemon/access":2,"./utils":16}],4:[function(require,module,exports){
+'use strict';
+
+var INVALID_PARAMS_CODE = -32602;
+var INTERNAL_ERROR_CODE = -32603;
+var RESPONSE_TIMEOUT_CODE = -32001;
+
+exports.invalidParams = function (data) {
+	return {
+		message: 'Invalid params',
+		code: INVALID_PARAMS_CODE,
+		data: data
+	};
+};
+
+exports.methodNotFound = function (data) {
+	return {
+		message: 'Method not found',
+		code: -32601,
+		data: data
+	};
+};
+
+exports.invalidRequest = function (data) {
+	return {
+		message: 'Invalid Request',
+		code: -32600,
+		data: data
+	};
+};
+
+exports.responseTimeout = function (data) {
+	return {
+		message: 'Response Timeout',
+		code: RESPONSE_TIMEOUT_CODE,
+		data: data
+	};
+};
+
+
+
+var BaseError = function (name, message, stack) {
+	var tmp = Error.call(this, message);
+	tmp.name = this.name = 'jet.' + name;
+	this.message = tmp.message;
+	var errorUrlBase = 'https://github.com/lipp/node-jet/blob/master/doc/peer.markdown';
+	var url = errorUrlBase + '#jet' + name.toLowerCase();
+	this.url = tmp.url = url;
+	Object.defineProperty(this, 'stack', {
+		get: function () {
+			return stack || 'no remote stack';
+		}
+	});
+	return this;
+};
+
+BaseError.prototype = Object.create(Error.prototype);
+
+var DaemonError = function (msg) {
+	BaseError.call(this, 'DaemonError', msg);
+};
+
+DaemonError.prototype = Object.create(BaseError.prototype);
+
+exports.DaemonError = DaemonError;
+exports.BaseError = BaseError;
+
+var PeerError = function (err) {
+	BaseError.call(this, 'PeerError', err.message, err.stack);
+};
+
+PeerError.prototype = Object.create(BaseError.prototype);
+exports.PeerError = PeerError;
+
+// authenticate
+var InvalidUser = function () {
+	BaseError.call(this, 'InvalidUser', 'The specified user does not exist');
+};
+
+InvalidUser.prototype = Object.create(BaseError.prototype);
+exports.InvalidUser = InvalidUser;
+
+// authenticate
+var InvalidPassword = function () {
+	BaseError.call(this, 'InvalidPassword', 'The specified password is wrong');
+};
+
+InvalidPassword.prototype = Object.create(BaseError.prototype);
+exports.InvalidPassword = InvalidPassword;
+
+var Unauthorized = function () {
+	BaseError.call(this, 'Unauthorized', 'The request is not authorized for the user');
+};
+
+Unauthorized.prototype = Object.create(BaseError.prototype);
+exports.Unauthorized = Unauthorized;
+
+// connect / all
+var ConnectionClosed = function (err) {
+	BaseError.call(this, 'ConnectionClosed', err);
+};
+
+ConnectionClosed.prototype = Object.create(BaseError.prototype);
+exports.ConnectionClosed = ConnectionClosed;
+
+// set / call
+var NotFound = function () {
+	BaseError.call(this, 'NotFound', 'No State/Method matching the specified path');
+};
+
+NotFound.prototype = Object.create(BaseError.prototype);
+exports.NotFound = NotFound;
+
+// set / call
+var InvalidArgument = function (msg) {
+	BaseError.call(this, 'InvalidArgument', msg || 'The provided argument(s) have been refused by the State/Method');
+};
+
+InvalidArgument.prototype = Object.create(BaseError.prototype);
+exports.InvalidArgument = InvalidArgument;
+
+// set / call
+var PeerTimeout = function () {
+	BaseError.call(this, 'PeerTimeout', 'The peer processing the request did not respond within the specified timeout');
+};
+
+PeerTimeout.prototype = Object.create(BaseError.prototype);
+exports.PeerTimeout = PeerTimeout;
+
+var Occupied = function () {
+	BaseError.call(this, 'Occupied', 'A State/Method with the same path has already been added');
+};
+
+Occupied.prototype = Object.create(BaseError.prototype);
+exports.Occupied = Occupied;
+
+var FetchOnly = function () {
+	BaseError.call(this, 'FetchOnly', 'The State cannot be modified');
+};
+
+FetchOnly.prototype = Object.create(BaseError.prototype);
+exports.FetchOnly = FetchOnly;
+
+exports.createTypedError = function (jsonrpcError) {
+	var code = jsonrpcError.code;
+	var data = jsonrpcError.data;
+	var dataType = typeof data;
+	if (code === INVALID_PARAMS_CODE) {
+		if (dataType === 'object') {
+			if (data.pathNotExists) {
+				return new NotFound();
+			} else if (data.pathAlreadyExists) {
+				return new Occupied();
+			} else if (data.fetchOnly) {
+				return new FetchOnly();
+			} else if (data.invalidUser) {
+				return new InvalidUser();
+			} else if (data.invalidPassword) {
+				return new InvalidPassword();
+			} else if (data.invalidArgument) {
+				return new InvalidArgument(data.invalidArgument);
+			} else if (data.noAccess) {
+				return new Unauthorized();
+			}
+		}
+	} else if (code === RESPONSE_TIMEOUT_CODE) {
+		return new PeerTimeout();
+	} else if (code === INTERNAL_ERROR_CODE) {
+		return new PeerError(data);
+	}
+};
+},{}],5:[function(require,module,exports){
+'use strict';
+
 var jetUtils = require('./utils');
 var jetSorter = require('./sorter');
 var jetFetcher = require('./fetcher');
 
 var checked = jetUtils.checked;
-var optional = jetUtils.optional;
 
 var isDefined = jetUtils.isDefined;
 
@@ -246,10 +475,7 @@ exports.unfetchCore = function (peer, elements, params) {
 };
 
 exports.addCore = function (peer, eachPeerFetcher, elements, params) {
-	var path = checked(params, 'path', 'string');
-	var access = optional(params, 'access', 'object');
-	var value = params.value;
-	elements.add(eachPeerFetcher, peer, path, value, access);
+	elements.add(eachPeerFetcher, peer, params);
 };
 
 exports.removeCore = function (peer, elements, params) {
@@ -261,8 +487,9 @@ exports.changeCore = function (peer, elements, params) {
 	var path = checked(params, 'path', 'string');
 	elements.change(path, params.value, peer);
 };
-},{"./fetcher":5,"./sorter":14,"./utils":15}],5:[function(require,module,exports){
+},{"./fetcher":6,"./sorter":15,"./utils":16}],6:[function(require,module,exports){
 'use strict';
+
 var jetPathMatcher = require('./path_matcher');
 var jetValueMatcher = require('./value_matcher');
 var jetUtils = require('./utils');
@@ -274,7 +501,7 @@ exports.create = function (options, notify) {
 	var valueMatcher = jetValueMatcher.create(options);
 	var added = {};
 
-	var matchValue = function (path, event, value) {
+	var matchValue = function (path, event, value, fetchOnly) {
 		var isAdded = added[path];
 		if (event === 'remove' || !valueMatcher(value)) {
 			if (isAdded) {
@@ -287,57 +514,69 @@ exports.create = function (options, notify) {
 			}
 			return true;
 		}
+		var notification = {};
 		if (!isAdded) {
 			event = 'add';
+			if (fetchOnly) {
+				notification.fetchOnly = true;
+			}
 			added[path] = true;
 		} else {
 			event = 'change';
 		}
-		notify({
-			path: path,
-			event: event,
-			value: value
-		});
+		notification.path = path;
+		notification.event = event;
+		notification.value = value;
+
+		notify(notification);
 		return true;
 	};
 
 	if (isDefined(pathMatcher) && !isDefined(valueMatcher)) {
-		return function (path, lowerPath, event, value) {
+		return function (path, lowerPath, event, value, fetchOnly) {
 			if (!pathMatcher(path, lowerPath)) {
 				// return false to indicate no further interest.
 				return false;
 			}
-			notify({
-				path: path,
-				event: event,
-				value: value
-			});
+			var notification = {};
+			if (event === 'add' && fetchOnly) {
+				notification.fetchOnly = true;
+			}
+			notification.path = path;
+			notification.event = event;
+			notification.value = value;
+			notify(notification);
 			return true;
 		};
 	} else if (!isDefined(pathMatcher) && isDefined(valueMatcher)) {
-		return function (path, lowerPath, event, value) {
-			return matchValue(path, event, value);
+		return function (path, lowerPath, event, value, fetchOnly) {
+			return matchValue(path, event, value, fetchOnly);
 		};
 	} else if (isDefined(pathMatcher) && isDefined(valueMatcher)) {
-		return function (path, lowerPath, event, value) {
+		return function (path, lowerPath, event, value, fetchOnly) {
 			if (!pathMatcher(path, lowerPath)) {
 				return false;
 			}
-			return matchValue(path, event, value);
+			return matchValue(path, event, value, fetchOnly);
 		};
 	} else {
-		return function (path, lowerPath, event, value) {
-			notify({
-				path: path,
-				event: event,
-				value: value
-			});
+		return function (path, lowerPath, event, value, fetchOnly) {
+			var notification = {};
+			if (event === 'add' && fetchOnly) {
+				notification.fetchOnly = true;
+			}
+			notification.path = path;
+			notification.event = event;
+			notification.value = value;
+			notify(notification);
 			return true;
 		};
 	}
 };
-},{"./path_matcher":7,"./utils":15,"./value_matcher":16}],6:[function(require,module,exports){
+},{"./path_matcher":8,"./utils":16,"./value_matcher":17}],7:[function(require,module,exports){
 (function (process,Buffer){
+'use strict';
+
 var util = require('util');
 var events = require('events');
 var net = require('net');
@@ -361,7 +600,7 @@ var MessageSocket = function (port, ip) {
 
 	socket.on('data', function (buf) {
 		var bigBuf = Buffer.concat([last, buf]);
-		while (true) {
+		while (true) { // eslint-disable-line no-constant-condition
 			if (len < 0) {
 				if (bigBuf.length < 4) {
 					last = bigBuf;
@@ -531,7 +770,7 @@ MessageSocket.prototype.addEventListener = function (method, listener) {
 
 exports.MessageSocket = MessageSocket;
 }).call(this,require('_process'),require("buffer").Buffer)
-},{"_process":25,"buffer":19,"events":23,"net":18,"util":27}],7:[function(require,module,exports){
+},{"_process":26,"buffer":20,"events":24,"net":19,"util":28}],8:[function(require,module,exports){
 'use strict';
 
 var jetUtils = require('./utils');
@@ -644,6 +883,7 @@ exports.create = function (options) {
 		ci = po.caseInsensitive,
 		pred,
 		predicates = [];
+
 	predicateOrder.forEach(function (name) {
 		var gen,
 			i,
@@ -671,43 +911,40 @@ exports.create = function (options) {
 		}
 		return true;
 	};
+
+	var pathMatcher;
+
 	if (ci) {
 		if (predicates.length === 1) {
 			pred = predicates[0];
-			return function (path, lowerPath) {
+			pathMatcher = function (path, lowerPath) {
 				return pred(lowerPath);
 			};
 		} else {
-			return function (path, lowerPath) {
+			pathMatcher = function (path, lowerPath) {
 				return applyPredicates(lowerPath);
 			};
 		}
 	} else {
 		if (predicates.length === 1) {
 			pred = predicates[0];
-			return function (path) {
+			pathMatcher = function (path) {
 				return pred(path);
 			};
 		} else {
-			return function (path) {
+			pathMatcher = function (path) {
 				return applyPredicates(path);
 			};
 		}
 	}
+
+	return pathMatcher; //eslint-disable-line consistent-return
 };
-},{"./utils":15}],8:[function(require,module,exports){
-var util = require('util');
-var jetUtils = require('./utils');
+},{"./utils":16}],9:[function(require,module,exports){
+'use strict';
+
 var JsonRPC = require('./peer/jsonrpc');
 var Bluebird = require('bluebird');
-
-/**
- * Helpers
- */
-var isDef = jetUtils.isDefined;
-var isArr = util.isArray;
-var invalidParams = jetUtils.invalidParams;
-var errorObject = jetUtils.errorObject;
 
 var fallbackDaemonInfo = {
 	name: 'unknown-daemon',
@@ -729,10 +966,6 @@ var Peer = function (config) {
 
 	this.jsonrpc = new JsonRPC(config);
 
-	this.closedPromise = new Bluebird(function (resolve) {
-		that.resolveClosed = resolve;
-	});
-
 	this.connectPromise = new Bluebird(function (resolve, reject) {
 		that.resolveConnect = resolve;
 		that.rejectConnect = reject;
@@ -740,39 +973,26 @@ var Peer = function (config) {
 
 	this.daemonInfo = fallbackDaemonInfo;
 
-	this.jsonrpc.once('open', function () {
-		try {
-			that.info().then(function (daemonInfo) {
-				that.daemonInfo = daemonInfo;
-			}).catch(function () {}).finally(function () {
-				if (that.config.user) {
-					that.authenticate(that.config.user, that.config.password).then(function (access) {
-						that.access = access;
-						that.connected = true;
-						that.resolveConnect(that);
-					}).catch(function (err) {
-						that.rejectConnect(err);
-					});
-				} else {
+	this.jsonrpc.connect().then(function () {
+		that.info().then(function (daemonInfo) {
+			that.daemonInfo = daemonInfo;
+		}).catch(function () {}).finally(function () {
+			if (that.config.user) {
+				that.authenticate(that.config.user, that.config.password).then(function (access) {
+					that.access = access;
 					that.connected = true;
 					that.resolveConnect(that);
-				}
-			});
-		} catch (err) {
-			that.rejectConnect(err);
-		}
+				}).catch(function (err) {
+					that.rejectConnect(err);
+				});
+			} else {
+				that.connected = true;
+				that.resolveConnect(that);
+			}
+		});
+	}).catch(function (err) {
+		that.rejectConnect(err);
 	});
-
-	this.jsonrpc.once('error', function (err) {
-		that.connected = false;
-		that.resolveClosed(err);
-	});
-
-	this.jsonrpc.once('close', function (reason) {
-		that.connected = false;
-		that.resolveClosed(reason);
-	});
-
 
 };
 
@@ -780,16 +1000,15 @@ Peer.prototype.connect = function () {
 	return this.connectPromise;
 };
 
-
 /**
  * Close
  */
 Peer.prototype.close = function () {
-	this.jsonrpc.close();
+	return this.jsonrpc.close();
 };
 
 Peer.prototype.closed = function () {
-	return this.closedPromise;
+	return this.jsonrpc.closed();
 };
 
 /**
@@ -899,7 +1118,9 @@ Peer.prototype.set = function (path, value, options) {
 
 
 module.exports = Peer;
-},{"./peer/jsonrpc":11,"./utils":15,"bluebird":17,"util":27}],9:[function(require,module,exports){
+},{"./peer/jsonrpc":12,"bluebird":18}],10:[function(require,module,exports){
+'use strict';
+
 var Fetcher = require('./fetch').Fetcher;
 var FakeFetcher = require('./fetch').FakeFetcher;
 
@@ -964,7 +1185,7 @@ FetchChainer.prototype.key = function (key, match, comp) {
 
 FetchChainer.prototype.value = function () {
 	var args = Array.prototype.slice.call(arguments, 0);
-	if (args.length == 2) {
+	if (args.length === 2) {
 		var match = args[0];
 		var comp = args[1];
 		this.rule.value = this.rule.value || {};
@@ -981,42 +1202,43 @@ var defaultSort = function () {
 	};
 };
 
-FetchChainer.prototype.differential = function () {
+FetchChainer.prototype._sortObject = function () {
 	this.rule.sort = this.rule.sort || defaultSort();
-	this.rule.sort.asArray = false;
+	return this.rule.sort;
+};
+
+FetchChainer.prototype.differential = function () {
+	this._sortObject().asArray = false;
 	return this;
 };
 
 FetchChainer.prototype.ascending = function () {
-	this.rule.sort = this.rule.sort || defaultSort();
-	this.rule.sort.descending = false;
+	this._sortObject().descending = false;
 	return this;
 };
 
 FetchChainer.prototype.descending = function () {
-	this.rule.sort = this.rule.sort || defaultSort();
-	this.rule.sort.descending = true;
+	this._sortObject().descending = true;
 	return this;
 };
 
 FetchChainer.prototype.sortByPath = function () {
-	this.rule.sort = this.rule.sort || defaultSort();
-	this.rule.sort.byPath = true;
+	this._sortObject().byPath = true;
 	return this;
 };
 
 FetchChainer.prototype.sortByKey = function (key, type) {
-	this.rule.sort = this.rule.sort || defaultSort();
-	this.rule.sort.byValueField = {};
-	this.rule.sort.byValueField[key] = type;
+	var sort = this._sortObject();
+	sort.byValueField = {};
+	sort.byValueField[key] = type;
 	return this;
 };
 
 FetchChainer.prototype.sortByValue = function () {
 	var args = Array.prototype.slice.call(arguments, 0);
-	this.rule.sort = this.rule.sort || defaultSort();
+	var sort = this._sortObject();
 	if (args.length === 1) {
-		this.rule.sort.byValue = args[0];
+		sort.byValue = args[0];
 	} else {
 		return this.sortByKey(args[0], args[1]);
 	}
@@ -1024,22 +1246,24 @@ FetchChainer.prototype.sortByValue = function () {
 };
 
 FetchChainer.prototype.range = function (from, to) {
-	this.rule.sort = this.rule.sort || defaultSort();
-	this.rule.sort.from = from;
-	this.rule.sort.to = to || from + 20;
+	var sort = this._sortObject();
+	sort.from = from;
+	sort.to = to || from + 20;
 	return this;
 };
 
 
 module.exports.FetchChainer = FetchChainer;
-},{"./fetch":10}],10:[function(require,module,exports){
+},{"./fetch":11}],11:[function(require,module,exports){
+'use strict';
+
 var jetUtils = require('../utils');
 var fetchCommon = require('../fetch-common');
 var Elements = require('../element').Elements;
 var Bluebird = require('bluebird');
 var isDef = jetUtils.isDefined;
 
-var fetchId = 1;
+var globalFetchId = 1;
 
 var createFetchDispatcher = function (params, f, ref) {
 	if (isDef(params.sort)) {
@@ -1048,23 +1272,20 @@ var createFetchDispatcher = function (params, f, ref) {
 			var arr = [];
 			var from = params.sort.from;
 			return function (message) {
-				var params = message.params;
-				arr.length = params.n;
-				params.changes.forEach(function (change) {
+				arr.length = message.params.n;
+				message.params.changes.forEach(function (change) {
 					arr[change.index - from] = change;
 				});
 				f.call(ref, arr, ref);
 			};
 		} else {
 			return function (message) {
-				var params = message.params;
-				f.call(ref, params.changes, params.n);
+				f.call(ref, message.params.changes, message.params.n);
 			};
 		}
 	} else {
 		return function (message) {
-			var params = message.params;
-			f.call(ref, params.path, params.event, params.value);
+			f.call(ref, message.params);
 		};
 	}
 };
@@ -1105,8 +1326,8 @@ FakePeer.prototype.hasFetcher = function (fetchId) {
  */
 var FakeFetcher = function (jsonrpc, fetchParams, fetchCb) {
 
-	var id = '__f__' + fetchId;
-	++fetchId;
+	var id = '__f__' + globalFetchId;
+	++globalFetchId;
 
 	fetchParams.id = id;
 
@@ -1137,11 +1358,11 @@ var FakeFetcher = function (jsonrpc, fetchParams, fetchCb) {
 		};
 
 		FakeFetcher.fetchAllPromise = new Bluebird(function (resolve, reject) {
-			jsonrpc.service('fetch', {})
-				.then(function (fetchSimpleId) {
-					jsonrpc.addRequestDispatcher(fetchSimpleId, fetchSimpleDispatcher);
-					setTimeout(resolve, 50); // wait some time to let the FakeFetcher.elements get filled
-				}).catch(reject);
+			jsonrpc.service('fetch', {}, function (ok, fetchSimpleId) {
+				jsonrpc.addRequestDispatcher(fetchSimpleId, fetchSimpleDispatcher);
+			}).then(function () {
+				setTimeout(resolve, 50); // wait some time to let the FakeFetcher.elements get filled
+			}).catch(reject);
 		});
 	}
 
@@ -1174,9 +1395,9 @@ var FakeFetcher = function (jsonrpc, fetchParams, fetchCb) {
  * All options are available at http://jetbus.io.
  */
 var Fetcher = function (jsonrpc, params, fetchCb) {
-	var id = '__f__' + fetchId;
+	var id = '__f__' + globalFetchId;
 	params.id = id;
-	++fetchId;
+	++globalFetchId;
 
 	var fetchDispatcher = createFetchDispatcher(params, fetchCb, this);
 
@@ -1208,15 +1429,15 @@ module.exports = {
 	FakeFetcher: FakeFetcher,
 	Fetcher: Fetcher
 };
-},{"../element":3,"../fetch-common":4,"../utils":15,"bluebird":17}],11:[function(require,module,exports){
+},{"../element":3,"../fetch-common":5,"../utils":16,"bluebird":18}],12:[function(require,module,exports){
 'use strict';
 
 var util = require('util');
-var events = require('events');
 var MessageSocket = require('../message-socket').MessageSocket;
 var WebSocket = require('ws');
 var jetUtils = require('../utils');
 var Bluebird = require('bluebird');
+var errors = require('../errors');
 
 /**
  * Helper shorthands.
@@ -1238,7 +1459,7 @@ var addHook = function (callbacks, callbackName, hook) {
 	if (callbacks[callbackName]) {
 		var orig = callbacks[callbackName];
 		callbacks[callbackName] = function (result) {
-			hook();
+			hook(result);
 			orig(result);
 		};
 	} else {
@@ -1259,45 +1480,71 @@ var JsonRPC = function (config) {
 	}
 	this.config = config;
 	this.messages = [];
-	this.closed = false;
 	this.willFlush = false;
 	this.requestDispatchers = {};
 	this.responseDispatchers = {};
 	this.id = 0;
+
+	var that = this;
+
+	this.closedPromise = new Bluebird(function (resolve) {
+		that.resolveClosed = resolve;
+	});
+
+	this.connectPromise = new Bluebird(function (resolve, reject) {
+		that.resolveConnect = resolve;
+		that.rejectConnect = reject;
+	});
 
 	// make sure event handlers have the same context
 	this._dispatchMessage = this._dispatchMessage.bind(this);
 	this._dispatchSingleMessage = this._dispatchSingleMessage.bind(this);
 	this._dispatchResponse = this._dispatchResponse.bind(this);
 	this._dispatchRequest = this._dispatchRequest.bind(this);
+	this._dispatchClose = this._dispatchClose.bind(this);
+	this._dispatchOpen = this._dispatchOpen.bind(this);
 
-	var that = this;
-
-	// onmessage
 	this.sock.addEventListener('message', this._dispatchMessage);
-
-	// onclose
-	this.sock.addEventListener('close', function (err) {
-		that.closed = true;
-		that.emit('close', err);
-	});
-
-	// onerror
-	this.sock.addEventListener('error', function (err) {
-		that.closed = true;
-		that.emit('error', err);
-	});
-
-	// onopen
-	this.sock.addEventListener('open', function () {
-		that.open = true;
-		that.emit('open');
-	});
+	this.sock.addEventListener('close', this._dispatchClose);
+	this.sock.addEventListener('error', function () {}); // swallow errors, closed event is emitted too
+	this.sock.addEventListener('open', this._dispatchOpen);
 
 };
 
+JsonRPC.prototype._dispatchOpen = function () {
+	/* istanbul ignore else */
+	if (!this._isClosed) {
+		this._isOpened = true;
+		this.resolveConnect();
+	}
+};
 
-util.inherits(JsonRPC, events.EventEmitter);
+JsonRPC.prototype._dispatchClose = function () {
+	this._isClosed = true;
+	var err = new errors.ConnectionClosed();
+	/* istanbul ignore else */
+	if (!this._isOpened) {
+		this.rejectConnect(err);
+	}
+	for (var id in this.responseDispatchers) {
+		var callbacks = this.responseDispatchers[id];
+		/* istanbul ignore else */
+		if (callbacks.error) {
+			callbacks.error(err);
+		}
+	}
+	this.responseDisptachers = {};
+	this.resolveClosed();
+};
+
+JsonRPC.prototype.connect = function () {
+	return this.connectPromise;
+};
+
+JsonRPC.prototype.closed = function () {
+	return this.closedPromise;
+};
+
 
 /**
  * _dispatchMessage
@@ -1314,8 +1561,8 @@ JsonRPC.prototype._dispatchMessage = function (event) {
 		this.config.onReceive(message, decoded);
 	}
 	if (isArr(decoded)) {
-		decoded.forEach(function (message) {
-			this._dispatchSingleMessage(message);
+		decoded.forEach(function (singleMessage) {
+			this._dispatchSingleMessage(singleMessage);
 		});
 	} else {
 		this._dispatchSingleMessage(decoded);
@@ -1355,7 +1602,8 @@ JsonRPC.prototype._dispatchResponse = function (message) {
 		if (isDef(message.result) && callbacks.success) {
 			callbacks.success(message.result);
 		} else if (isDef(message.error) && callbacks.error) {
-			callbacks.error(message.error);
+			var err = errors.createTypedError(message.error);
+			callbacks.error(err || message.error);
 		}
 	}
 };
@@ -1374,7 +1622,7 @@ JsonRPC.prototype._dispatchRequest = function (message) {
 	try {
 		dispatcher(message);
 	} catch (err) {
-		/* istanbul ignore else */
+		/* istanbul ignore if */
 		if (isDef(message.id)) {
 			this.queue({
 				id: message.id,
@@ -1449,57 +1697,57 @@ JsonRPC.prototype.hasRequestDispatcher = function (id) {
  * Service.
  */
 JsonRPC.prototype.service = function (method, params, complete, asNotification) {
-	/* istanbul ignore else */
-	if (this.closed) {
-		throw new Error('Jet Websocket connection is closed');
-	}
 	var that = this;
 	return new Bluebird(function (resolve, reject) {
-		var rpcId;
-		// Only make a Request, if callbacks are specified.
-		// Make complete call in case of success.
-		// If no id is specified in the message, no Response
-		// is expected, aka Notification.
-		if (!!!asNotification) {
-			rpcId = that.id;
-			that.id = that.id + 1;
-			var callbacks = {
-				success: resolve,
-				error: reject
-			};
-			/* istanbul ignore else */
-			if (complete) {
-				addHook(callbacks, 'success', function () {
+		if (that._isClosed) {
+			reject(new errors.ConnectionClosed());
+		} else {
+			var rpcId;
+			// Only make a Request, if callbacks are specified.
+			// Make complete call in case of success.
+			// If no id is specified in the message, no Response
+			// is expected, aka Notification.
+			if (!asNotification) {
+				rpcId = that.id;
+				that.id = that.id + 1;
+				var callbacks = {
+					success: resolve,
+					error: reject
+				};
+				/* istanbul ignore else */
+				if (complete) {
+					addHook(callbacks, 'success', function (result) {
+						complete(true, result);
+					});
+					addHook(callbacks, 'error', function () {
+						complete(false);
+					});
+				}
+				that.responseDispatchers[rpcId] = callbacks;
+			} else {
+				// There will be no response, so call complete either way
+				// and hope everything is ok
+				if (complete) {
 					complete(true);
-				});
-				addHook(callbacks, 'error', function () {
-					complete(false);
-				});
+				}
 			}
-			that.responseDispatchers[rpcId] = callbacks;
-		} else {
-			// There will be no response, so call complete either way
-			// and hope everything is ok
-			if (complete) {
-				complete(true);
+			var message = {
+				id: rpcId,
+				method: method,
+				params: params
+			};
+			if (that.willFlush) {
+				that.queue(message);
+			} else {
+				var encoded = encode(message);
+				if (that.config.onSend) {
+					that.config.onSend(encoded, [message]);
+				}
+				that.sock.send(encode(message));
 			}
-		}
-		var message = {
-			id: rpcId,
-			method: method,
-			params: params
-		};
-		if (that.willFlush) {
-			that.queue(message);
-		} else {
-			var encoded = encode(message);
-			if (that.config.onSend) {
-				that.config.onSend(encoded, [message]);
+			if (asNotification) {
+				resolve();
 			}
-			that.sock.send(encode(message));
-		}
-		if (asNotification) {
-			resolve();
 		}
 	});
 };
@@ -1517,23 +1765,24 @@ JsonRPC.prototype.batch = function (action) {
  * Close.
  */
 JsonRPC.prototype.close = function () {
-	this.closed = true;
-	this.flush();
-	this.sock.close();
+	if (!this._isClosed) {
+		this._isClosed = true;
+		this.flush();
+		this.sock.close();
+	}
+	return this.closedPromise;
 };
 
 module.exports = JsonRPC;
-},{"../message-socket":6,"../utils":15,"bluebird":17,"events":23,"util":27,"ws":28}],12:[function(require,module,exports){
-var util = require('util');
+},{"../errors":4,"../message-socket":7,"../utils":16,"bluebird":18,"util":28,"ws":29}],13:[function(require,module,exports){
+'use strict';
+
 var jetUtils = require('../utils');
-var Bluebird = require('bluebird');
 
 /**
  * Helpers
  */
 var isDef = jetUtils.isDefined;
-var isArr = util.isArray;
-var invalidParams = jetUtils.invalidParams;
 var errorObject = jetUtils.errorObject;
 
 
@@ -1541,7 +1790,7 @@ var errorObject = jetUtils.errorObject;
  * Method
  */
 
-Method = function (path, access) {
+var Method = function (path, access) {
 	this._path = path;
 	this._access = access;
 };
@@ -1592,8 +1841,8 @@ Method.prototype.createSyncDispatcher = function (cb) {
 Method.prototype.createAsyncDispatcher = function (cb) {
 	var that = this;
 	var dispatch = function (message) {
+		var mid = message.id;
 		var reply = function (resp) {
-			var mid = message.id;
 			resp = resp || {};
 			if (isDef(mid)) {
 				var response = {
@@ -1616,7 +1865,6 @@ Method.prototype.createAsyncDispatcher = function (cb) {
 		try {
 			cb.call(that, params, reply);
 		} catch (err) {
-			var mid = message.id;
 			if (isDef(mid)) {
 				that.jsonrpc.queue({
 					id: mid,
@@ -1662,12 +1910,13 @@ Method.prototype.remove = function () {
 };
 
 Method.prototype.isAdded = function () {
-	return that.jsonrpc.hasRequestDispatcher(this._path);
+	return this.jsonrpc.hasRequestDispatcher(this._path);
 };
 
 module.exports = Method;
-},{"../utils":15,"bluebird":17,"util":27}],13:[function(require,module,exports){
-var util = require('util');
+},{"../utils":16}],14:[function(require,module,exports){
+'use strict';
+
 var jetUtils = require('../utils');
 var Bluebird = require('bluebird');
 
@@ -1675,9 +1924,8 @@ var Bluebird = require('bluebird');
  * Helpers
  */
 var isDef = jetUtils.isDefined;
-var isArr = util.isArray;
-var invalidParams = jetUtils.invalidParams;
 var errorObject = jetUtils.errorObject;
+var noop = function () {};
 
 /**
  * State
@@ -1687,7 +1935,7 @@ var State = function (path, initialValue, access) {
 	this._path = path;
 	this._value = initialValue;
 	this._access = access;
-	this._dispatcher = this.createReadOnlyDispatcher();
+	this._dispatcher = noop;
 	var that = this;
 	this._isAddedPromise = new Bluebird(function (resolve, reject) {
 		that._isAddedPromiseResolve = resolve;
@@ -1763,8 +2011,8 @@ State.prototype.createAsyncDispatcher = function (cb) {
 
 	var dispatch = function (message) {
 		var value = message.params.value;
+		var mid = message.id;
 		var reply = function (resp) {
-			var mid = message.id;
 			resp = resp || {};
 			if (isDef(resp.value)) {
 				that._value = resp.value;
@@ -1802,7 +2050,6 @@ State.prototype.createAsyncDispatcher = function (cb) {
 		try {
 			cb.call(that, value, reply);
 		} catch (err) {
-			var mid = message.id;
 			/* istanbul ignore else */
 			if (isDef(mid)) {
 				that.jsonrpc.queue({
@@ -1811,21 +2058,6 @@ State.prototype.createAsyncDispatcher = function (cb) {
 				});
 
 			}
-		}
-	};
-	return dispatch;
-};
-
-State.prototype.createReadOnlyDispatcher = function () {
-	var that = this;
-	var dispatch = function (message) {
-		var mid = message.id;
-		/* istanbul ignore else */
-		if (isDef(mid)) {
-			that.jsonrpc.queue({
-				id: mid,
-				error: invalidParams(that._path + ' is read-only')
-			});
 		}
 	};
 	return dispatch;
@@ -1847,6 +2079,9 @@ State.prototype.add = function () {
 		value: this._value,
 		access: this._access
 	};
+	if (this._dispatcher === noop) {
+		params.fetchOnly = true;
+	}
 	return this.connectPromise.then(function () {
 		return that.jsonrpc.service('add', params, addDispatcher);
 	});
@@ -1858,13 +2093,14 @@ State.prototype.remove = function () {
 		path: this._path
 	};
 	var removeDispatcher = function (success) {
+		/* istanbul ignore else */
 		if (success) {
 			that._isAddedPromise = new Bluebird(function (resolve, reject) {
 				that._isAddedPromiseResolve = resolve;
 				that._isAddedPromiseReject = reject;
 			});
 			that.jsonrpc.removeRequestDispatcher(that._path, that._dispatcher);
-		} else {}
+		}
 	};
 	return this.connectPromise.then(function () {
 		return that.jsonrpc.service('remove', params, removeDispatcher);
@@ -1883,7 +2119,7 @@ State.prototype.value = function (newValue, notAsNotification) {
 			return that.jsonrpc.service('change', {
 				path: that._path,
 				value: newValue
-			}, null, !!!notAsNotification);
+			}, null, !notAsNotification);
 		});
 	} else {
 		return this._value;
@@ -1891,7 +2127,7 @@ State.prototype.value = function (newValue, notAsNotification) {
 };
 
 module.exports = State;
-},{"../utils":15,"bluebird":17,"util":27}],14:[function(require,module,exports){
+},{"../utils":16,"bluebird":18}],15:[function(require,module,exports){
 'use strict';
 
 var jetUtils = require('./utils');
@@ -1932,7 +2168,7 @@ var createSort = function (options) {
 			if (s(a, b)) {
 				return -1;
 			}
-		} catch (ignore) {}
+		} catch (ignore) {} // eslint-disable-line no-empty
 		return 1;
 	};
 
@@ -1982,16 +2218,21 @@ exports.create = function (options, notify) {
 			news,
 			olds,
 			ji,
-			i;
+			i,
+			match;
 
 		if (initializing) {
 			if (isDefined(index[path])) {
 				return;
 			}
-			matches.push({
+			match = {
 				path: path,
 				value: value
-			});
+			};
+			if (notification.fetchOnly) {
+				match.fetchOnly = true;
+			}
+			matches.push(match);
 			index[path] = matches.length;
 			return;
 		}
@@ -2006,17 +2247,21 @@ exports.create = function (options, notify) {
 		} else if (isDefined(lastIndex)) {
 			matches[lastIndex - 1].value = value;
 		} else {
-			matches.push({
+			match = {
 				path: path,
 				value: value
-			});
+			};
+			if (notification.fetchOnly) {
+				match.fetchOnly = true;
+			}
+			matches.push(match);
 		}
 
 
 		matches.sort(sort);
 
-		matches.forEach(function (m, i) {
-			index[m.path] = i + 1;
+		matches.forEach(function (m, mindex) {
+			index[m.path] = mindex + 1;
 		});
 
 		if (matches.length < from && lastMatchesLength < from) {
@@ -2025,15 +2270,21 @@ exports.create = function (options, notify) {
 
 		newIndex = index[path];
 
+		var change;
+
 		if (isDefined(lastIndex) && isDefined(newIndex) && newIndex === lastIndex && isInRange(newIndex)) {
 			if (event === 'change') {
+				change = {
+					path: path,
+					value: value,
+					index: newIndex
+				};
+				if (matches[newIndex - 1].fetchOnly) {
+					change.fetchOnly = true;
+				}
 				notify({
 					n: n,
-					changes: [{
-						path: path,
-						value: value,
-						index: newIndex,
-                        }]
+					changes: [change]
 				});
 			}
 			return;
@@ -2061,11 +2312,15 @@ exports.create = function (options, notify) {
 			news = matches[ji];
 			olds = sorted[ji];
 			if (news && news !== olds) {
-				changes.push({
+				change = {
 					path: news.path,
 					value: news.value,
 					index: i
-				});
+				};
+				if (news.fetchOnly) {
+					change.fetchOnly = true;
+				}
+				changes.push(change);
 			}
 			sorted[ji] = news;
 			if (news === undefined) {
@@ -2089,8 +2344,8 @@ exports.create = function (options, notify) {
 			ji,
 			i;
 		matches.sort(sort);
-		matches.forEach(function (m, i) {
-			index[m.path] = i + 1;
+		matches.forEach(function (m, mindex) {
+			index[m.path] = mindex + 1;
 		});
 
 		n = 0;
@@ -2117,7 +2372,11 @@ exports.create = function (options, notify) {
 		flush: flush
 	};
 };
-},{"./utils":15}],15:[function(require,module,exports){
+},{"./utils":16}],16:[function(require,module,exports){
+'use strict';
+
+var errors = require('./errors');
+
 var invalidParams = function (data) {
 	return {
 		message: 'Invalid params',
@@ -2127,14 +2386,6 @@ var invalidParams = function (data) {
 };
 
 exports.invalidParams = invalidParams;
-
-exports.responseTimeout = function (data) {
-	return {
-		message: 'Response Timeout',
-		code: -32001,
-		data: data
-	};
-};
 
 exports.parseError = function (data) {
 	return {
@@ -2215,8 +2466,7 @@ exports.accessField = function (fieldStr) {
 		fieldStr = '.' + fieldStr;
 	}
 	var funStr = 'return t' + fieldStr;
-	/*jshint -W061 */
-	return new Function('t', funStr);
+	return new Function('t', funStr); // eslint-disable-line no-new-func
 };
 
 exports.errorObject = function (err) {
@@ -2224,17 +2474,28 @@ exports.errorObject = function (err) {
 	if (typeof err === 'object' && isDefined(err.code) && isDefined(err.message)) {
 		return err;
 	} else {
-		if (typeof err === 'object') {
-			data = {};
-			data.message = err.message;
-			data.lineNumber = err.lineNumber;
-			data.fileName = err.fileName;
+		if (err instanceof errors.InvalidArgument) {
+			return invalidParams({
+				invalidArgument: err
+			});
+		} else {
+			if (typeof err === 'object') {
+				data = {};
+				data.message = err.message;
+				data.stack = err.stack;
+				data.lineNumber = err.lineNumber;
+				data.fileName = err.fileName;
+			} else {
+				data = {};
+				data.message = err;
+				data.stack = 'no stack available';
+			}
+			return {
+				code: -32603,
+				message: 'Internal error',
+				data: data
+			};
 		}
-		return {
-			code: -32602,
-			message: 'Internal error',
-			data: data || err
-		};
 	}
 };
 
@@ -2247,7 +2508,7 @@ exports.eachKeyValue = function (obj) {
 		}
 	};
 };
-},{}],16:[function(require,module,exports){
+},{"./errors":4}],17:[function(require,module,exports){
 'use strict';
 
 var jetUtils = require('./utils');
@@ -2361,7 +2622,7 @@ exports.create = function (options) {
 		predicates = createValueFieldPredicates(options.valueField);
 	}
 
-	return function (value) {
+	return function (value) { // eslint-disable-line consistent-return
 		try {
 			for (var i = 0; i < predicates.length; ++i) {
 				if (!predicates[i](value)) {
@@ -2374,7 +2635,7 @@ exports.create = function (options) {
 		}
 	};
 };
-},{"./utils":15}],17:[function(require,module,exports){
+},{"./utils":16}],18:[function(require,module,exports){
 (function (process,global){
 /* @preserve
  * The MIT License (MIT)
@@ -2401,7 +2662,7 @@ exports.create = function (options) {
  * 
  */
 /**
- * bluebird build version 2.9.24
+ * bluebird build version 2.9.27
  * Features enabled: core, race, call_get, generators, map, nodeify, promisify, props, reduce, settle, some, cancel, using, filter, any, each, timers
 */
 !function(e){if("object"==typeof exports&&"undefined"!=typeof module)module.exports=e();else if("function"==typeof define&&define.amd)define([],e);else{var f;"undefined"!=typeof window?f=window:"undefined"!=typeof global?f=global:"undefined"!=typeof self&&(f=self),f.Promise=e()}}(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof _dereq_=="function"&&_dereq_;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof _dereq_=="function"&&_dereq_;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(_dereq_,module,exports){
@@ -2489,6 +2750,7 @@ Async.prototype.throwLater = function(fn, arg) {
 
 Async.prototype._getDomain = function() {};
 
+if (!true) {
 if (util.isNode) {
     var EventsModule = _dereq_("events");
 
@@ -2504,30 +2766,31 @@ if (util.isNode) {
         var descriptor =
             Object.getOwnPropertyDescriptor(EventsModule, "usingDomains");
 
-        if (!descriptor.configurable) {
-            process.on("domainsActivated", function() {
-                Async.prototype._getDomain = domainGetter;
-            });
-        } else {
-            var usingDomains = false;
-            Object.defineProperty(EventsModule, "usingDomains", {
-                configurable: false,
-                enumerable: true,
-                get: function() {
-                    return usingDomains;
-                },
-                set: function(value) {
-                    if (usingDomains || !value) return;
-                    usingDomains = true;
+        if (descriptor) {
+            if (!descriptor.configurable) {
+                process.on("domainsActivated", function() {
                     Async.prototype._getDomain = domainGetter;
-                    util.toFastProperties(process);
-                    process.emit("domainsActivated");
-                }
-            });
+                });
+            } else {
+                var usingDomains = false;
+                Object.defineProperty(EventsModule, "usingDomains", {
+                    configurable: false,
+                    enumerable: true,
+                    get: function() {
+                        return usingDomains;
+                    },
+                    set: function(value) {
+                        if (usingDomains || !value) return;
+                        usingDomains = true;
+                        Async.prototype._getDomain = domainGetter;
+                        util.toFastProperties(process);
+                        process.emit("domainsActivated");
+                    }
+                });
+            }
         }
-
-
     }
+}
 }
 
 function AsyncInvokeLater(fn, receiver, arg) {
@@ -3658,6 +3921,10 @@ var returner = function () {
 var thrower = function () {
     throw this;
 };
+var returnUndefined = function() {};
+var throwUndefined = function() {
+    throw undefined;
+};
 
 var wrapper = function (value, action) {
     if (action === 1) {
@@ -3674,6 +3941,8 @@ var wrapper = function (value, action) {
 
 Promise.prototype["return"] =
 Promise.prototype.thenReturn = function (value) {
+    if (value === undefined) return this.then(returnUndefined);
+
     if (wrapsPrimitiveReceiver && isPrimitive(value)) {
         return this._then(
             wrapper(value, 2),
@@ -3688,6 +3957,8 @@ Promise.prototype.thenReturn = function (value) {
 
 Promise.prototype["throw"] =
 Promise.prototype.thenThrow = function (reason) {
+    if (reason === undefined) return this.then(throwUndefined);
+
     if (wrapsPrimitiveReceiver && isPrimitive(reason)) {
         return this._then(
             wrapper(reason, 1),
@@ -6226,23 +6497,16 @@ Promise.reduce = function (promises, fn, initialValue, _each) {
 },{"./async.js":2,"./util.js":38}],31:[function(_dereq_,module,exports){
 "use strict";
 var schedule;
+var util = _dereq_("./util");
 var noAsyncScheduler = function() {
     throw new Error("No async scheduler available\u000a\u000a    See http://goo.gl/m3OTXk\u000a");
 };
-if (_dereq_("./util.js").isNode) {
-    var version = process.versions.node.split(".").map(Number);
-    schedule = (version[0] === 0 && version[1] > 10) || (version[0] > 0)
-        ? global.setImmediate : process.nextTick;
-
-    if (!schedule) {
-        if (typeof setImmediate !== "undefined") {
-            schedule = setImmediate;
-        } else if (typeof setTimeout !== "undefined") {
-            schedule = setTimeout;
-        } else {
-            schedule = noAsyncScheduler;
-        }
-    }
+if (util.isNode && typeof MutationObserver === "undefined") {
+    var GlobalSetImmediate = global.setImmediate;
+    var ProcessNextTick = process.nextTick;
+    schedule = util.isRecentNode
+                ? function(fn) { GlobalSetImmediate.call(global, fn); }
+                : function(fn) { ProcessNextTick.call(process, fn); };
 } else if (typeof MutationObserver !== "undefined") {
     schedule = function(fn) {
         var div = document.createElement("div");
@@ -6264,7 +6528,7 @@ if (_dereq_("./util.js").isNode) {
 }
 module.exports = schedule;
 
-},{"./util.js":38}],32:[function(_dereq_,module,exports){
+},{"./util":38}],32:[function(_dereq_,module,exports){
 "use strict";
 module.exports =
     function(Promise, PromiseArray) {
@@ -7163,6 +7427,10 @@ var ret = {
     isNode: typeof process !== "undefined" &&
         classString(process).toLowerCase() === "[object process]"
 };
+ret.isRecentNode = ret.isNode && (function() {
+    var version = process.versions.node.split(".").map(Number);
+    return (version[0] === 0 && version[1] > 10) || (version[0] > 0);
+})();
 try {throw new Error(); } catch (e) {ret.lastLineError = e;}
 module.exports = ret;
 
@@ -7472,9 +7740,9 @@ function isUndefined(arg) {
 },{}]},{},[4])(4)
 });                    ;if (typeof window !== 'undefined' && window !== null) {                               window.P = window.Promise;                                                     } else if (typeof self !== 'undefined' && self !== null) {                             self.P = self.Promise;                                                         }
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"_process":25}],18:[function(require,module,exports){
+},{"_process":26}],19:[function(require,module,exports){
 
-},{}],19:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 /*!
  * The buffer module from node.js, for the browser.
  *
@@ -8890,7 +9158,7 @@ function decodeUtf8Char (str) {
   }
 }
 
-},{"base64-js":20,"ieee754":21,"is-array":22}],20:[function(require,module,exports){
+},{"base64-js":21,"ieee754":22,"is-array":23}],21:[function(require,module,exports){
 var lookup = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 
 ;(function (exports) {
@@ -9016,8 +9284,8 @@ var lookup = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 	exports.fromByteArray = uint8ToBase64
 }(typeof exports === 'undefined' ? (this.base64js = {}) : exports))
 
-},{}],21:[function(require,module,exports){
-exports.read = function(buffer, offset, isLE, mLen, nBytes) {
+},{}],22:[function(require,module,exports){
+exports.read = function (buffer, offset, isLE, mLen, nBytes) {
   var e, m,
       eLen = nBytes * 8 - mLen - 1,
       eMax = (1 << eLen) - 1,
@@ -9025,32 +9293,32 @@ exports.read = function(buffer, offset, isLE, mLen, nBytes) {
       nBits = -7,
       i = isLE ? (nBytes - 1) : 0,
       d = isLE ? -1 : 1,
-      s = buffer[offset + i];
+      s = buffer[offset + i]
 
-  i += d;
+  i += d
 
-  e = s & ((1 << (-nBits)) - 1);
-  s >>= (-nBits);
-  nBits += eLen;
-  for (; nBits > 0; e = e * 256 + buffer[offset + i], i += d, nBits -= 8);
+  e = s & ((1 << (-nBits)) - 1)
+  s >>= (-nBits)
+  nBits += eLen
+  for (; nBits > 0; e = e * 256 + buffer[offset + i], i += d, nBits -= 8) {}
 
-  m = e & ((1 << (-nBits)) - 1);
-  e >>= (-nBits);
-  nBits += mLen;
-  for (; nBits > 0; m = m * 256 + buffer[offset + i], i += d, nBits -= 8);
+  m = e & ((1 << (-nBits)) - 1)
+  e >>= (-nBits)
+  nBits += mLen
+  for (; nBits > 0; m = m * 256 + buffer[offset + i], i += d, nBits -= 8) {}
 
   if (e === 0) {
-    e = 1 - eBias;
+    e = 1 - eBias
   } else if (e === eMax) {
-    return m ? NaN : ((s ? -1 : 1) * Infinity);
+    return m ? NaN : ((s ? -1 : 1) * Infinity)
   } else {
-    m = m + Math.pow(2, mLen);
-    e = e - eBias;
+    m = m + Math.pow(2, mLen)
+    e = e - eBias
   }
-  return (s ? -1 : 1) * m * Math.pow(2, e - mLen);
-};
+  return (s ? -1 : 1) * m * Math.pow(2, e - mLen)
+}
 
-exports.write = function(buffer, value, offset, isLE, mLen, nBytes) {
+exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
   var e, m, c,
       eLen = nBytes * 8 - mLen - 1,
       eMax = (1 << eLen) - 1,
@@ -9058,51 +9326,51 @@ exports.write = function(buffer, value, offset, isLE, mLen, nBytes) {
       rt = (mLen === 23 ? Math.pow(2, -24) - Math.pow(2, -77) : 0),
       i = isLE ? 0 : (nBytes - 1),
       d = isLE ? 1 : -1,
-      s = value < 0 || (value === 0 && 1 / value < 0) ? 1 : 0;
+      s = value < 0 || (value === 0 && 1 / value < 0) ? 1 : 0
 
-  value = Math.abs(value);
+  value = Math.abs(value)
 
   if (isNaN(value) || value === Infinity) {
-    m = isNaN(value) ? 1 : 0;
-    e = eMax;
+    m = isNaN(value) ? 1 : 0
+    e = eMax
   } else {
-    e = Math.floor(Math.log(value) / Math.LN2);
+    e = Math.floor(Math.log(value) / Math.LN2)
     if (value * (c = Math.pow(2, -e)) < 1) {
-      e--;
-      c *= 2;
+      e--
+      c *= 2
     }
     if (e + eBias >= 1) {
-      value += rt / c;
+      value += rt / c
     } else {
-      value += rt * Math.pow(2, 1 - eBias);
+      value += rt * Math.pow(2, 1 - eBias)
     }
     if (value * c >= 2) {
-      e++;
-      c /= 2;
+      e++
+      c /= 2
     }
 
     if (e + eBias >= eMax) {
-      m = 0;
-      e = eMax;
+      m = 0
+      e = eMax
     } else if (e + eBias >= 1) {
-      m = (value * c - 1) * Math.pow(2, mLen);
-      e = e + eBias;
+      m = (value * c - 1) * Math.pow(2, mLen)
+      e = e + eBias
     } else {
-      m = value * Math.pow(2, eBias - 1) * Math.pow(2, mLen);
-      e = 0;
+      m = value * Math.pow(2, eBias - 1) * Math.pow(2, mLen)
+      e = 0
     }
   }
 
-  for (; mLen >= 8; buffer[offset + i] = m & 0xff, i += d, m /= 256, mLen -= 8);
+  for (; mLen >= 8; buffer[offset + i] = m & 0xff, i += d, m /= 256, mLen -= 8) {}
 
-  e = (e << mLen) | m;
-  eLen += mLen;
-  for (; eLen > 0; buffer[offset + i] = e & 0xff, i += d, e /= 256, eLen -= 8);
+  e = (e << mLen) | m
+  eLen += mLen
+  for (; eLen > 0; buffer[offset + i] = e & 0xff, i += d, e /= 256, eLen -= 8) {}
 
-  buffer[offset + i - d] |= s * 128;
-};
+  buffer[offset + i - d] |= s * 128
+}
 
-},{}],22:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 
 /**
  * isArray
@@ -9137,7 +9405,7 @@ module.exports = isArray || function (val) {
   return !! val && '[object Array]' == str.call(val);
 };
 
-},{}],23:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -9440,7 +9708,7 @@ function isUndefined(arg) {
   return arg === void 0;
 }
 
-},{}],24:[function(require,module,exports){
+},{}],25:[function(require,module,exports){
 if (typeof Object.create === 'function') {
   // implementation from standard node.js 'util' module
   module.exports = function inherits(ctor, superCtor) {
@@ -9465,38 +9733,70 @@ if (typeof Object.create === 'function') {
   }
 }
 
-},{}],25:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
 var queue = [];
 var draining = false;
+var currentQueue;
+var queueIndex = -1;
+
+function cleanUpNextTick() {
+    draining = false;
+    if (currentQueue.length) {
+        queue = currentQueue.concat(queue);
+    } else {
+        queueIndex = -1;
+    }
+    if (queue.length) {
+        drainQueue();
+    }
+}
 
 function drainQueue() {
     if (draining) {
         return;
     }
+    var timeout = setTimeout(cleanUpNextTick);
     draining = true;
-    var currentQueue;
+
     var len = queue.length;
     while(len) {
         currentQueue = queue;
         queue = [];
-        var i = -1;
-        while (++i < len) {
-            currentQueue[i]();
+        while (++queueIndex < len) {
+            currentQueue[queueIndex].run();
         }
+        queueIndex = -1;
         len = queue.length;
     }
+    currentQueue = null;
     draining = false;
+    clearTimeout(timeout);
 }
+
 process.nextTick = function (fun) {
-    queue.push(fun);
-    if (!draining) {
+    var args = new Array(arguments.length - 1);
+    if (arguments.length > 1) {
+        for (var i = 1; i < arguments.length; i++) {
+            args[i - 1] = arguments[i];
+        }
+    }
+    queue.push(new Item(fun, args));
+    if (queue.length === 1 && !draining) {
         setTimeout(drainQueue, 0);
     }
 };
 
+// v8 likes predictible objects
+function Item(fun, array) {
+    this.fun = fun;
+    this.array = array;
+}
+Item.prototype.run = function () {
+    this.fun.apply(null, this.array);
+};
 process.title = 'browser';
 process.browser = true;
 process.env = {};
@@ -9525,14 +9825,14 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],26:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
 module.exports = function isBuffer(arg) {
   return arg && typeof arg === 'object'
     && typeof arg.copy === 'function'
     && typeof arg.fill === 'function'
     && typeof arg.readUInt8 === 'function';
 }
-},{}],27:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 (function (process,global){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -10122,7 +10422,7 @@ function hasOwnProperty(obj, prop) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./support/isBuffer":26,"_process":25,"inherits":24}],28:[function(require,module,exports){
+},{"./support/isBuffer":27,"_process":26,"inherits":25}],29:[function(require,module,exports){
 
 /**
  * Module dependencies.
