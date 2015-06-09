@@ -13,7 +13,7 @@
   "license": "MIT",
   "dependencies": {
     "finalhandler": "^0.3.4",
-    "node-jet": "^0.3.2",
+    "node-jet": "git+https://github.com/lipp/node-jet.git",
     "serve-static": "^1.9.2"
   },
   "devDependencies": {
