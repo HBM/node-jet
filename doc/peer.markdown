@@ -576,6 +576,53 @@ The returned Promise may be rejected with:
  
 # Errors
 
+All Peer methods which return a Promise maybe rejected with a typed error. See the doc of each method to see, which
+error types this can be for each respective method. For instance the [`peer.add` method](#peeraddstatemethod---promise)
+may throw `jet.ConnectionClosed`, `jet.Unauthorized` or `jet.Occupied`.
+
+There are three recommended strategies for handling different errors: 
+   - Using `err.name` to distinguish between the types
+   - Using `instanceof` operator
+   - Using the bluebird Promises' catch by type facility
+
+```javascript
+// by err.name
+peer.set('foo', {age: 3, name: 'bar'})
+	.then(function() {})
+	.catch(function(err) {
+	  if (err.name === 'NotFound') {
+	    console.log('foo was not found');
+	  } else if (err.name === 'PeerTimeout') {
+	    console.log('foo is not responding fast enough');
+	  } ...
+	});
+```
+
+```javascript
+// by instanceof
+peer.set('foo', {age: 3, name: 'bar'})
+	.then(function() {})
+	.catch(function(err) {
+	  if (err instanceof jet.NotFound) {
+	    console.log('foo was not found');
+	  } else if (err instanceof jet.PeerTimeout) {
+	    console.log('foo is not responding fast enough');
+	  } ...
+	});
+```
+
+```javascript
+// by bluebird's catch facility
+peer.set('foo', {age: 3, name: 'bar'})
+	.then(function() {})
+	.catch(jet.NotFound, function(err) {
+	  console.log('foo was not found');
+	})
+	.catch(jet.PeerTimeout, function(err) {
+	  console.log('foo is not responding fast enough');
+	});
+```
+
 ## `jet.BaseError`
 
 Base class for all jet Error types. For all error instances `err instanceof Error` and `err instanceof jet.BaseError` is `true`.
