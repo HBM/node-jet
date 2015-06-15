@@ -1,0 +1,21 @@
+{
+  "name": "chat",
+  "version": "1.0.0",
+  "description": "Chat",
+  "main": "chat-server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node chat-server.js",
+    "build": "browserify chat-client.js > bundle.js"
+  },
+  "author": "Gerhard Preuss",
+  "license": "MIT",
+  "dependencies": {
+    "finalhandler": "^0.3.4",
+    "node-jet": "git+https://github.com/lipp/node-jet.git",
+    "serve-static": "^1.9.2"
+  },
+  "devDependencies": {
+    "browserify": "^10.2.3"
+  }
+}

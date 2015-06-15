@@ -14,3 +14,7 @@ bundle*
 bundle.*
 
 examples/todo/bundle.js
+
+examples/chat/bundle.js
+
+examples/ants/bundle.js
