@@ -4,10 +4,17 @@
 
 var jet = require('node-jet');
 var d3 = require('d3');
+var shared = require('./shared');
 
 var peer = new jet.Peer({
 	url: 'ws://' + window.location.host
 });
+
+var randomColor = function () {
+	var hue = Math.abs(Math.random()) * 360;
+	var saturation = 40 + Math.abs(Math.random()) * 60;
+	return 'hsl(' + hue + ',' + saturation + '%,60%)';
+};
 
 var ants = {};
 
@@ -17,10 +24,16 @@ var renderAnt = function (ant) {
 		ants[ant.path] = circle = svgContainer.append('circle');
 		circle
 			.transition()
-			.attr('r', 4)
+			.attr('r', 8)
 			.attr('cx', ant.value.pos.x)
 			.attr('cy', ant.value.pos.y)
 			.style('fill', ant.value.color);
+		circle.on('click', function () {
+			peer.set(ant.path, {
+				color: randomColor(),
+
+			});
+		});
 	} else if (ant.event === 'change') {
 		circle = ants[ant.path];
 		circle
@@ -59,12 +72,17 @@ d3.select('#delay')
 	});
 
 var svgContainer = d3.select('svg')
-	.attr('width', 200 + 2)
-	.attr('height', 200 + 2);
+	.attr('width', shared.canvasSize)
+	.attr('height', shared.canvasSize);
 
 d3.select('#shake')
 	.on('click', function () {
 		peer.call('ants/shake', []);
+	});
+
+d3.select('#edge')
+	.on('click', function () {
+		peer.call('ants/edge', []);
 	});
 
 d3.select('#add')

@@ -4,6 +4,7 @@ var jet = require('node-jet');
 var finalhandler = require('finalhandler');
 var http = require('http');
 var serveStatic = require('serve-static');
+var shared = require('./shared');
 
 var port = parseInt(process.argv[2]) || 80;
 var internalPort = 10200;
@@ -31,11 +32,54 @@ var peer = new jet.Peer({
 	port: internalPort
 });
 
+
 var randomPos = function () {
+	var rad = Math.random() * Math.PI;
+	var max = shared.canvasSize / 2;
+	var radius = 0.8 * max;
+	if (Math.random() > 0.5) {
+		rad = rad * -1;
+	}
+	if (Math.random() > 0.8) {
+		radius = max * 0.2;
+	}
 	return {
-		x: Math.abs(Math.random() * 200),
-		y: Math.abs(Math.random() * 200)
+		x: Math.sin(rad) * radius + max,
+		y: Math.cos(rad) * radius + max
 	};
+};
+
+var edgePos = function () {
+	var x = Math.random();
+	var size = 0.8;
+	if (Math.random() > 0.7) {
+		size = 0.4;
+	}
+	var border = (1 - size) / 2;
+	var min = border * shared.canvasSize;
+	var max = (size + border) * shared.canvasSize;
+	var pos = Math.random() * size * shared.canvasSize + min;
+	if (x > 0.75) {
+		return {
+			x: min,
+			y: pos
+		};
+	} else if (x > 0.5) {
+		return {
+			x: max,
+			y: pos
+		};
+	} else if (x > 0.25) {
+		return {
+			x: pos,
+			y: max
+		};
+	} else {
+		return {
+			x: pos,
+			y: min
+		};
+	}
 };
 
 var randomColor = function () {
@@ -55,14 +99,23 @@ var createAnt = function () {
 		pos: pos,
 		color: color
 	});
+	ant.on('set', function (newVal) {
+		var val = this.value();
+		val.color = newVal.color;
+		return {
+			value: val
+		};
+	});
 	peer.add(ant).then(function () {
 		ants.push(ant);
 	});
 };
 
-[1, 2, 3].forEach(createAnt);
+for (var i = 0; i < 150; ++i) {
+	createAnt();
+}
 
-var delay = new jet.State('ants/delay', 100);
+var delay = new jet.State('ants/delay', 10);
 delay.on('set', jet.State.acceptAny);
 
 var shake = new jet.Method('ants/shake');
@@ -70,6 +123,20 @@ shake.on('call', function (args) {
 	ants.forEach(function (ant, index) {
 		setTimeout(function () {
 			var pos = randomPos();
+			var color = ant.value().color;
+			ant.value({
+				pos: pos,
+				color: color
+			});
+		}, index * delay.value());
+	});
+});
+
+var edge = new jet.Method('ants/edge');
+edge.on('call', function (args) {
+	ants.forEach(function (ant, index) {
+		setTimeout(function () {
+			var pos = edgePos();
 			var color = randomColor();
 			ant.value({
 				pos: pos,
@@ -94,6 +161,7 @@ remove.on('call', function (args) {
 jet.Promise.all([
 	peer.connect(),
 	peer.add(shake),
+	peer.add(edge),
 	peer.add(delay),
 	peer.add(add),
 	peer.add(remove)
