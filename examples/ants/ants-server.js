@@ -32,8 +32,14 @@ var peer = new jet.Peer({
 	port: internalPort
 });
 
-
 var randomPos = function () {
+	return {
+		x: Math.random() * shared.canvasSize,
+		y: Math.random() * shared.canvasSize
+	};
+};
+
+var circlePos = function () {
 	var rad = Math.random() * Math.PI;
 	var max = shared.canvasSize / 2;
 	var radius = 0.8 * max;
@@ -93,7 +99,7 @@ var ants = [];
 var id = 0;
 
 var createAnt = function () {
-	var pos = randomPos();
+	var pos = circlePos();
 	var color = randomColor();
 	var ant = new jet.State('ants/#' + id++, {
 		pos: pos,
@@ -101,7 +107,8 @@ var createAnt = function () {
 	});
 	ant.on('set', function (newVal) {
 		var val = this.value();
-		val.color = newVal.color;
+		val.pos = newVal.pos || val.pos;
+		val.color = newVal.color || val.color;
 		return {
 			value: val
 		};
@@ -115,35 +122,45 @@ for (var i = 0; i < 150; ++i) {
 	createAnt();
 }
 
-var delay = new jet.State('ants/delay', 10);
+
+var delay = new jet.State('ants/delay', 3);
 delay.on('set', jet.State.acceptAny);
 
-var shake = new jet.Method('ants/shake');
-shake.on('call', function (args) {
+var repositionAnts = function (calcPos, delay) {
 	ants.forEach(function (ant, index) {
 		setTimeout(function () {
-			var pos = randomPos();
+			var pos = calcPos();
 			var color = ant.value().color;
 			ant.value({
 				pos: pos,
 				color: color
 			});
-		}, index * delay.value());
+		}, index * delay);
 	});
+};
+
+var shake = new jet.Method('ants/shake');
+shake.on('call', function (args) {
+	repositionAnts(circlePos, delay.value());
 });
 
 var edge = new jet.Method('ants/edge');
 edge.on('call', function (args) {
-	ants.forEach(function (ant, index) {
-		setTimeout(function () {
-			var pos = edgePos();
-			var color = randomColor();
-			ant.value({
-				pos: pos,
-				color: color
-			});
-		}, index * delay.value());
-	});
+	repositionAnts(edgePos, delay.value());
+});
+
+var boom = new jet.Method('ants/boom');
+boom.on('call', function (args) {
+	var center = shared.canvasSize / 2;
+	repositionAnts(function () {
+		return {
+			x: center,
+			y: center
+		};
+	}, 0.1);
+	setTimeout(function () {
+		repositionAnts(randomPos, 0.1);
+	}, 1000);
 });
 
 var add = new jet.Method('ants/add');
@@ -162,6 +179,7 @@ jet.Promise.all([
 	peer.connect(),
 	peer.add(shake),
 	peer.add(edge),
+	peer.add(boom),
 	peer.add(delay),
 	peer.add(add),
 	peer.add(remove)

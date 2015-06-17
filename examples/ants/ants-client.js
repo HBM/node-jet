@@ -24,6 +24,8 @@ var renderAnt = function (ant) {
 		ants[ant.path] = circle = svgContainer.append('circle');
 		circle
 			.transition()
+			.duration(400)
+			.ease('exp-out')
 			.attr('r', 8)
 			.attr('cx', ant.value.pos.x)
 			.attr('cy', ant.value.pos.y)
@@ -38,6 +40,8 @@ var renderAnt = function (ant) {
 		circle = ants[ant.path];
 		circle
 			.transition()
+			.duration(200)
+			.ease('exp-out')
 			.attr('cx', ant.value.pos.x)
 			.attr('cy', ant.value.pos.y)
 			.style('fill', ant.value.color);
@@ -57,23 +61,63 @@ var allAnts = new jet.Fetcher()
 
 peer.fetch(allAnts);
 
+var speedToDelay = {
+	fast: 1,
+	medium: 3,
+	slow: 5
+};
+
+var delayToSpeed = {};
+delayToSpeed[1] = 'fast';
+delayToSpeed[3] = 'medium';
+delayToSpeed[5] = 'slow';
+
+
 var delayValue = new jet.Fetcher()
 	.path('equals', 'ants/delay')
 	.on('data', function (data) {
-		d3.select('#delay').attr('value', data.value);
+		var speed = delayToSpeed[data.value];
+		d3.select('input[type="radio"]').attr('checked', false);
+		d3.select('input[value="' + speed + '"]').attr('checked', true);
 	});
 
 peer.fetch(delayValue);
 
-d3.select('#delay')
+d3.selectAll('input[type="radio"]')
 	.on('change', function () {
-		var val = d3.select('#delay').attr('value');
-		peer.set('ants/delay', event.target.value);
+		var radio = d3.select(this);
+		var delay = speedToDelay[radio.attr('value')];
+		peer.set('ants/delay', delay);
 	});
 
 var svgContainer = d3.select('svg')
 	.attr('width', shared.canvasSize)
-	.attr('height', shared.canvasSize);
+	.attr('height', shared.canvasSize)
+	.on('click', function () {
+		var dist = function (x, y) {
+			var dx = x - event.clientX;
+			var dy = y - event.clientY;
+			return Math.sqrt(dx * dx + dy * dy);
+		};
+		var radius = Math.random() * 50 + 50;
+		for (var path in ants) {
+			var ant = ants[path];
+			var x = parseFloat(ant.attr('cx'));
+			var y = parseFloat(ant.attr('cy'));
+			var d = dist(x, y);
+			var dir = Math.random() * 2 * Math.PI;
+			if (d < radius) {
+
+				var newPos = {
+					x: event.clientX + Math.cos(dir) * radius,
+					y: event.clientY + Math.sin(dir) * radius
+				};
+				peer.set(path, {
+					pos: newPos
+				});
+			}
+		}
+	});
 
 d3.select('#shake')
 	.on('click', function () {
@@ -83,6 +127,11 @@ d3.select('#shake')
 d3.select('#edge')
 	.on('click', function () {
 		peer.call('ants/edge', []);
+	});
+
+d3.select('#boom')
+	.on('click', function () {
+		peer.call('ants/boom', []);
 	});
 
 d3.select('#add')
