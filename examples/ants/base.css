@@ -14,3 +14,10 @@ body {
     -ms-user-select: none;
    	user-select: none;
 }
+
+svg {
+		width: 400px;
+		height: 400px;
+		max-width: 100%;
+		max-height: 100%;
+}

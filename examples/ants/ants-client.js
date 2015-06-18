@@ -26,7 +26,7 @@ var renderAnt = function (ant) {
 			.transition()
 			.duration(400)
 			.ease('exp-out')
-			.attr('r', 8)
+			.attr('r', ant.value.size)
 			.attr('cx', ant.value.pos.x)
 			.attr('cy', ant.value.pos.y)
 			.style('fill', ant.value.color);
@@ -42,6 +42,7 @@ var renderAnt = function (ant) {
 			.transition()
 			.duration(200)
 			.ease('exp-out')
+			.attr('r', ant.value.size)
 			.attr('cx', ant.value.pos.x)
 			.attr('cy', ant.value.pos.y)
 			.style('fill', ant.value.color);
@@ -91,8 +92,7 @@ d3.selectAll('input[type="radio"]')
 	});
 
 var svgContainer = d3.select('svg')
-	.attr('width', shared.canvasSize)
-	.attr('height', shared.canvasSize)
+	.attr('viewBox', '0 0 ' + shared.canvasSize + ' ' + shared.canvasSize)
 	.on('click', function () {
 		var dist = function (x, y) {
 			var dx = x - event.clientX;

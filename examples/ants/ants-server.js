@@ -103,12 +103,14 @@ var createAnt = function () {
 	var color = randomColor();
 	var ant = new jet.State('ants/#' + id++, {
 		pos: pos,
-		color: color
+		color: color,
+		size: 8
 	});
 	ant.on('set', function (newVal) {
 		var val = this.value();
 		val.pos = newVal.pos || val.pos;
 		val.color = newVal.color || val.color;
+		val.size = newVal.size || val.size;
 		return {
 			value: val
 		};
@@ -126,14 +128,16 @@ for (var i = 0; i < 150; ++i) {
 var delay = new jet.State('ants/delay', 3);
 delay.on('set', jet.State.acceptAny);
 
-var repositionAnts = function (calcPos, delay) {
+var repositionAnts = function (calcPos, delay, sizeX) {
 	ants.forEach(function (ant, index) {
 		setTimeout(function () {
 			var pos = calcPos();
 			var color = ant.value().color;
+			var size = sizeX || ant.value().size;
 			ant.value({
 				pos: pos,
-				color: color
+				color: color,
+				size: size
 			});
 		}, index * delay);
 	});
@@ -157,9 +161,9 @@ boom.on('call', function (args) {
 			x: center,
 			y: center
 		};
-	}, 0.1);
+	}, 0.1, 1);
 	setTimeout(function () {
-		repositionAnts(randomPos, 0.1);
+		repositionAnts(randomPos, 0.1, 8);
 	}, 1000);
 });
 
