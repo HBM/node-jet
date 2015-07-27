@@ -1,12 +1,12 @@
 {
-  "name": "ants",
+  "name": "balls",
   "version": "1.0.0",
-  "description": "Ants",
-  "main": "todo-ants.js",
+  "description": "using d3.js with jet",
+  "main": "balls-client.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node ants-server.js",
-    "build": "browserify ants-client.js > bundle.js"
+    "start": "node balls-server.js",
+    "build": "browserify balls-client.js > bundle.js"
   },
   "author": "Gerhard Preuss",
   "license": "MIT",

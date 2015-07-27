@@ -8,6 +8,7 @@ var shared = require('./shared');
 
 var port = parseInt(process.argv[2]) || 80;
 var internalPort = 10200;
+var numBalls = 150;
 
 // Serve this dir as static content 
 var serve = serveStatic('./');
@@ -94,19 +95,19 @@ var randomColor = function () {
 	return 'hsl(' + hue + ',' + saturation + '%,60%)';
 };
 
-var ants = [];
+var balls = [];
 
 var id = 0;
 
-var createAnt = function () {
+var createBall = function () {
 	var pos = circlePos();
 	var color = randomColor();
-	var ant = new jet.State('ants/#' + id++, {
+	var ball = new jet.State('balls/#' + id++, {
 		pos: pos,
 		color: color,
 		size: 8
 	});
-	ant.on('set', function (newVal) {
+	ball.on('set', function (newVal) {
 		var val = this.value();
 		val.pos = newVal.pos || val.pos;
 		val.color = newVal.color || val.color;
@@ -115,26 +116,26 @@ var createAnt = function () {
 			value: val
 		};
 	});
-	peer.add(ant).then(function () {
-		ants.push(ant);
+	peer.add(ball).then(function () {
+		balls.push(ball);
 	});
 };
 
-for (var i = 0; i < 150; ++i) {
-	createAnt();
+for (var i = 0; i < numBalls; ++i) {
+	createBall();
 }
 
 
-var delay = new jet.State('ants/delay', 3);
+var delay = new jet.State('balls/delay', 3);
 delay.on('set', jet.State.acceptAny);
 
-var repositionAnts = function (calcPos, delay, sizeX) {
-	ants.forEach(function (ant, index) {
+var repositionBalls = function (calcPos, delay, sizeX) {
+	balls.forEach(function (ball, index) {
 		setTimeout(function () {
 			var pos = calcPos();
-			var color = ant.value().color;
-			var size = sizeX || ant.value().size;
-			ant.value({
+			var color = ball.value().color;
+			var size = sizeX || ball.value().size;
+			ball.value({
 				pos: pos,
 				color: color,
 				size: size
@@ -143,51 +144,38 @@ var repositionAnts = function (calcPos, delay, sizeX) {
 	});
 };
 
-var shake = new jet.Method('ants/shake');
-shake.on('call', function (args) {
-	repositionAnts(circlePos, delay.value());
+var circle = new jet.Method('balls/circle');
+circle.on('call', function (args) {
+	repositionBalls(circlePos, delay.value());
 });
 
-var edge = new jet.Method('ants/edge');
-edge.on('call', function (args) {
-	repositionAnts(edgePos, delay.value());
+var square = new jet.Method('balls/square');
+square.on('call', function (args) {
+	repositionBalls(edgePos, delay.value());
 });
 
-var boom = new jet.Method('ants/boom');
+var boom = new jet.Method('balls/boom');
 boom.on('call', function (args) {
 	var center = shared.canvasSize / 2;
-	repositionAnts(function () {
+	repositionBalls(function () {
 		return {
 			x: center,
 			y: center
 		};
 	}, 0.1, 1);
 	setTimeout(function () {
-		repositionAnts(randomPos, 0.1, 8);
+		repositionBalls(randomPos, 0.1, 8);
 	}, 1000);
-});
-
-var add = new jet.Method('ants/add');
-add.on('call', function (args) {
-	createAnt();
-});
-
-var remove = new jet.Method('ants/remove');
-remove.on('call', function (args) {
-	var last = ants.pop();
-	last.remove();
 });
 
 // connect peer and register methods
 jet.Promise.all([
 	peer.connect(),
-	peer.add(shake),
-	peer.add(edge),
+	peer.add(circle),
+	peer.add(square),
 	peer.add(boom),
-	peer.add(delay),
-	peer.add(add),
-	peer.add(remove)
+	peer.add(delay)
 ]).then(function () {
-	console.log('ants-server ready');
+	console.log('balls-server ready');
 	console.log('listening on port', port);
 });

@@ -16,51 +16,51 @@ var randomColor = function () {
 	return 'hsl(' + hue + ',' + saturation + '%,60%)';
 };
 
-var ants = {};
+var balls = {};
 
-var renderAnt = function (ant) {
+var renderBall = function (ball) {
 	var circle;
-	if (ant.event === 'add') {
-		ants[ant.path] = circle = svgContainer.append('circle');
+	if (ball.event === 'add') {
+		balls[ball.path] = circle = svgContainer.append('circle');
 		circle
 			.transition()
 			.duration(400)
 			.ease('exp-out')
-			.attr('r', ant.value.size)
-			.attr('cx', ant.value.pos.x)
-			.attr('cy', ant.value.pos.y)
-			.style('fill', ant.value.color);
+			.attr('r', ball.value.size)
+			.attr('cx', ball.value.pos.x)
+			.attr('cy', ball.value.pos.y)
+			.style('fill', ball.value.color);
 		circle.on('click', function () {
-			peer.set(ant.path, {
+			peer.set(ball.path, {
 				color: randomColor(),
 
 			});
 		});
-	} else if (ant.event === 'change') {
-		circle = ants[ant.path];
+	} else if (ball.event === 'change') {
+		circle = balls[ball.path];
 		circle
 			.transition()
 			.duration(200)
 			.ease('exp-out')
-			.attr('r', ant.value.size)
-			.attr('cx', ant.value.pos.x)
-			.attr('cy', ant.value.pos.y)
-			.style('fill', ant.value.color);
+			.attr('r', ball.value.size)
+			.attr('cx', ball.value.pos.x)
+			.attr('cy', ball.value.pos.y)
+			.style('fill', ball.value.color);
 	} else {
-		circle = ants[ant.path];
+		circle = balls[ball.path];
 		circle
 			.remove();
-		delete ants[ant.path];
+		delete balls[ball.path];
 	}
 };
 
-var allAnts = new jet.Fetcher()
-	.path('startsWith', 'ants/#')
-	.on('data', function (ant) {
-		renderAnt(ant)
+var allBalls = new jet.Fetcher()
+	.path('startsWith', 'balls/#')
+	.on('data', function (ball) {
+		renderBall(ball)
 	});
 
-peer.fetch(allAnts);
+peer.fetch(allBalls);
 
 var speedToDelay = {
 	fast: 1,
@@ -75,7 +75,7 @@ delayToSpeed[5] = 'slow';
 
 
 var delayValue = new jet.Fetcher()
-	.path('equals', 'ants/delay')
+	.path('equals', 'balls/delay')
 	.on('data', function (data) {
 		var speed = delayToSpeed[data.value];
 		d3.select('input[type="radio"]').attr('checked', false);
@@ -88,7 +88,7 @@ d3.selectAll('input[type="radio"]')
 	.on('change', function () {
 		var radio = d3.select(this);
 		var delay = speedToDelay[radio.attr('value')];
-		peer.set('ants/delay', delay);
+		peer.set('balls/delay', delay);
 	});
 
 var svgContainer = d3.select('svg')
@@ -100,10 +100,10 @@ var svgContainer = d3.select('svg')
 			return Math.sqrt(dx * dx + dy * dy);
 		};
 		var radius = Math.random() * 50 + 50;
-		for (var path in ants) {
-			var ant = ants[path];
-			var x = parseFloat(ant.attr('cx'));
-			var y = parseFloat(ant.attr('cy'));
+		for (var path in balls) {
+			var ball = balls[path];
+			var x = parseFloat(ball.attr('cx'));
+			var y = parseFloat(ball.attr('cy'));
 			var d = dist(x, y);
 			var dir = Math.random() * 2 * Math.PI;
 			if (d < radius) {
@@ -119,27 +119,17 @@ var svgContainer = d3.select('svg')
 		}
 	});
 
-d3.select('#shake')
+d3.select('#circle')
 	.on('click', function () {
-		peer.call('ants/shake', []);
+		peer.call('balls/circle', []);
 	});
 
-d3.select('#edge')
+d3.select('#square')
 	.on('click', function () {
-		peer.call('ants/edge', []);
+		peer.call('balls/square', []);
 	});
 
 d3.select('#boom')
 	.on('click', function () {
-		peer.call('ants/boom', []);
-	});
-
-d3.select('#add')
-	.on('click', function () {
-		peer.call('ants/add');
-	});
-
-d3.select('#remove')
-	.on('click', function () {
-		peer.call('ants/remove');
+		peer.call('balls/boom', []);
 	});
