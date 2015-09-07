@@ -238,7 +238,7 @@ describe('Jet module', function () {
 			});
 		});
 
-		it('can add a state and non InvalidArgument error propagates as PeerError', function (done) {
+		it('can add a state and InvalidArgument error propagates as InvalidArgument with message', function (done) {
 			var random = randomPath();
 			var state = new jet.State(random, 123);
 			state.on('set', function (newval) {
@@ -250,6 +250,24 @@ describe('Jet module', function () {
 
 			peer.set(random, 6237).catch(function (err) {
 				expect(err).is.instanceof(jet.InvalidArgument);
+				expect(err.message).equals('out of range');
+				done();
+			});
+		});
+
+		it('can add a state and InvalidArgument error propagates as InvalidArgument with default message', function (done) {
+			var random = randomPath();
+			var state = new jet.State(random, 123);
+			state.on('set', function (newval) {
+				if (newval > 200) {
+					throw new jet.InvalidArgument();
+				}
+			});
+			peer.add(state);
+
+			peer.set(random, 6237).catch(function (err) {
+				expect(err).is.instanceof(jet.InvalidArgument);
+				expect(err.message).equals('The provided argument(s) have been refused by the State/Method');
 				done();
 			});
 		});
