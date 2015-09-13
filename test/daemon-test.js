@@ -79,7 +79,7 @@ describe('A Daemon', function () {
 
 		commandRequestTest(testPort, 'info', {}, function (result) {
 			expect(result.name).to.equal('node-jet');
-			expect(result.version).to.equal('1.0.0');
+			expect(result.version).to.equal('1.0.2');
 			expect(result.protocolVersion).to.equal('1.0.0');
 			expect(result.features.fetch).to.equal('full');
 			expect(result.features.batches).to.be.true;
@@ -221,7 +221,7 @@ describe('A Daemon with simple fetching', function () {
 
 		commandRequestTest(testPort + 1, 'info', {}, function (result) {
 			expect(result.name).to.equal('simple-jet');
-			expect(result.version).to.equal('1.0.0');
+			expect(result.version).to.equal('1.0.2');
 			expect(result.protocolVersion).to.equal('1.0.0');
 			expect(result.features.fetch).to.equal('simple');
 			expect(result.features.batches).to.be.true;
