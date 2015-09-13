@@ -406,7 +406,7 @@ exports.createTypedError = function (jsonrpcError) {
 			} else if (data.invalidPassword) {
 				return new InvalidPassword();
 			} else if (data.invalidArgument) {
-				return new InvalidArgument(data.invalidArgument);
+				return new InvalidArgument(data.invalidArgument && data.invalidArgument.message);
 			} else if (data.noAccess) {
 				return new Unauthorized();
 			}
@@ -1295,8 +1295,12 @@ var FakePeer = function () {
 	this.fetchers = {};
 	this.id = 'fakePeer';
 	var eachFetcherIterator = jetUtils.eachKeyValue(this.fetchers);
-	this.eachFetcher = function (element, f) {
-		eachFetcherIterator(f);
+	this.eachFetcher = function (element, initElementFetching) {
+		var hasSetAccess = !element.fetchOnly;
+		var initElementFetchingAccess = function (peerFetchId, fetcher) {
+			initElementFetching(peerFetchId, fetcher, hasSetAccess);
+		}
+		eachFetcherIterator(initElementFetchingAccess);
 	};
 };
 
@@ -1340,24 +1344,25 @@ var FakeFetcher = function (jsonrpc, fetchParams, fetchCb) {
 		});
 	};
 
-	if (FakeFetcher.elements === undefined) {
-		FakeFetcher.elements = new Elements();
-		FakeFetcher.peer = new FakePeer();
+	if (jsonrpc.fakeContext === undefined) {
+		var context = jsonrpc.fakeContext = {};
+		context.elements = new Elements();
+		context.peer = new FakePeer();
 
 		var fetchSimpleDispatcher = function (message) {
 			var params = message.params;
 			var event = params.event;
 
 			if (event === 'remove') {
-				fetchCommon.removeCore(FakeFetcher.peer, FakeFetcher.elements, params);
+				fetchCommon.removeCore(context.peer, context.elements, params);
 			} else if (event === 'add') {
-				fetchCommon.addCore(FakeFetcher.peer, FakeFetcher.peer.eachFetcher, FakeFetcher.elements, params);
+				fetchCommon.addCore(context.peer, context.peer.eachFetcher, context.elements, params);
 			} else {
-				fetchCommon.changeCore(FakeFetcher.peer, FakeFetcher.elements, params);
+				fetchCommon.changeCore(context.peer, context.elements, params);
 			}
 		};
 
-		FakeFetcher.fetchAllPromise = new Bluebird(function (resolve, reject) {
+		context.fetchAllPromise = new Bluebird(function (resolve, reject) {
 			jsonrpc.service('fetch', {}, function (ok, fetchSimpleId) {
 				jsonrpc.addRequestDispatcher(fetchSimpleId, fetchSimpleDispatcher);
 			}).then(function () {
@@ -1367,19 +1372,22 @@ var FakeFetcher = function (jsonrpc, fetchParams, fetchCb) {
 	}
 
 	this.fetch = function () {
-		return FakeFetcher.fetchAllPromise.then(function () {
-			return fetchCommon.fetchCore(FakeFetcher.peer, FakeFetcher.elements, fetchParams, wrappedFetchDispatcher);
+		var context = jsonrpc.fakeContext;
+		return context.fetchAllPromise.then(function () {
+			return fetchCommon.fetchCore(context.peer, context.elements, fetchParams, wrappedFetchDispatcher);
 		});
 	};
 
 	this.unfetch = function () {
-		return FakeFetcher.fetchAllPromise.then(function () {
-			return fetchCommon.unfetchCore(FakeFetcher.peer, FakeFetcher.elements, fetchParams);
+		var context = jsonrpc.fakeContext;
+		return context.fetchAllPromise.then(function () {
+			return fetchCommon.unfetchCore(context.peer, context.elements, fetchParams);
 		});
 	};
 
 	this.isFetching = function () {
-		return FakeFetcher.peer.hasFetcher(fetchParams.id);
+		var context = jsonrpc.fakeContext;
+		return context.peer.hasFetcher(fetchParams.id);
 	};
 
 };
@@ -1797,7 +1805,7 @@ var Method = function (path, access) {
 
 Method.prototype.on = function (event, cb) {
 	if (event === 'call') {
-		if (cb.length === 1) {
+		if (cb.length <= 1) {
 			this._dispatcher = this.createSyncDispatcher(cb);
 		} else {
 			this._dispatcher = this.createAsyncDispatcher(cb);
