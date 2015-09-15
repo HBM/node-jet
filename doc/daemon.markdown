@@ -38,7 +38,7 @@ an object. The following entries are allowed/supported:
 
 -  `options.tcpPort`: The listening port for the "trivial" message protocol
 -  `options.wsPort`: The listening port for WebSocket protocol
--  `options.server`: An existing (http) server to hook onto providing WebSocket protocol
+-  `options.server`: An existing (http or https) server to hook onto providing WebSocket protocol
 
 `options.wsPort` and `options.server` must not be used simultaneously.
 `options.tcpPort` and `options.wsPort`/`options.server` can both be defined to
