@@ -6,6 +6,8 @@ var EventEmitter = require('events').EventEmitter;
 var MessageSocket = require('../lib/jet/message-socket').MessageSocket;
 var jet = require('../lib/jet');
 var http = require('http');
+var https = require('https');
+var fs = require('fs');
 
 var commandRequestTest = function (port, command, params, checkResult) {
 	describe('who sends "' + command + '" as request', function () {
@@ -191,6 +193,56 @@ describe('A Daemon', function () {
 			var peer = new jet.Peer({
 				url: 'ws://localhost:23456',
 				name: 'blabla'
+			});
+
+			peer.connect().then(function () {
+				peer.close();
+				done();
+			});
+		});
+
+	});
+
+	describe('hooking to a (https) server', function () {
+		var server;
+		var daemon;
+
+		before(function () {
+			var options = {
+				key: fs.readFileSync('test/fixtures/key.pem'),
+				cert: fs.readFileSync('test/fixtures/certificate.pem')
+			};
+			server = https.createServer(options, function (req, res) {
+				res.writeHead(200, {
+					'Content-Type': 'text/plain'
+				});
+				res.end('Hello World\n');
+			});
+			server.listen(23490);
+			daemon = new jet.Daemon();
+			daemon.listen({
+				server: server
+			});
+		});
+
+		it('https get works', function (done) {
+			https.get({
+				hostname: 'localhost',
+				port: 23490,
+				rejectUnauthorized: false
+			}, function (res) {
+				res.on('data', function (data) {
+					expect(data.toString()).to.equal('Hello World\n');
+					done();
+				})
+			});
+		});
+
+		it('peer can connect via secure websockets (wss) on same port', function (done) {
+			var peer = new jet.Peer({
+				url: 'wss://localhost:23490',
+				name: 'blabla',
+				rejectUnauthorized: false
 			});
 
 			peer.connect().then(function () {
