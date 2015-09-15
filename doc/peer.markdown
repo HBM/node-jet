@@ -31,6 +31,7 @@ The supported config fields are:
 - `port`: {String} The Jet Daemon TCP trivial protocol port (default: `11122`)
 - `user`: {String, Optional} The user name used for authentication
 - `password`: {String, Optional} The password used for authentication
+- `rejectUnauthorized`: {Boolean, Options} Allow self signed server certificates, when using wss:// (default: `false`)
 
 The peer uses either the Websocket protocol or the TCP trivial protocol (default) as transport.
 When specifying the `url` field, the peer uses the Websocket protocol as transport.
