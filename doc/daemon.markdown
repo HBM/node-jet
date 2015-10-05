@@ -77,3 +77,18 @@ daemon.listen({
   server: httpServer
 });
 ```
+
+### daemon.on(event, callback)
+
+The events that can be watched are connection and disconnect
+.
+```javascript
+daemon.on('connection', function (peer) {
+  console.log('connect ' + peer.id);
+});
+
+daemon.on('disconnect', function (peer) {
+  console.log('disconnect ' + peer.id);
+});
+
+```
