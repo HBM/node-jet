@@ -36,7 +36,7 @@ The supported config fields are:
 The peer uses either the Websocket protocol or the TCP trivial protocol (default) as transport.
 When specifying the `url` field, the peer uses the Websocket protocol as transport.
 If no `config` is provided, the Peer connects to the local ('localhost') Daemon using the trivial protocol.
-Browsers do only support the Websocket transport and must provided a `config` with `url` field.
+Browsers do only support the Websocket transport and must be provided with a `config` with `url` field.
 
 Authentication is optional and is explained separately.
 
