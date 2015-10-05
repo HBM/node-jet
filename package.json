@@ -19,21 +19,21 @@
     }
   ],
   "devDependencies": {
-    "browserify": "^10.2.3",
-    "chai": "^2.3.0",
-    "coveralls": "^2.11.2",
-    "eslint": "^0.22.1",
-    "istanbul": "^0.3.14",
-    "js-beautify": "^1.5.6",
-    "mocha": "^2.2.5",
-    "sinon": "^1.14.1",
-    "uglify-js": "^2.4.23"
+    "browserify": "10.2.6",
+    "chai": "2.3.0",
+    "coveralls": "2.11.4",
+    "eslint": "0.22.1",
+    "istanbul": "0.3.22",
+    "js-beautify": "1.5.10",
+    "mocha": "2.3.3",
+    "sinon": "1.17.1",
+    "uglify-js": "2.4.24"
   },
   "dependencies": {
-    "bluebird": "^2.9.27",
-    "optimist": "^0.6.1",
-    "uuid": "^2.0.1",
-    "ws": "^0.7.2"
+    "bluebird": "2.10.2",
+    "optimist": "0.6.1",
+    "uuid": "2.0.1",
+    "ws": "0.7.2"
   },
   "main": "./lib/jet.js",
   "bin": {
