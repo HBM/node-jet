@@ -22,7 +22,7 @@
     "browserify": "10.2.6",
     "chai": "2.3.0",
     "coveralls": "2.11.4",
-    "eslint": "0.22.1",
+    "eslint": "1.6.0",
     "istanbul": "0.3.22",
     "js-beautify": "1.5.10",
     "mocha": "2.3.3",
