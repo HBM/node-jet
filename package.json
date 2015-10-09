@@ -19,7 +19,7 @@
     }
   ],
   "devDependencies": {
-    "browserify": "10.2.6",
+    "browserify": "11.2.0",
     "chai": "2.3.0",
     "coveralls": "2.11.4",
     "eslint": "0.22.1",
