@@ -26,7 +26,7 @@
     "istanbul": "0.3.22",
     "js-beautify": "1.5.10",
     "mocha": "2.3.3",
-    "sinon": "1.17.1",
+    "sinon": "1.17.2",
     "uglify-js": "2.5.0"
   },
   "dependencies": {
