@@ -30,7 +30,7 @@
     "uglify-js": "2.5.0"
   },
   "dependencies": {
-    "bluebird": "2.10.2",
+    "bluebird": "3.0.4",
     "optimist": "0.6.1",
     "uuid": "2.0.1",
     "ws": "0.8.0"
