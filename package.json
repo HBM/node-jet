@@ -27,7 +27,7 @@
     "js-beautify": "1.5.10",
     "mocha": "2.3.4",
     "sinon": "1.17.2",
-    "uglify-js": "2.5.0"
+    "uglify-js": "2.6.0"
   },
   "dependencies": {
     "bluebird": "3.0.5",
