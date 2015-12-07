@@ -409,6 +409,10 @@ Adds a path matching rule to the fetcher.
 - `equalsOneOf` {Array of Strings}
 - `equalsNotOneOf` {Array of Strings}
 
+## `fetcher.pathCaseInsensitive() -> Fetcher`
+
+Makes path matching case insensitive.
+
 ## `fetcher.value(predicate, comp) -> Fetcher`
 
 Adds a value matching rule for **primitive type** values to the fetcher.
