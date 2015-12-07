@@ -33,7 +33,7 @@
     "bluebird": "3.0.6",
     "optimist": "0.6.1",
     "uuid": "2.0.1",
-    "ws": "0.8.0"
+    "ws": "0.8.1"
   },
   "main": "./lib/jet.js",
   "bin": {
