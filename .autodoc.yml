@@ -1,0 +1,5 @@
+dir: lib
+articles:
+  - Overview: README.md
+tutorials:
+  - Todo App: examples/todo/README.md
