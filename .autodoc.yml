@@ -1,5 +1,6 @@
 dir: lib
+name: node-jet
+flavor: jsdoc
 articles:
   - Overview: README.md
-tutorials:
   - Todo App: examples/todo/README.md
