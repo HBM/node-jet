@@ -506,6 +506,38 @@ describe('Jet module', function () {
 			]).catch(done);
 		});
 
+		it('can add and call a method which returns false', function (done) {
+			var path = randomPath();
+			var m = new jet.Method(path);
+			m.on('call', function () {
+				return false
+			});
+
+			jet.Promise.all([
+			peer.add(m),
+			peer.call(path, []).then(function (result) {
+					expect(result).to.equal(false);
+					done();
+				})
+			]).catch(done);
+		});
+
+		it('can add and call a method which returns 0', function (done) {
+			var path = randomPath();
+			var m = new jet.Method(path);
+			m.on('call', function () {
+				return 0
+			});
+
+			jet.Promise.all([
+			peer.add(m),
+			peer.call(path, []).then(function (result) {
+					expect(result).to.equal(0);
+					done();
+				})
+			]).catch(done);
+		});
+
 		it('a method call handler with no args works synchronous', function (done) {
 			var path = randomPath();
 			var m = new jet.Method(path);
