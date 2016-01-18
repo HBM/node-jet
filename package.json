@@ -27,6 +27,7 @@
     "js-beautify": "1.5.10",
     "mocha": "2.3.4",
     "sinon": "1.17.2",
+    "standard": "^5.4.1",
     "uglify-js": "2.6.1"
   },
   "dependencies": {
@@ -59,5 +60,8 @@
     "url": "http://github.com/lipp/node-jet/issues",
     "email": "gelipp@gmail.com"
   },
-  "browser": "./lib/browser.js"
+  "browser": "./lib/browser.js",
+  "standard": {
+		  "ignore": ["build/", "examples/"]
+  }
 }
