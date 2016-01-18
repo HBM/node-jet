@@ -1,3 +1,3 @@
 module.exports = {
-	canvasSize: 400
-};
+  canvasSize: 400
+}

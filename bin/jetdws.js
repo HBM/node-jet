@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
-var jet = require('../lib/jet');
+var jet = require('../lib/jet')
 
-var daemon = new jet.Daemon();
+var daemon = new jet.Daemon()
 
 daemon.listen({
-	wsPort: 11123
-});
+  wsPort: 11123
+})
