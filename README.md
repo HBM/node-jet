@@ -2,7 +2,8 @@
 
 [![Join the chat at https://gitter.im/lipp/node-jet](https://badges.gitter.im/lipp/node-jet.svg)](https://gitter.im/lipp/node-jet?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![npm version](https://badge.fury.io/js/node-jet.svg)](http://badge.fury.io/js/node-jet) [![Build Status](https://travis-ci.org/lipp/node-jet.svg?branch=master)](https://travis-ci.org/lipp/node-jet) [![Code Climate](https://codeclimate.com/github/lipp/node-jet/badges/gpa.svg)](https://codeclimate.com/github/lipp/node-jet) [![Coverage Status](https://coveralls.io/repos/lipp/node-jet/badge.png?branch=master)](https://coveralls.io/r/lipp/node-jet?branch=master)
-[![deps](https://david-dm.org/lipp/node-jet.svg)](https://david-dm.org/lipp/node-jet.svg)
+[![js-standard-style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg)](http://standardjs.com/)
+[![deps](https://david-dm.org/lipp/node-jet.svg)](https://david-dm.org/lipp/node-jet.svg) 
 
 This is [Jet](http://jetbus.io/) for Javasript. Jet is the hybrid of an **In-Memory Database** and a **Realtime Push-Framework**. Node and Browsers are supported (using Browserify).
 
