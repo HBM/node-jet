@@ -181,6 +181,31 @@ describe('Jet module', function () {
 			]).catch(done);
 		});
 
+		it('can fetch and add state', function (done) {
+			var random = randomPath();
+			var state = new jet.State(random, 123);
+			var changedValue;
+			state.on('set', function (newValue) {
+				expect(newValue).to.equal(876);
+				changedValue = newValue;
+			});
+
+			var fetcher = new jet.Fetcher();
+			fetcher.path('contains', random);
+			fetcher.on('data', function (data) {
+				expect(data.path).to.equal(random);
+				expect(data.event).to.equal('add');
+				expect(data.value).to.equal(123);
+				expect(!data.fetchOnly).to.equal(true);
+				done()
+			});
+
+			jet.Promise.all([
+			peer.fetch(fetcher),
+			peer.add(state)
+			]).catch(done);
+		});
+
 		it('can add and fetch and a fetchOnly state', function (done) {
 			var random = randomPath();
 			var state = new jet.State(random, 123);
