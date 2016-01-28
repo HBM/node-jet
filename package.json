@@ -20,7 +20,7 @@
   ],
   "devDependencies": {
     "browserify": "13.0.0",
-    "chai": "3.4.1",
+    "chai": "3.5.0",
     "coveralls": "2.11.6",
     "eslint": "1.7.3",
     "istanbul": "0.4.2",
@@ -62,6 +62,9 @@
   },
   "browser": "./lib/browser.js",
   "standard": {
-		  "ignore": ["build/", "examples/"]
+    "ignore": [
+      "build/",
+      "examples/"
+    ]
   }
 }
