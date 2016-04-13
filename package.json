@@ -33,7 +33,7 @@
   "dependencies": {
     "bluebird": "3.3.5",
     "optimist": "0.6.1",
-    "uuid": "2.0.1",
+    "uuid": "2.0.2",
     "ws": "1.1.0"
   },
   "main": "./lib/jet.js",
