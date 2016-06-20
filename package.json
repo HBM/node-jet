@@ -23,7 +23,7 @@
     "chai": "3.5.0",
     "coveralls": "2.11.6",
     "eslint": "1.7.3",
-    "istanbul": "0.4.2",
+    "istanbul": "0.4.4",
     "js-beautify": "1.5.10",
     "mocha": "2.3.4",
     "sinon": "1.17.3",
