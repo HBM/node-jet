@@ -31,7 +31,7 @@
     "mocha": "2.3.4",
     "sinon": "1.17.3",
     "standard": "^6.0.4",
-    "uglify-js": "2.6.1"
+    "uglify-js": "2.6.3"
   },
   "dependencies": {
     "bluebird": "3.3.5",
