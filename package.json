@@ -29,7 +29,7 @@
     "istanbul": "0.4.2",
     "js-beautify": "1.5.10",
     "mocha": "2.3.4",
-    "sinon": "1.17.3",
+    "sinon": "1.17.4",
     "standard": "^6.0.4",
     "uglify-js": "2.6.1"
   },
