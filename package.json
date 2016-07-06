@@ -28,7 +28,7 @@
     "eslint": "1.7.3",
     "istanbul": "0.4.2",
     "js-beautify": "1.5.10",
-    "mocha": "2.3.4",
+    "mocha": "2.5.3",
     "sinon": "1.17.3",
     "standard": "^6.0.4",
     "uglify-js": "2.6.1"
