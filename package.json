@@ -11,7 +11,10 @@
     "jet",
     "json"
   ],
-  "author": "Gerhard Preuss <gelipp@gmail.com>",
+  "author": {
+    "name": "Gerhard Preuss",
+    "email": "gelipp@gmail.com"
+  },
   "contributors": [
     {
       "name": "Gerhard Preuss",
@@ -60,7 +63,11 @@
     "url": "http://github.com/lipp/node-jet/issues",
     "email": "gelipp@gmail.com"
   },
-  "browser": "./lib/browser.js",
+  "browser": {
+		  "ws": false,
+		  "bluebird": false,
+		  "node-jet": "./lib/browser.js"
+  },
   "standard": {
     "ignore": [
       "build/",
