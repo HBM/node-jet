@@ -51,7 +51,7 @@
   },
   "license": "MIT",
   "scripts": {
-    "test": "istanbul cover _mocha -- --recursive test",
+    "test": "standard && istanbul cover _mocha -- --recursive test",
     "test_nocover": "mocha  test",
     "start": "./bin/jetd.js"
   },
@@ -64,9 +64,9 @@
     "email": "gelipp@gmail.com"
   },
   "browser": {
-		  "ws": false,
-		  "bluebird": false,
-		  "node-jet": "./lib/browser.js"
+    "ws": false,
+    "bluebird": false,
+    "node-jet": "./lib/browser.js"
   },
   "standard": {
     "ignore": [
