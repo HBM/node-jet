@@ -26,7 +26,7 @@
     "chai": "3.5.0",
     "coveralls": "2.11.9",
     "istanbul": "0.4.4",
-    "mocha": "2.5.3",
+    "mocha": "3.0.1",
     "sinon": "1.17.4",
     "standard": "^7.1.2",
     "uglify-js": "2.7.0"
