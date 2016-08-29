@@ -42,7 +42,7 @@
     "jetd.js": "./bin/jetd.js",
     "fetch.js": "./bin/fetch.js"
   },
-  "version": "1.0.6",
+  "version": "1.1.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/lipp/node-jet"
