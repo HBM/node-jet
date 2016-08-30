@@ -35,6 +35,15 @@ describe('The jet.peer.fetch-chainer module', function () {
     })
   })
 
+  it('.expression() directly sets rules', function () {
+    fc.expression({path: {startsWith: 'foo'}})
+    expect(fc.rule).to.deep.equal({
+      path: {
+        startsWith: 'foo'
+      }
+    })
+  })
+
   it('.pathCaseInsensitive() adds path rules caseInsensitive', function () {
     fc.pathCaseInsensitive()
     expect(fc.rule).to.deep.equal({

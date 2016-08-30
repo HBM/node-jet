@@ -413,6 +413,46 @@ Adds a path matching rule to the fetcher.
 
 Makes path matching case insensitive.
 
+## `fetcher.expression(expr) -> Fetcher`
+
+Directly sets the fetch expression rule object. This call overwrite all previously set (chained) rules.
+```javascript
+// The expression may contain the following entries
+var expr = {
+  path: { // path based matches
+    caseInsensitive: true,
+    startsWith: 'foo',
+    contains: ['bar', 'test']
+    // and all other path based match rules
+  },
+  value: { // value based matches
+    equals: 3
+    // and other value based match rules
+  },
+  valueField: {
+    'sub.object.path': {
+      isType: 'string'
+      // and other value/key based match rules
+    },
+    'another.sub.object.path': {
+      lessThan: 5
+      // and other value/key based match rules
+    }
+  },
+  sort: {
+    asArray: true, // pass items as sorted array to data callback. See fetcher.differential doc
+    byPath: true, // either this
+    byValue: 'number', // or this (needs supposed js type)
+    byValueFiels: { // or this
+      'sub.object.path': 'string'
+    },
+    descending: true,
+    from: 1, // starts with index 1 (inclusive range)
+    to: 100 // last index 100 (inclusive range)
+  }
+}
+```
+
 ## `fetcher.value(predicate, comp) -> Fetcher`
 
 Adds a value matching rule for **primitive type** values to the fetcher.
