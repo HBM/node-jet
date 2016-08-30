@@ -35,6 +35,17 @@ describe('Jet module', function () {
     })
   })
 
+  it('a jet peer can connect to the jet daemon and isConnected() === true', function (done) {
+    var peer = new jet.Peer({
+      port: testPort
+    })
+    expect(peer.isConnected()).to.equal(false)
+    peer.connect().then(function () {
+      expect(peer.isConnected()).to.equal(true)
+      done()
+    })
+  })
+
   it('peer.close immediatly does not brake', function (done) {
     var peer = new jet.Peer({
       port: testPort
