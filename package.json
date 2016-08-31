@@ -27,7 +27,7 @@
     "coveralls": "2.11.9",
     "istanbul": "0.4.4",
     "mocha": "3.0.2",
-    "sinon": "1.17.4",
+    "sinon": "1.17.5",
     "standard": "^7.1.2",
     "uglify-js": "2.7.0"
   },
