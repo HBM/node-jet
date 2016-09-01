@@ -67,6 +67,14 @@ var portBase = 4345
       peer.close()
     })
 
+    it('can do fetch / unfetch immediatly', function (done) {
+      var fetcher = new jet.Fetcher()
+        .path('startsWith', 'a')
+        .on('data', function () {})
+      peer.fetch(fetcher)
+      fetcher.unfetch().then(done)
+    })
+
     describe('fetch chaining', function () {
       var states
 
