@@ -154,6 +154,16 @@ describe('Jet module', function () {
       expect(state.path).to.be.a('function')
     })
 
+    it('new jet.State().on returns self', function () {
+      var state = new jet.State(randomPath(), 123)
+      expect(state.on('set', function () {})).to.equal(state)
+    })
+
+    it('new jet.Method().on returns self', function () {
+      var method = new jet.Method(randomPath())
+      expect(method.on('call', function () {})).to.equal(method)
+    })
+
     it('can add, fetch and set a state', function (done) {
       var random = randomPath()
       var state = new jet.State(random, 123)
