@@ -5,7 +5,7 @@
 var jet = require('node-jet')
 
 var peer = new jet.Peer({
-  url: 'ws://' + window.location.host
+  url: (window.location.protocol === 'http:' ? 'ws://' : 'wss://') + window.location.host
 })
 
 var addTodo = function (title) {
