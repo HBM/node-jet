@@ -8,6 +8,7 @@ var jet = require('../lib/jet')
 var http = require('http')
 var https = require('https')
 var fs = require('fs')
+var WebSocket = require('ws')
 
 var commandRequestTest = function (port, command, params, checkResult) {
   describe('who sends "' + command + '" as request', function () {
@@ -44,6 +45,33 @@ var commandRequestTest = function (port, command, params, checkResult) {
 }
 
 var testPort = 33301
+
+describe('A Daemon with websockets', function () {
+  var daemon
+  var wsPort = 11145
+  before(function () {
+    daemon = new jet.Daemon()
+    daemon.listen({wsPingInterval: 10, wsPort: wsPort})
+  })
+
+  it('a ws client gets pinged', function (done) {
+    var client = new WebSocket('ws://localhost:' + wsPort, 'jet')
+    client.on('ping', function () {
+      client.close()
+      done()
+    })
+  })
+
+  it('a ws client which closes does not break the server', function (done) {
+    var client = new WebSocket('ws://localhost:' + wsPort, 'jet')
+    client.on('open', function () {
+      client.close()
+      setTimeout(function () {
+        done()
+      }, 100)
+    })
+  })
+})
 
 describe('A Daemon', function () {
   var daemon
