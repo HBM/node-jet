@@ -8,10 +8,10 @@ var serveStatic = require('serve-static')
 var port = parseInt(process.argv[2]) || 80
 var internalPort = 11128
 
-// Serve this dir as static content 
+// Serve this dir as static content
 var serve = serveStatic('./')
 
-// Create Webserver 
+// Create Webserver
 var httpServer = http.createServer(function (req, res) {
   var done = finalhandler(req, res)
   serve(req, res, done)
@@ -68,7 +68,6 @@ addTodo.on('call', function (args) {
     return {
       value: todo
     }
-
   })
   todoStates[todo.id] = todoState
   peer.add(todoState)
@@ -76,10 +75,13 @@ addTodo.on('call', function (args) {
 
 // Provide a "todo/remove" method to delete a certain todo
 var removeTodo = new jet.Method('todo/remove')
-removeTodo.on('call', function (args) {
-  var todoId = args[0]
-  todoStates[todoId].remove()
-  delete todoStates[todoId]
+removeTodo.on('call', function (ids) {
+  ids.forEach(function (id) {
+    if (todoStates[id]) {
+      todoStates[id].remove()
+      delete todoStates[todoId]
+    }
+  })
 })
 
 // connect peer and register methods
