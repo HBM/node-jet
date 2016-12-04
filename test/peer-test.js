@@ -164,6 +164,59 @@ describe('Jet module', function () {
       expect(method.on('call', function () {})).to.equal(method)
     })
 
+    it('can add and get a state', function (done) {
+      var random = randomPath()
+      var state = new jet.State(random, 123)
+      peer.add(state)
+        .then(function () {
+          return peer.get({path: {equals: random}})
+        })
+        .then(function (data) {
+          expect(data).to.deep.equal([
+            {
+              path: random,
+              value: 123,
+              fetchOnly: true,
+              event: 'add'
+            }
+          ])
+          done()
+        })
+        .catch(done)
+    })
+
+    it('can add and get sorted states', function (done) {
+      var random = randomPath()
+      var state = new jet.State(random, 123)
+      var random2 = randomPath()
+      var state2 = new jet.State(random2, 333)
+      peer.add(state)
+        .then(function () {
+          return peer.add(state2)
+        })
+        .then(function () {
+          return peer.get({sort: {byValue: 'number', descending: true}})
+        })
+        .then(function (data) {
+          expect(data).to.deep.equal([
+            {
+              path: random2,
+              value: 333,
+              fetchOnly: true,
+              index: 1
+            },
+            {
+              path: random,
+              value: 123,
+              fetchOnly: true,
+              index: 2
+            }
+          ])
+          done()
+        })
+        .catch(done)
+    })
+
     it('can add, fetch and set a state', function (done) {
       var random = randomPath()
       var state = new jet.State(random, 123)
