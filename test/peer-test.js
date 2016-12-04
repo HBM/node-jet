@@ -78,7 +78,7 @@ describe('Jet module', function () {
       expect(daemonInfo).to.be.an('object')
       expect(daemonInfo.name).to.equal('node-jet')
       expect(daemonInfo.version).to.be.a('string')
-      expect(daemonInfo.protocolVersion).to.equal('1.0.0')
+      expect(daemonInfo.protocolVersion).to.equal('1.1.0')
       expect(daemonInfo.features.fetch).to.equal('full')
       expect(daemonInfo.features.authentication).to.equal(true)
       expect(daemonInfo.features.batches).to.equal(true)
