@@ -80,9 +80,9 @@ peer.set('person/#123', {name: 'Jose', age: 33});
 
 ## Tutorial
 
-Read the [Todo-App Tutorial](https://github.com/lipp/node-jet/tree/master/examples/todo/README.md) for building this simple collaborative realtime app:
+Read the [Todo-App Tutorial](https://github.com/lipp/node-jet/tree/master/examples/todo/README.md) (Vanilla JS client) or the [React + Redux Variant](https://github.com/lipp/next-todos) for building this simple collaborative realtime app:
 
-[![Jet Todo-App](./jet-todo.png)](http://jetbus.io:8080)
+[![Jet Todo-App](./jet-todo.png)](https://todos.now.sh)
 
 # Install
 
@@ -90,9 +90,6 @@ Read the [Todo-App Tutorial](https://github.com/lipp/node-jet/tree/master/exampl
   
     $ npm install node-jet
 
-## Bower
-
-    $ bower install jet
 
 ## script tag
   
