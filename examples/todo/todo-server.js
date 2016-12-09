@@ -79,7 +79,31 @@ removeTodo.on('call', function (ids) {
   ids.forEach(function (id) {
     if (todoStates[id]) {
       todoStates[id].remove()
-      delete todoStates[todoId]
+      delete todoStates[id]
+    }
+  })
+})
+
+// Provide a "todo/remove" method to delete a certain todo
+var clearCompletedTodos = new jet.Method('todo/clearCompleted')
+clearCompletedTodos.on('call', function () {
+  Object.keys(todoStates).forEach(function (id) {
+    if (todoStates[id].value().completed) {
+      todoStates[id].remove()
+      delete todoStates[id]
+    }
+  })
+})
+
+// Provide a "todo/remove" method to delete a certain todo
+var setCompleted = new jet.Method('todo/setCompleted')
+setCompleted.on('call', function (args) {
+  Object.keys(todoStates).forEach(function (id) {
+    var todo = todoStates[id]
+    var current = todo.value()
+    if (current.completed !== args[0]) {
+      current.completed = args[0]
+      todo.value(current)
     }
   })
 })
@@ -88,7 +112,9 @@ removeTodo.on('call', function (ids) {
 jet.Promise.all([
   peer.connect(),
   peer.add(addTodo),
-  peer.add(removeTodo)
+  peer.add(removeTodo),
+  peer.add(setCompleted),
+  peer.add(clearCompletedTodos)
 ]).then(function () {
   console.log('todo-server ready')
   console.log('listening on port', port)
