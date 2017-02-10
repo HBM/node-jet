@@ -134,7 +134,7 @@ describe('A Daemon', function () {
     var state = new jet.State('pathdoesnotmatter', 32)
     var fetcher = new jet.Fetcher()
 
-    jet.Promise.all([
+    Promise.all([
       peer.connect(),
       peer.fetch(fetcher),
       peer.add(state)
@@ -174,7 +174,7 @@ describe('A Daemon', function () {
       }, 100)
     })
 
-    jet.Promise.all([
+    Promise.all([
       peer.connect(),
       peer.add(tooLate),
       peer.call('alwaysTooLate', [1, 2], {

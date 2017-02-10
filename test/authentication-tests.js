@@ -123,7 +123,7 @@ describe('access tests', function () {
       return a * a
     })
 
-    jet.Promise.all([
+    Promise.all([
       provider.connect(),
       provider.add(everyoneState),
       provider.add(pubAdminState),
@@ -202,11 +202,11 @@ describe('access tests', function () {
       }
     })
 
-    jet.Promise.all([
+    Promise.all([
       consumer.connect(),
       consumer.fetch(all)
     ]).then(function () {
-      return jet.Promise.all([
+      return Promise.all([
         everyoneState.value('foo'),
         pubApiState.value('foo'), // should not trigger fetch callback
         pubAdminState.value('bar')

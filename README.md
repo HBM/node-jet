@@ -88,14 +88,8 @@ Read the [Todo-App Tutorial](https://github.com/lipp/node-jet/tree/master/exampl
 
 ## NPM
   
-    $ npm install node-jet
+    $ npm install node-jet --save
 
-
-## script tag
-  
-```html
-<script src="https://rawgit.com/lipp/node-jet/master/build/jet.js"></script>
-```
 
 # Stand-Alone Daemon
 

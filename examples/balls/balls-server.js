@@ -168,7 +168,7 @@ boom.on('call', function (args) {
 })
 
 // connect peer and register methods
-jet.Promise.all([
+Promise.all([
   peer.connect(),
   peer.add(circle),
   peer.add(square),
