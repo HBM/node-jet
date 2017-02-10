@@ -628,7 +628,6 @@ may throw `jet.ConnectionClosed`, `jet.Unauthorized` or `jet.Occupied`.
 There are three recommended strategies for handling different errors: 
    - Using `err.name` to distinguish between the types
    - Using `instanceof` operator
-   - Using the bluebird Promises' catch by type facility
 
 ```javascript
 // by err.name
@@ -653,18 +652,6 @@ peer.set('foo', {age: 3, name: 'bar'})
 	  } else if (err instanceof jet.PeerTimeout) {
 	    console.log('foo is not responding fast enough');
 	  } ...
-	});
-```
-
-```javascript
-// by bluebird's catch facility
-peer.set('foo', {age: 3, name: 'bar'})
-	.then(function() {})
-	.catch(jet.NotFound, function(err) {
-	  console.log('foo was not found');
-	})
-	.catch(jet.PeerTimeout, function(err) {
-	  console.log('foo is not responding fast enough');
 	});
 ```
 
