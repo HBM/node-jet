@@ -980,20 +980,6 @@ describe('Jet module', function () {
           done()
         })
       })
-
-      it('filter by bluebird catch', function (done) {
-        peer.set('this-path-does-not-exist', 123)
-          .catch(jet.Unauthorized, function (err) {
-            console.log(err)
-            expect('this should not happen').to.be.false
-          })
-          .catch(jet.NotFound, function (err) {
-            expect(err instanceof jet.NotFound).to.be.true
-          })
-          .finally(function () {
-            done()
-          })
-      })
     })
   })
 })
