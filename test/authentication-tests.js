@@ -1,6 +1,7 @@
-/* global describe it before afterEach beforeEach */
+/* global describe it before afterEach beforeEach after */
 var expect = require('chai').expect
 var jet = require('../lib/jet')
+var WebSocket = require('ws')
 
 var testWsPort = 3333
 
@@ -348,3 +349,54 @@ describe('access tests', function () {
     })
   })
 })
+
+describe('A Daemon with specified wsGetAuthentication option', function () {
+  const auth = {
+    fetchGroups: [],
+    setGroups: ['foo'],
+    callGroups: []
+  }
+  var returnAuth
+
+  var daemon
+  before(function () {
+    daemon = new jet.Daemon()
+    daemon.listen({
+      wsPort: testWsPort + 3,
+      wsGetAuthentication: function (info) {
+        return returnAuth
+      }
+    })
+  })
+
+  after(function () {
+    daemon.wsServer.close()
+  })
+
+  it('attaches the returned auth object to the peer', function (done) {
+    var client
+    var _auth
+    returnAuth = auth
+    daemon.on('connection', function (peer) {
+      _auth = peer.auth
+    })
+
+    client = new WebSocket('ws://localhost:' + (testWsPort + 3), 'jet')
+    client.on('open', function () {
+      expect(_auth).to.deep.equals(auth)
+      client.close()
+      done()
+    })
+  })
+
+  it('refuses the connection when returning false', function (done) {
+    var client
+    returnAuth = false
+    client = new WebSocket('ws://localhost:' + (testWsPort + 3), 'jet')
+    client.on('error', function () {
+      daemon.wsServer.close()
+      done()
+    })
+  })
+})
+

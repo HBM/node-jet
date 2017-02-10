@@ -19,8 +19,8 @@ var daemon = new jet.Daemon({
 	  password: '12345',
 	  auth: {
 	    fetchGroups: ['users','public'],
-		setGroups: ['users'],
-		callGroups: ['users']
+	    setGroups: ['users'],
+	    callGroups: ['users']
 	  }
 	},
 	bob: {
@@ -38,6 +38,8 @@ an object. The following entries are allowed/supported:
 
 -  `options.tcpPort`: The listening port for the "trivial" message protocol
 -  `options.wsPort`: The listening port for WebSocket protocol
+-  `options.wsPingInterval`: The interval in which the client gets pinged [MS]. Useful to prevent getting put to freeze (AWS) be cloud provider.
+-  `options.wsGetAuthentication`: A function which may return a user authentication object (see above). If the function returns false, the connection gets refused. The argument to the function is the `info` object from [WebSocketServer:verifyClient](https://github.com/websockets/ws/blob/master/doc/ws.md#new-websocketserveroptions-callback)
 -  `options.server`: An existing (http or https) server to hook onto providing WebSocket protocol
 
 `options.wsPort` and `options.server` must not be used simultaneously.
