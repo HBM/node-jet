@@ -400,3 +400,24 @@ describe('A Daemon with specified wsGetAuthentication option', function () {
   })
 })
 
+it('A Peer can send custom headers', function (done) {
+  var headers
+  var daemon = new jet.Daemon()
+  daemon.listen({
+    wsPort: testWsPort + 4,
+    wsGetAuthentication: function (info) {
+      headers = info.req.headers
+      return {}
+    }
+  })
+
+  var peer = new jet.Peer({url: 'ws://localhost:' + (testWsPort + 4), headers: {foo: 'bar'}})
+  peer.connect().then(function () {
+    expect(headers.foo).to.equal('bar')
+    peer.close()
+    peer.closed().then(function () {
+      daemon.wsServer.close()
+      done()
+    })
+  })
+})
