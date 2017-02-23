@@ -145,6 +145,27 @@ var portBase = 4345
         })
       })
 
+      it('fetch promise resolves before fetch data arrives', function (done) {
+        states.push({
+          path: 'abc',
+          value: 1
+        })
+
+        states.addAll().then(function () {
+          var fetchSpy = sinon.spy()
+          var fetcher = new jet.Fetcher()
+            .path('equals', 'abc')
+            .on('data', fetchSpy)
+
+          peer.fetch(fetcher).then(function () {
+            expect(fetchSpy.callCount).to.equal(0)
+            fetcher.unfetch().then(function () {
+              done()
+            })
+          })
+        })
+      })
+
       it('immediate value changes are fetch in correct order', function (done) {
         states.push({
           path: 'abc',

@@ -380,6 +380,7 @@ describe('Jet module', function () {
         expect(data.path).to.equal(random)
         expect(data.event).to.equal('add')
         expect(data.value).to.equal(123)
+        this.unfetch()
         peer.set(random, 876).then(function () {
           done()
         }).catch(function (err) {
