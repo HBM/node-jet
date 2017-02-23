@@ -1,4 +1,4 @@
-/* global describe it before afterEach beforeEach after */
+/* global describe it before afterEach beforeEach after xit */
 var jet = require('../lib/jet')
 var sinon = require('sinon')
 var expect = require('chai').expect
@@ -145,7 +145,7 @@ var portBase = 4345
         })
       })
 
-      it('fetch promise resolves before fetch data arrives', function (done) {
+      xit('fetch promise resolves before fetch data arrives', function (done) {
         states.push({
           path: 'abc',
           value: 1
