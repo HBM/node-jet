@@ -34,6 +34,7 @@
   "dependencies": {
     "bluebird": "3.4.6",
     "optimist": "0.6.1",
+    "setimmediate": "^1.0.5",
     "uuid": "3.0.1",
     "ws": "^2.0.3"
   },
@@ -42,7 +43,7 @@
     "jetd.js": "./bin/jetd.js",
     "fetch.js": "./bin/fetch.js"
   },
-  "version": "1.5.0",
+  "version": "1.5.1",
   "repository": {
     "type": "git",
     "url": "https://github.com/lipp/node-jet"
