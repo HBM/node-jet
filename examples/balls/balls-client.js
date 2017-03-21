@@ -7,7 +7,7 @@ var d3 = require('d3')
 var shared = require('./shared')
 
 var peer = new jet.Peer({
-  url: 'ws://' + window.location.host
+  url: (window.location.protocol === 'https:' ? 'wss://' : 'ws://') + window.location.host
 })
 
 var randomColor = function () {
@@ -93,9 +93,10 @@ d3.selectAll('input[type="radio"]')
 var svgContainer = d3.select('svg')
   .attr('viewBox', '0 0 ' + shared.canvasSize + ' ' + shared.canvasSize)
   .on('click', function () {
+    var pos = d3.mouse(this)
     var dist = function (x, y) {
-      var dx = x - event.clientX
-      var dy = y - event.clientY
+      var dx = x - pos[0]
+      var dy = y - pos[1]
       return Math.sqrt(dx * dx + dy * dy)
     }
     var radius = Math.random() * 50 + 50
@@ -107,8 +108,8 @@ var svgContainer = d3.select('svg')
       var dir = Math.random() * 2 * Math.PI
       if (d < radius) {
         var newPos = {
-          x: event.clientX + Math.cos(dir) * radius,
-          y: event.clientY + Math.sin(dir) * radius
+          x: pos[0] + Math.cos(dir) * radius,
+          y: pos[1] + Math.sin(dir) * radius
         }
         peer.set(path, {
           pos: newPos

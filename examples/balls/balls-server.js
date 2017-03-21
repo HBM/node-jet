@@ -7,13 +7,12 @@ var serveStatic = require('serve-static')
 var shared = require('./shared')
 
 var port = parseInt(process.argv[2]) || 80
-var internalPort = 10200
 var numBalls = 150
 
-// Serve this dir as static content 
+// Serve this dir as static content
 var serve = serveStatic('./')
 
-// Create Webserver 
+// Create Webserver
 var httpServer = http.createServer(function (req, res) {
   var done = finalhandler(req, res)
   serve(req, res, done)
@@ -24,13 +23,12 @@ httpServer.listen(port)
 // Create Jet Daemon
 var daemon = new jet.Daemon()
 daemon.listen({
-  server: httpServer, // embed jet websocket upgrade handler
-  tcpPort: internalPort // nodejitsu prevents internal websocket connections
+  server: httpServer // embed jet websocket upgrade handler
 })
 
 // Create Jet Peer
 var peer = new jet.Peer({
-  port: internalPort
+  url: 'ws://localhost:' + port
 })
 
 var randomPos = function () {
