@@ -392,6 +392,7 @@ peer.fetch(topTenPlayers);
 ```
 
 ## `fetcher.path(predicate, comp) -> Fetcher`
+## `fetcher.pathCaseInsensitive(predicate, comp) -> Fetcher`
 
 Adds a path matching rule to the fetcher.
 
