@@ -29,7 +29,7 @@
     "mocha": "3.2.0",
     "sinon": "2.1.0",
     "standard": "^8.3.0",
-    "uglify-js": "2.7.0"
+    "uglify-js": "2.8.14"
   },
   "dependencies": {
     "bluebird": "3.4.6",
