@@ -392,6 +392,56 @@ describe('Jet module', function () {
       peer.fetch(fetcher)
     })
 
+    it('can add, fetch and set a boolean state from true to false', function (done) {
+      var random = randomPath()
+      var state = new jet.State(random, true)
+      state.on('set', function (newval) {
+        return
+      })
+
+      var fetcher = new jet.Fetcher().path('contains', random)
+      fetcher.on('data', function (data) {
+        expect(data.path).to.equal(random)
+        expect(data.event).to.equal('add')
+        expect(data.value).to.equal(true)
+        this.unfetch()
+        peer.set(random, false).then(function () {
+          expect(state.value()).to.equal(false)
+          done()
+        }).catch(function (err) {
+          done(err)
+        })
+      })
+
+      peer.add(state)
+      peer.fetch(fetcher)
+    })
+
+    it('can add, fetch and set a boolean state from true to false', function (done) {
+      var random = randomPath()
+      var state = new jet.State(random, false)
+      state.on('set', function (newval) {
+        return
+      })
+
+      var fetcher = new jet.Fetcher().path('contains', random)
+      fetcher.on('data', function (data) {
+        expect(data.path).to.equal(random)
+        expect(data.event).to.equal('add')
+        expect(data.value).to.equal(false)
+        this.unfetch()
+        peer.set(random, true).then(function () {
+          expect(state.value()).to.equal(true)
+          done()
+        }).catch(function (err) {
+          done(err)
+        })
+      })
+
+      peer.add(state)
+      peer.fetch(fetcher)
+    })
+
     it('set may throw a PeerTimeout error', function (done) {
       var random = randomPath()
       var state = new jet.State(random, 123)
