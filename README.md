@@ -5,7 +5,7 @@
 [![js-standard-style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg)](http://standardjs.com/)
 [![deps](https://david-dm.org/lipp/node-jet.svg)](https://david-dm.org/lipp/node-jet.svg) 
 
-This is [Jet](http://jetbus.io/) for Javasript. Jet is the hybrid of an **In-Memory Database** and a **Realtime Push-Framework**. Node and Browsers are supported (using Browserify).
+This is [Jet](http://jetbus.io/) for JavaScript. Jet is the hybrid of an **In-Memory Database** and a **Realtime Push-Framework**. Node and Browsers are supported (using Browserify).
 
 
 # Synopsis
