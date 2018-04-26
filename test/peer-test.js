@@ -689,7 +689,6 @@ describe('Jet module', function () {
       jet.Promise.all([
         peer.add(m),
         peer.call(path, []).then(function (result) {
-          console.log('result='+result)
           expect(result).to.equal(null)
           done()
         })
