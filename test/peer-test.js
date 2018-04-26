@@ -679,6 +679,57 @@ describe('Jet module', function () {
       ]).catch(done)
     })
 
+    it('can add and call a method which returns null', function (done) {
+      var path = randomPath()
+      var m = new jet.Method(path)
+      m.on('call', function () {
+        return null
+      })
+
+      jet.Promise.all([
+        peer.add(m),
+        peer.call(path, []).then(function (result) {
+          console.log('result='+result)
+          expect(result).to.equal(null)
+          done()
+        })
+      ]).catch(done)
+    })
+
+    it('can add and call a method which returns 1', function (done) {
+      var path = randomPath()
+      var m = new jet.Method(path)
+      m.on('call', function () {
+        return 1
+      })
+
+      jet.Promise.all([
+        peer.add(m),
+        peer.call(path, []).then(function (result) {
+          expect(result).to.equal(1)
+          done()
+        })
+      ]).catch(done)
+    })
+
+    it('can add and call a method which returns an empty Object', function (done) {
+      var path = randomPath()
+      var m = new jet.Method(path)
+      m.on('call', function () {
+        return {}
+      })
+
+      jet.Promise.all([
+        peer.add(m),
+        peer.call(path, []).then(function (result) {
+          expect(typeof result).to.equal('object')
+          expect(result.length).to.equal(undefined)
+          expect(Object.keys(result).length).to.equal(0)
+          done()
+        })
+      ]).catch(done)
+    })
+
     it('a method call handler with no args works synchronous', function (done) {
       var path = randomPath()
       var m = new jet.Method(path)
