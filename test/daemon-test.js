@@ -1,4 +1,4 @@
-/* global describe it before */
+/* global describe it before beforeEach afterEach */
 var expect = require('chai').expect
 var net = require('net')
 var EventEmitter = require('events').EventEmitter
@@ -75,11 +75,15 @@ describe('A Daemon with websockets', function () {
 
 describe('A Daemon', function () {
   var daemon
-  before(function () {
+  beforeEach(function () {
     daemon = new jet.Daemon()
     daemon.listen({
       tcpPort: testPort
     })
+  })
+
+  afterEach(function () {
+    daemon.close()
   })
 
   it('should be instance of EventEmitter', function (done) {
@@ -274,6 +278,71 @@ describe('A Daemon', function () {
       peer.connect().then(function () {
         peer.close()
         done()
+      })
+    })
+  })
+
+  describe('can create a local peer and ', function () {
+    var peer
+    beforeEach(function () {
+      peer = daemon.createLocalPeer()
+    })
+
+    it('it is an instance of Peer', function (done) {
+      expect(peer).to.be.an.instanceof(jet.Peer)
+      done()
+    })
+
+    it('it can connect', function (done) {
+      peer.connect().then(function () {
+        done()
+      })
+    })
+
+    it('it can add a method and receive invocations to it', function (done) {
+      var testPath = '/test'
+      var remotePeer
+
+      peer.connect().then(function () {
+        var method = new jet.Method(testPath)
+          .on('call', function (data) {
+            expect(data).to.be.an('array').that.has.lengthOf(1)
+            expect(data[0]).to.equal('foo')
+            remotePeer.close()
+            done()
+          })
+        peer.add(method).then(function () {
+          remotePeer = new jet.Peer({
+            port: testPort
+          })
+
+          remotePeer.connect().then(function () {
+            remotePeer.call(testPath, ['foo'])
+          })
+        })
+      })
+    })
+
+    it('it can invoke a remote peer\'s method', function (done) {
+      var testPath = '/test'
+
+      peer.connect().then(function () {
+        var remotePeer = new jet.Peer({
+          port: testPort
+        })
+
+        remotePeer.connect().then(function () {
+          var method = new jet.Method(testPath)
+          .on('call', function (data) {
+            expect(data).to.be.an('array').that.has.lengthOf(1)
+            expect(data[0]).to.equal('foo')
+            remotePeer.close()
+            done()
+          })
+          remotePeer.add(method).then(function () {
+            peer.call(testPath, ['foo'])
+          })
+        })
       })
     })
   })
