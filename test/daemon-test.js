@@ -1,5 +1,10 @@
 /* global describe it before beforeEach afterEach */
-var expect = require('chai').expect
+var chai = require('chai')
+var expect = chai.expect
+var sinon = require('sinon')
+var sinonChai = require('sinon-chai')
+chai.should()
+chai.use(sinonChai)
 var net = require('net')
 var EventEmitter = require('events').EventEmitter
 /* this is a private module, so load directly */
@@ -343,6 +348,35 @@ describe('A Daemon', function () {
             peer.call(testPath, ['foo'])
           })
         })
+      })
+    })
+
+    it('it can be closed and methods should not be called', function (done) {
+      var testPath = '/test'
+      var remotePeer
+      var onMethodCallSpy = sinon.spy()
+
+      peer.connect().then(function () {
+        var method = new jet.Method(testPath)
+          .on('call', onMethodCallSpy)
+        return peer.add(method)
+      })
+      .then(function () {
+        remotePeer = new jet.Peer({
+          port: testPort
+        })
+
+        return remotePeer.connect()
+      })
+      .then(function () {
+        daemon.on('disconnect', function () {
+          remotePeer.call(testPath, ['foo'])
+          .catch(function () {
+            onMethodCallSpy.should.not.have.been.called
+            done()
+          })
+        })
+        peer.close()
       })
     })
   })
