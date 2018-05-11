@@ -316,38 +316,43 @@ describe('A Daemon', function () {
             remotePeer.close()
             done()
           })
-        peer.add(method).then(function () {
-          remotePeer = new jet.Peer({
-            port: testPort
-          })
-
-          remotePeer.connect().then(function () {
-            remotePeer.call(testPath, ['foo'])
-          })
+        return peer.add(method)
+      })
+      .then(function () {
+        remotePeer = new jet.Peer({
+          port: testPort
         })
+
+        return remotePeer.connect()
+      })
+      .then(function () {
+        remotePeer.call(testPath, ['foo'])
       })
     })
 
     it('it can invoke a remote peer\'s method', function (done) {
       var testPath = '/test'
+      var remotePeer
 
       peer.connect().then(function () {
-        var remotePeer = new jet.Peer({
+        remotePeer = new jet.Peer({
           port: testPort
         })
 
-        remotePeer.connect().then(function () {
-          var method = new jet.Method(testPath)
-          .on('call', function (data) {
-            expect(data).to.be.an('array').that.has.lengthOf(1)
-            expect(data[0]).to.equal('foo')
-            remotePeer.close()
-            done()
-          })
-          remotePeer.add(method).then(function () {
-            peer.call(testPath, ['foo'])
-          })
+        return remotePeer.connect()
+      })
+      .then(function () {
+        var method = new jet.Method(testPath)
+        .on('call', function (data) {
+          expect(data).to.be.an('array').that.has.lengthOf(1)
+          expect(data[0]).to.equal('foo')
+          remotePeer.close()
+          done()
         })
+        return remotePeer.add(method)
+      })
+      .then(function () {
+        peer.call(testPath, ['foo'])
       })
     })
 
