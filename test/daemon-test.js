@@ -54,9 +54,13 @@ var testPort = 33301
 describe('A Daemon with websockets', function () {
   var daemon
   var wsPort = 11145
-  before(function () {
+  beforeEach(function () {
     daemon = new jet.Daemon()
     daemon.listen({wsPingInterval: 10, wsPort: wsPort})
+  })
+
+  afterEach(function () {
+    return daemon.close()
   })
 
   it('a ws client gets pinged', function (done) {
@@ -88,7 +92,7 @@ describe('A Daemon', function () {
   })
 
   afterEach(function () {
-    daemon.close()
+    return daemon.close()
   })
 
   it('should be instance of EventEmitter', function (done) {
@@ -374,7 +378,7 @@ describe('A Daemon', function () {
         return remotePeer.connect()
       })
       .then(function () {
-        daemon.on('disconnect', function () {
+        daemon.once('disconnect', function () {
           remotePeer.call(testPath, ['foo'])
           .catch(function () {
             onMethodCallSpy.should.not.have.been.called
