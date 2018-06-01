@@ -308,6 +308,23 @@ describe('A Daemon', function () {
       })
     })
 
+    it('it causes a connection and disconnect event on the daemon', function (done) {
+      var connectionSpy = sinon.spy()
+
+      daemon.on('connection', connectionSpy)
+      daemon.once('disconnect', function () {
+        connectionSpy.should.have.been.calledOnce
+        done()
+      })
+
+      var otherPeer = daemon.createLocalPeer()
+
+      otherPeer.connect()
+      .then(function () {
+        otherPeer.close()
+      })
+    })
+
     it('it can add a method and receive invocations to it', function (done) {
       var testPath = '/test'
       var remotePeer
