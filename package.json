@@ -32,7 +32,6 @@
     "uglify-js": "2.7.0"
   },
   "dependencies": {
-    "bluebird": "3.4.6",
     "optimist": "0.6.1",
     "uuid": "3.0.1",
     "ws": "^3.3.3"
@@ -63,7 +62,6 @@
   },
   "browser": {
     "ws": false,
-    "bluebird": false,
     "node-jet": "./lib/browser.js"
   },
   "standard": {
