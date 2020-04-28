@@ -50,7 +50,7 @@
   "license": "MIT",
   "scripts": {
     "test": "standard && istanbul cover node_modules/mocha/bin/_mocha -- --recursive test",
-    "test_nocover": "node node_modules/mocha/bin/mocha test",
+    "test_nocover": "npx mocha test",
     "start": "./bin/jetd.js"
   },
   "engines": {
