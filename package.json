@@ -33,7 +33,7 @@
   },
   "dependencies": {
     "optimist": "0.6.1",
-    "uuid": "7.0.3",
+    "uuid": "8.0.0",
     "ws": "^7.2.5"
   },
   "main": "./lib/jet.js",
