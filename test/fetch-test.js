@@ -1,11 +1,12 @@
 /* global describe it before afterEach beforeEach after xit */
+/* eslint-disable no-unused-expressions */
 var jet = require('../lib/jet')
 var sinon = require('sinon')
 var expect = require('chai').expect
 var util = require('util')
 var MessageSocket = require('../lib/jet/message-socket').MessageSocket
 
-var waitTime = process.env.TRAVIS && 100 || 40
+var waitTime = (process.env.TRAVIS && 100) || 40
 
 var StateArray = function (peer) {
   this.peer = peer

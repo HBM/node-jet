@@ -64,7 +64,7 @@ describe('The jet.errors module', function () {
       })
 
       it('Error is not parent class', function () {
-        expect(new Error() instanceof Ctor).to.be.false
+        expect(new Error() instanceof Ctor).to.be.false // eslint-disable-line no-unused-expressions
       })
 
       it('is instance of errors.BaseError', function () {

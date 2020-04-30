@@ -28,7 +28,7 @@ describe('The (daemon) jsonrpc module', function () {
       }
       ji.dispatch(peer, JSON.stringify(msg))
       expect(services.test.callCount).to.equal(1)
-      expect(services.test.calledWith(peer, msg)).to.be.true
+      expect(services.test.calledWith(peer, msg)).to.be.true // eslint-disable-line no-unused-expressions
     })
 
     it('valid notification known method/service gets called', function () {
@@ -37,7 +37,7 @@ describe('The (daemon) jsonrpc module', function () {
       }
       ji.dispatch(peer, JSON.stringify(msg))
       expect(services.test.callCount).to.equal(1)
-      expect(services.test.calledWith(peer, msg)).to.be.true
+      expect(services.test.calledWith(peer, msg)).to.be.true // eslint-disable-line no-unused-expressions
     })
 
     it('valid request unknown method/service gets not called', function () {

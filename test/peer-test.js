@@ -1,4 +1,5 @@
 /* global describe it before afterEach beforeEach */
+/* eslint-disable no-unused-expressions */
 var expect = require('chai').expect
 var uuid = require('uuid')
 var jet = require('../lib/jet')
@@ -169,7 +170,7 @@ describe('Jet module', function () {
       var state = new jet.State(random, 123)
       peer.add(state)
         .then(function () {
-          return peer.get({path: {equals: random}})
+          return peer.get({ path: { equals: random } })
         })
         .then(function (data) {
           expect(data).to.deep.equal([
@@ -195,7 +196,7 @@ describe('Jet module', function () {
           return peer.add(state2)
         })
         .then(function () {
-          return peer.get({sort: {byValue: 'number', descending: true}})
+          return peer.get({ sort: { byValue: 'number', descending: true } })
         })
         .then(function (data) {
           expect(data).to.deep.equal([
@@ -396,7 +397,7 @@ describe('Jet module', function () {
       var random = randomPath()
       var state = new jet.State(random, true)
       state.on('set', function (newval) {
-        return
+
       })
 
       var fetcher = new jet.Fetcher().path('contains', random)
@@ -421,7 +422,7 @@ describe('Jet module', function () {
       var random = randomPath()
       var state = new jet.State(random, false)
       state.on('set', function (newval) {
-        return
+
       })
 
       var fetcher = new jet.Fetcher().path('contains', random)

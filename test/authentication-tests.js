@@ -18,7 +18,7 @@ users['John Doe'] = {
   }
 }
 
-users['Linus'] = {
+users.Linus = {
   password: '12345',
   auth: {
     fetchGroups: ['admin'],
@@ -27,7 +27,7 @@ users['Linus'] = {
   }
 }
 
-users['Horst'] = {
+users.Horst = {
   password: '12345',
   auth: {
     fetchGroups: ['horsties'],
@@ -285,7 +285,7 @@ describe('access tests', function () {
       .path('equals', 'pub-admin')
       .on('data', function (data) {
         expect(data.path).to.equal('pub-admin')
-        expect(data.fetchOnly).to.be.true
+        expect(data.fetchOnly).to.be.true // eslint-disable-line no-unused-expressions
         done()
       })
 
@@ -303,7 +303,7 @@ describe('access tests', function () {
       .path('equals', 'pub-admin')
       .on('data', function (data) {
         expect(data.path).to.equal('pub-admin')
-        expect(!data.fetchOnly).to.be.true
+        expect(!data.fetchOnly).to.be.true // eslint-disable-line no-unused-expressions
         done()
       })
 
@@ -411,7 +411,7 @@ it('A Peer can send custom headers', function (done) {
     }
   })
 
-  var peer = new jet.Peer({url: 'ws://localhost:' + (testWsPort + 4), headers: {foo: 'bar'}})
+  var peer = new jet.Peer({ url: 'ws://localhost:' + (testWsPort + 4), headers: { foo: 'bar' } })
   peer.connect().then(function () {
     expect(headers.foo).to.equal('bar')
     peer.close()

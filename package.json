@@ -22,34 +22,34 @@
     }
   ],
   "devDependencies": {
-    "browserify": "13.0.1",
-    "chai": "3.5.0",
-    "coveralls": "2.11.14",
-    "istanbul": "0.4.4",
-    "mocha": "3.2.0",
-    "sinon": "2.1.0",
-    "standard": "^8.3.0",
-    "uglify-js": "2.7.0"
+    "browserify": "16.5.1",
+    "chai": "4.2.0",
+    "coveralls": "3.1.0",
+    "istanbul": "0.4.5",
+    "mocha": "7.1.2",
+    "sinon": "9.0.2",
+    "standard": "^14.3.3",
+    "uglify-js": "3.9.1"
   },
   "dependencies": {
     "optimist": "0.6.1",
-    "uuid": "3.0.1",
-    "ws": "^3.3.3"
+    "uuid": "7.0.3",
+    "ws": "^7.2.5"
   },
   "main": "./lib/jet.js",
   "bin": {
     "jetd.js": "./bin/jetd.js",
     "fetch.js": "./bin/fetch.js"
   },
-  "version": "1.6.1",
+  "version": "1.6.3",
   "repository": {
     "type": "git",
     "url": "https://github.com/lipp/node-jet"
   },
   "license": "MIT",
   "scripts": {
-    "test": "standard && istanbul cover node_modules/mocha/bin/_mocha -- --recursive test",
-    "test_nocover": "npx mocha test",
+    "test": "standard && istanbul cover node_modules/mocha/bin/_mocha -- --exit --recursive test",
+    "test_nocover": "npx mocha --exit test",
     "start": "./bin/jetd.js"
   },
   "engines": {

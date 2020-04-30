@@ -85,7 +85,7 @@ describe('A MessageSocket', function () {
       it('can be constructed from sock', function () {
         var sock = net.connect(echoPort)
         var ms = new MessageSocket(sock)
-        expect(ms).to.be.defined
+        expect(ms).to.be.exist // eslint-disable-line no-unused-expressions
       })
     })
   })
