@@ -21,7 +21,7 @@ var display = function (data) {
   var now = new Date().toLocaleTimeString()
   var symbol = eventSymbols[data.event]
   var isState = data.value !== undefined
-  var type = isState && '<S>' || '<M>'
+  var type = (isState && '<S>') || '<M>'
   console.log(symbol + ' ' + data.path + ' ' + type + ' ' + now)
   if (isState) {
     console.log(JSON.stringify(data.value, null, '\t'))

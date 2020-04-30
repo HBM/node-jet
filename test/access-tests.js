@@ -1,4 +1,5 @@
 /* global describe it */
+/* eslint-disable no-unused-expressions */
 var expect = require('chai').expect
 var access = require('../lib/jet/daemon/access')
 

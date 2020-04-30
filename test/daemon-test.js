@@ -1,4 +1,5 @@
 /* global describe it before */
+/* eslint-disable no-unused-expressions */
 var expect = require('chai').expect
 var net = require('net')
 var EventEmitter = require('events').EventEmitter
@@ -51,7 +52,7 @@ describe('A Daemon with websockets', function () {
   var wsPort = 11145
   before(function () {
     daemon = new jet.Daemon()
-    daemon.listen({wsPingInterval: 10, wsPort: wsPort})
+    daemon.listen({ wsPingInterval: 10, wsPort: wsPort })
   })
 
   it('a ws client gets pinged', function (done) {
@@ -98,7 +99,7 @@ describe('A Daemon', function () {
       done()
     })
     var sock = net.connect(testPort)
-    expect(sock).is.defined
+    expect(sock).is.exist
   })
 
   describe('when connected to a peer sending "handmade" message', function () {
