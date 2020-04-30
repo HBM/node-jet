@@ -91,12 +91,6 @@ Read the [Todo-App Tutorial](https://github.com/lipp/node-jet/tree/master/exampl
     $ npm install node-jet
 
 
-## script tag
-  
-```html
-<script src="https://rawgit.com/lipp/node-jet/master/build/jet.js"></script>
-```
-
 # Stand-Alone Daemon
 
 The package provides a stand-alone Jet Daemon which listens on ports

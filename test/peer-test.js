@@ -234,7 +234,7 @@ describe('Jet module', function () {
         expect(data.event).to.equal('add')
         expect(data.value).to.equal(123)
         expect(!data.fetchOnly).to.equal(true)
-        jet.Promise.all([
+        Promise.all([
           this.unfetch(),
           peer.set(random, 876).then(function () {
             expect(changedValue).to.equal(876)
@@ -246,7 +246,7 @@ describe('Jet module', function () {
         })
       })
 
-      jet.Promise.all([
+      Promise.all([
         peer.add(state),
         peer.fetch(fetcher)
       ]).catch(done)
@@ -269,7 +269,7 @@ describe('Jet module', function () {
         done()
       })
 
-      jet.Promise.all([
+      Promise.all([
         peer.fetch(fetcher),
         peer.add(state)
       ]).catch(done)
@@ -289,7 +289,7 @@ describe('Jet module', function () {
         done()
       })
 
-      jet.Promise.all([
+      Promise.all([
         peer.add(state),
         peer.fetch(fetcher)
       ]).catch(done)
@@ -487,7 +487,7 @@ describe('Jet module', function () {
     it('can add and remove a state', function (done) {
       var random = randomPath()
       var state = new jet.State(random, 'asd')
-      jet.Promise.all([
+      Promise.all([
         peer.add(state),
         peer.remove(state),
         peer.add(state)
@@ -503,7 +503,7 @@ describe('Jet module', function () {
       var random = randomPath()
       var method = new jet.Method(random)
       method.on('call', function () {})
-      jet.Promise.all([
+      Promise.all([
         peer.add(method),
         peer.remove(method),
         peer.add(method)
@@ -569,7 +569,7 @@ describe('Jet module', function () {
         done()
       })
 
-      jet.Promise.all([
+      Promise.all([
         peer.add(state),
         peer.remove(state),
         state.add(),
@@ -639,7 +639,7 @@ describe('Jet module', function () {
         return args[0] + args[1]
       })
 
-      jet.Promise.all([
+      Promise.all([
         peer.add(m),
         peer.call(path, [1, 2, false]).then(function (result) {
           expect(result).to.equal(3)
@@ -655,7 +655,7 @@ describe('Jet module', function () {
         return false
       })
 
-      jet.Promise.all([
+      Promise.all([
         peer.add(m),
         peer.call(path, []).then(function (result) {
           expect(result).to.equal(false)
@@ -671,7 +671,7 @@ describe('Jet module', function () {
         return 0
       })
 
-      jet.Promise.all([
+      Promise.all([
         peer.add(m),
         peer.call(path, []).then(function (result) {
           expect(result).to.equal(0)
@@ -687,7 +687,7 @@ describe('Jet module', function () {
         return null
       })
 
-      jet.Promise.all([
+      Promise.all([
         peer.add(m),
         peer.call(path, []).then(function (result) {
           expect(result).to.equal(null)
@@ -703,7 +703,7 @@ describe('Jet module', function () {
         return 1
       })
 
-      jet.Promise.all([
+      Promise.all([
         peer.add(m),
         peer.call(path, []).then(function (result) {
           expect(result).to.equal(1)
@@ -719,7 +719,7 @@ describe('Jet module', function () {
         return {}
       })
 
-      jet.Promise.all([
+      Promise.all([
         peer.add(m),
         peer.call(path, []).then(function (result) {
           expect(typeof result).to.equal('object')
@@ -737,7 +737,7 @@ describe('Jet module', function () {
         return 'hello'
       })
 
-      jet.Promise.all([
+      Promise.all([
         peer.add(m),
         peer.call(path, [1, 2, false]).then(function (result) {
           expect(result).to.equal('hello')
@@ -980,20 +980,6 @@ describe('Jet module', function () {
           expect(err instanceof jet.Unauthorized).to.be.false
           done()
         })
-      })
-
-      it('filter by bluebird catch', function (done) {
-        peer.set('this-path-does-not-exist', 123)
-          .catch(jet.Unauthorized, function (err) {
-            console.log(err)
-            expect('this should not happen').to.be.false
-          })
-          .catch(jet.NotFound, function (err) {
-            expect(err instanceof jet.NotFound).to.be.true
-          })
-          .finally(function () {
-            done()
-          })
       })
     })
   })

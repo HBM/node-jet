@@ -53,7 +53,7 @@ clear.on('call', function () {
 })
 
 // connect peer and register methods
-jet.Promise.all([
+Promise.all([
   peer.connect(),
   peer.add(messages),
   peer.add(append),

@@ -23,13 +23,13 @@ StateArray.prototype.addAll = function (states) {
   for (var i = 0; i < this.length; ++i) {
     this[i] = new jet.State(this[i].path, this[i].value)
   }
-  return jet.Promise.all(this.map(function (state) {
+  return Promise.all(this.map(function (state) {
     return that.peer.add(state)
   }))
 }
 
 StateArray.prototype.removeAll = function (done) {
-  jet.Promise.all(this.map(function (state) {
+  Promise.all(this.map(function (state) {
     return state.remove()
   })).then(function () {
     done()
@@ -1484,7 +1484,7 @@ describe('A Daemon with features.fetch = "simple" and two states', function () {
       port: port
     })
 
-    jet.Promise.all([
+    Promise.all([
       peer.connect(),
       peer.add(new jet.State('abc', 123)),
       peer.add(new jet.State('def', 123))
