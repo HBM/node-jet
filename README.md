@@ -88,7 +88,7 @@ Read the [Todo-App Tutorial](https://github.com/lipp/node-jet/tree/master/exampl
 
 ## NPM
   
-    $ npm install node-jet --save
+    $ npm install node-jet
 
 
 # Stand-Alone Daemon
