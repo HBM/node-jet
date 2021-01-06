@@ -1,6 +1,6 @@
 /* global describe it before */
-var expect = require('chai').expect
-var errors = require('../lib/jet/errors')
+const expect = require('chai').expect
+const errors = require('../lib/jet/errors')
 
 describe('The jet.errors module', function () {
   [
@@ -43,11 +43,11 @@ describe('The jet.errors module', function () {
       message: 'The request is not authorized for the user'
     }
   ].forEach(function (errDesc) {
-    var errName = errDesc.errName
+    const errName = errDesc.errName
     describe('a jet.' + errName, function () {
-      var Ctor = errors[errDesc.errName]
-      var err
-      var message
+      const Ctor = errors[errDesc.errName]
+      let err
+      let message
 
       before(function () {
         if (errDesc.message) {

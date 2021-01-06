@@ -1,17 +1,17 @@
 /* global describe it */
-var utils = require('../lib/jet/utils')
-var expect = require('chai').expect
-var sinon = require('sinon')
+const utils = require('../lib/jet/utils')
+const expect = require('chai').expect
+const sinon = require('sinon')
 
 describe('The utils module', function () {
   it('utils.eachKeyValue', function () {
-    var x = {
+    const x = {
       a: 1,
       b: 3,
       c: 2223
     }
-    var eachX = utils.eachKeyValue(x)
-    var spy = sinon.spy()
+    const eachX = utils.eachKeyValue(x)
+    const spy = sinon.spy()
     eachX(spy)
 
     expect(spy.callCount).to.equal(3)

@@ -1,26 +1,26 @@
 /* global describe it before afterEach beforeEach after xit */
 /* eslint-disable no-unused-expressions */
-var jet = require('../lib/jet')
-var sinon = require('sinon')
-var expect = require('chai').expect
-var util = require('util')
-var MessageSocket = require('../lib/jet/message-socket').MessageSocket
+const jet = require('../lib/jet')
+const sinon = require('sinon')
+const expect = require('chai').expect
+const util = require('util')
+const MessageSocket = require('../lib/jet/message-socket').MessageSocket
 
-var waitTime = (process.env.TRAVIS && 100) || 40
+const waitTime = (process.env.TRAVIS && 100) || 40
 
-var StateArray = function (peer) {
+const StateArray = function (peer) {
   this.peer = peer
 }
 
 util.inherits(StateArray, Array)
 
 StateArray.prototype.addAll = function (states) {
-  var that = this
+  const that = this
   states = states || []
   states.forEach(function (state) {
     that.push(state)
   })
-  for (var i = 0; i < this.length; ++i) {
+  for (let i = 0; i < this.length; ++i) {
     this[i] = new jet.State(this[i].path, this[i].value)
   }
   return Promise.all(this.map(function (state) {
@@ -36,13 +36,13 @@ StateArray.prototype.removeAll = function (done) {
   }).catch(done)
 }
 
-var portBase = 4345
+let portBase = 4345
 
 ;['full', 'simple'].forEach(function (fetchType) {
   describe('Fetch (' + fetchType + ') tests with daemon and peer ', function () {
-    var daemon
-    var peer
-    var port = ++portBase
+    let daemon
+    let peer
+    const port = ++portBase
 
     before(function (done) {
       daemon = new jet.Daemon({
@@ -69,7 +69,7 @@ var portBase = 4345
     })
 
     it('can do fetch / unfetch immediatly', function (done) {
-      var fetcher = new jet.Fetcher()
+      const fetcher = new jet.Fetcher()
         .path('startsWith', 'a')
         .on('data', function () {})
       peer.fetch(fetcher)
@@ -77,7 +77,7 @@ var portBase = 4345
     })
 
     describe('fetch chaining', function () {
-      var states
+      let states
 
       beforeEach(function () {
         states = new StateArray(peer)
@@ -106,12 +106,12 @@ var portBase = 4345
         })
 
         states.addAll().then(function () {
-          var fetchSpy = sinon.spy()
+          const fetchSpy = sinon.spy()
 
-          var a2 = new jet.State('aXXX', 3)
+          const a2 = new jet.State('aXXX', 3)
           peer.add(a2)
 
-          var fetcher = new jet.Fetcher()
+          const fetcher = new jet.Fetcher()
             .path('startsWith', 'a')
             .on('data', fetchSpy)
 
@@ -153,8 +153,8 @@ var portBase = 4345
         })
 
         states.addAll().then(function () {
-          var fetchSpy = sinon.spy()
-          var fetcher = new jet.Fetcher()
+          const fetchSpy = sinon.spy()
+          const fetcher = new jet.Fetcher()
             .path('equals', 'abc')
             .on('data', fetchSpy)
 
@@ -174,8 +174,8 @@ var portBase = 4345
         })
 
         states.addAll().then(function () {
-          var fetchSpy = sinon.spy()
-          var fetcher = new jet.Fetcher()
+          const fetchSpy = sinon.spy()
+          const fetcher = new jet.Fetcher()
             .path('equals', 'abc')
             .on('data', fetchSpy)
 
@@ -220,9 +220,9 @@ var portBase = 4345
         })
 
         states.addAll().then(function () {
-          var fetchSpy = sinon.spy()
+          const fetchSpy = sinon.spy()
 
-          var fetcher = new jet.Fetcher()
+          const fetcher = new jet.Fetcher()
             .path('equalsOneOf', ['abc', 'Aa'])
             .on('data', fetchSpy)
 
@@ -266,11 +266,11 @@ var portBase = 4345
         })
 
         states.addAll().then(function () {
-          var fetchSpy = sinon.spy()
-          var a2 = new jet.State('aXXX', 3)
+          const fetchSpy = sinon.spy()
+          const a2 = new jet.State('aXXX', 3)
           peer.add(a2)
 
-          var fetcher = new jet.Fetcher()
+          const fetcher = new jet.Fetcher()
             .path('startsWith', 'a')
             .pathCaseInsensitive()
             .on('data', fetchSpy)
@@ -329,8 +329,8 @@ var portBase = 4345
         })
 
         states.addAll().then(function () {
-          var fetchSpy = sinon.spy()
-          var fetcher = new jet.Fetcher()
+          const fetchSpy = sinon.spy()
+          const fetcher = new jet.Fetcher()
             .path('contains', 'bc')
             .on('data', fetchSpy)
 
@@ -369,8 +369,8 @@ var portBase = 4345
         })
 
         states.addAll().then(function () {
-          var fetchSpy = sinon.spy()
-          var fetcher = new jet.Fetcher()
+          const fetchSpy = sinon.spy()
+          const fetcher = new jet.Fetcher()
             .path('equals', 'abc')
             .on('data', fetchSpy)
 
@@ -402,8 +402,8 @@ var portBase = 4345
         })
 
         states.addAll().then(function () {
-          var fetchSpy = sinon.spy()
-          var fetcher = new jet.Fetcher()
+          const fetchSpy = sinon.spy()
+          const fetcher = new jet.Fetcher()
             .path('equalsNot', 'abc')
             .on('data', fetchSpy)
 
@@ -440,8 +440,8 @@ var portBase = 4345
         })
 
         states.addAll().then(function () {
-          var fetchSpy = sinon.spy()
-          var fetcher = new jet.Fetcher()
+          const fetchSpy = sinon.spy()
+          const fetcher = new jet.Fetcher()
             .path('containsOneOf', ['d', 'a'])
             .on('data', fetchSpy)
 
@@ -489,8 +489,8 @@ var portBase = 4345
         })
 
         states.addAll().then(function () {
-          var fetchSpy = sinon.spy()
-          var fetcher = new jet.Fetcher()
+          const fetchSpy = sinon.spy()
+          const fetcher = new jet.Fetcher()
             .path('startsWith', '1')
             .path('containsAllOf', ['b', 'c'])
             .on('data', fetchSpy)
@@ -518,7 +518,7 @@ var portBase = 4345
     })
 
     describe('by value', function () {
-      var states
+      let states
 
       beforeEach(function () {
         states = new StateArray(peer)
@@ -542,9 +542,9 @@ var portBase = 4345
         })
 
         states.addAll().then(function () {
-          var fetchSpy = sinon.spy()
+          const fetchSpy = sinon.spy()
 
-          var fetcher = new jet.Fetcher()
+          const fetcher = new jet.Fetcher()
             .value('equals', 1)
             .on('data', fetchSpy)
           peer.fetch(fetcher)
@@ -575,9 +575,9 @@ var portBase = 4345
         })
 
         states.addAll().then(function () {
-          var fetchSpy = sinon.spy()
+          const fetchSpy = sinon.spy()
 
-          var fetcher = new jet.Fetcher()
+          const fetcher = new jet.Fetcher()
             .value('greaterThan', 2)
             .on('data', fetchSpy)
 
@@ -610,9 +610,9 @@ var portBase = 4345
         })
 
         states.addAll().then(function () {
-          var fetchSpy = sinon.spy()
+          const fetchSpy = sinon.spy()
 
-          var fetcher = new jet.Fetcher()
+          const fetcher = new jet.Fetcher()
             .value('lessThan', 3)
             .on('data', fetchSpy)
 
@@ -645,9 +645,9 @@ var portBase = 4345
         })
 
         states.addAll().then(function () {
-          var fetchSpy = sinon.spy()
+          const fetchSpy = sinon.spy()
 
-          var fetcher = new jet.Fetcher()
+          const fetcher = new jet.Fetcher()
             .value('isType', 'string')
             .on('data', fetchSpy)
 
@@ -670,7 +670,7 @@ var portBase = 4345
     })
 
     describe('by key (valueField)', function () {
-      var states
+      let states
 
       beforeEach(function () {
         states = new StateArray(peer)
@@ -683,7 +683,7 @@ var portBase = 4345
       })
 
       it('equals', function (done) {
-        var john = {
+        const john = {
           age: 35,
           name: 'John',
           parents: {
@@ -715,9 +715,9 @@ var portBase = 4345
         })
 
         states.addAll().then(function () {
-          var fetchSpy = sinon.spy()
+          const fetchSpy = sinon.spy()
 
-          var fetcher = new jet.Fetcher()
+          const fetcher = new jet.Fetcher()
             .key('age', 'equals', 35)
             .on('data', fetchSpy)
           peer.fetch(fetcher)
@@ -738,7 +738,7 @@ var portBase = 4345
       })
 
       it('greaterThan', function (done) {
-        var john = {
+        const john = {
           age: 35,
           name: 'John',
           parents: {
@@ -770,9 +770,9 @@ var portBase = 4345
         })
 
         states.addAll().then(function () {
-          var fetchSpy = sinon.spy()
+          const fetchSpy = sinon.spy()
 
-          var fetcher = new jet.Fetcher()
+          const fetcher = new jet.Fetcher()
             .key('age', 'greaterThan', 31)
             .on('data', fetchSpy)
 
@@ -794,7 +794,7 @@ var portBase = 4345
                 dad: 'Paul'
               }
             })
-            var nick = states[1].value()
+            const nick = states[1].value()
             setTimeout(function () {
               expect(fetchSpy.callCount).to.equal(2)
               expect(fetchSpy.calledWith({
@@ -812,7 +812,7 @@ var portBase = 4345
       })
 
       it('equals and lessThan', function (done) {
-        var john = {
+        const john = {
           age: 35,
           name: 'John',
           parents: {
@@ -856,9 +856,9 @@ var portBase = 4345
         })
 
         states.addAll().then(function () {
-          var fetchSpy = sinon.spy()
+          const fetchSpy = sinon.spy()
 
-          var fetcher = new jet.Fetcher()
+          const fetcher = new jet.Fetcher()
             .key('age', 'lessThan', 40)
             .key('name', 'equals', 'John')
             .on('data', fetchSpy)
@@ -882,7 +882,7 @@ var portBase = 4345
     })
 
     describe('sorting', function () {
-      var states
+      let states
 
       beforeEach(function () {
         states = new StateArray(peer)
@@ -895,7 +895,7 @@ var portBase = 4345
       })
 
       it('sort by path and differential', function (done) {
-        for (var i = 10; i < 30; ++i) {
+        for (let i = 10; i < 30; ++i) {
           states.push({
             path: i.toString(),
             value: i
@@ -903,10 +903,10 @@ var portBase = 4345
         }
 
         states.addAll().then(function () {
-          var fetchSpy = sinon.spy()
-          var fetchOK
+          const fetchSpy = sinon.spy()
+          let fetchOK
 
-          var fetcher = new jet.Fetcher()
+          const fetcher = new jet.Fetcher()
             .sortByPath()
             .range(1, 10)
             .differential()
@@ -918,8 +918,8 @@ var portBase = 4345
             })
 
           setTimeout(function () {
-            var expectedChanges = []
-            for (var i = 10; i < 20; ++i) {
+            const expectedChanges = []
+            for (let i = 10; i < 20; ++i) {
               expectedChanges.push({
                 path: i.toString(),
                 value: i,
@@ -937,7 +937,7 @@ var portBase = 4345
       })
 
       it('from / to works', function (done) {
-        for (var i = 10; i < 30; ++i) {
+        for (let i = 10; i < 30; ++i) {
           states.push({
             path: i.toString(),
             value: i
@@ -945,9 +945,9 @@ var portBase = 4345
         }
 
         states.addAll().then(function () {
-          var fetchSpy = sinon.spy()
+          const fetchSpy = sinon.spy()
 
-          var fetcher = new jet.Fetcher()
+          const fetcher = new jet.Fetcher()
             .sortByPath()
             .range(11, 13)
             .differential()
@@ -956,8 +956,8 @@ var portBase = 4345
           peer.fetch(fetcher)
 
           setTimeout(function () {
-            var expectedChanges = []
-            for (var i = 20; i < 23; ++i) {
+            const expectedChanges = []
+            for (let i = 20; i < 23; ++i) {
               expectedChanges.push({
                 path: i.toString(),
                 value: i,
@@ -975,7 +975,7 @@ var portBase = 4345
       })
 
       it('n callback param indicates number of matches within from/to', function (done) {
-        for (var i = 10; i < 13; ++i) {
+        for (let i = 10; i < 13; ++i) {
           states.push({
             path: i.toString(),
             value: i
@@ -983,9 +983,9 @@ var portBase = 4345
         }
 
         states.addAll().then(function () {
-          var fetchSpy = sinon.spy()
+          const fetchSpy = sinon.spy()
 
-          var fetcher = new jet.Fetcher()
+          const fetcher = new jet.Fetcher()
             .sortByPath()
             .range(2, 5)
             .differential()
@@ -994,8 +994,8 @@ var portBase = 4345
           peer.fetch(fetcher)
 
           setTimeout(function () {
-            var expectedChanges = []
-            for (var i = 11; i < 13; ++i) {
+            let expectedChanges = []
+            for (let i = 11; i < 13; ++i) {
               expectedChanges.push({
                 path: i.toString(),
                 value: i,
@@ -1008,7 +1008,7 @@ var portBase = 4345
             expect(fetchSpy.calledWith(expectedChanges, 2)).to.be.true
 
             // insert path between '11' and '12'
-            var s = new jet.State('112', 123)
+            const s = new jet.State('112', 123)
             peer.add(s)
 
             setTimeout(function () {
@@ -1038,7 +1038,7 @@ var portBase = 4345
       })
 
       it('sort standard (non-differential) feeds callback with complete array', function (done) {
-        for (var i = 10; i < 13; ++i) {
+        for (let i = 10; i < 13; ++i) {
           states.push({
             path: i.toString(),
             value: i
@@ -1046,9 +1046,9 @@ var portBase = 4345
         }
 
         states.addAll().then(function () {
-          var fetchSpy = sinon.spy()
+          const fetchSpy = sinon.spy()
 
-          var fetcher = new jet.Fetcher()
+          const fetcher = new jet.Fetcher()
             .sortByPath()
             .range(2, 5)
             .on('data', fetchSpy)
@@ -1056,8 +1056,8 @@ var portBase = 4345
           peer.fetch(fetcher)
 
           setTimeout(function () {
-            var expectedArray = []
-            for (var i = 11; i < 13; ++i) {
+            const expectedArray = []
+            for (let i = 11; i < 13; ++i) {
               expectedArray.push({
                 path: i.toString(),
                 value: i,
@@ -1070,7 +1070,7 @@ var portBase = 4345
             expect(fetchSpy.calledWith(expectedArray)).to.be.true
 
             // insert path between '11' and '12'
-            var s = new jet.State('112', 123)
+            const s = new jet.State('112', 123)
             peer.add(s)
 
             setTimeout(function () {
@@ -1097,7 +1097,7 @@ var portBase = 4345
       })
 
       it('byValue works', function (done) {
-        for (var i = 10; i < 30; ++i) {
+        for (let i = 10; i < 30; ++i) {
           states.push({
             path: i.toString(),
             value: i * i
@@ -1110,9 +1110,9 @@ var portBase = 4345
         })
 
         states.addAll().then(function () {
-          var fetchSpy = sinon.spy()
+          const fetchSpy = sinon.spy()
 
-          var fetcher = new jet.Fetcher()
+          const fetcher = new jet.Fetcher()
             .sortByValue('number')
             .range(11, 13)
             .differential()
@@ -1120,8 +1120,8 @@ var portBase = 4345
 
           peer.fetch(fetcher).then(function () {
             setTimeout(function () {
-              var expectedChanges = []
-              for (var i = 20; i < 23; ++i) {
+              const expectedChanges = []
+              for (let i = 20; i < 23; ++i) {
                 expectedChanges.push({
                   path: i.toString(),
                   value: i * i,
@@ -1139,7 +1139,7 @@ var portBase = 4345
       })
 
       it('byValue works when state is removed', function (done) {
-        for (var i = 10; i < 30; ++i) {
+        for (let i = 10; i < 30; ++i) {
           states.push({
             path: i.toString(),
             value: i * i
@@ -1152,9 +1152,9 @@ var portBase = 4345
         })
 
         states.addAll().then(function () {
-          var fetchSpy = sinon.spy()
+          const fetchSpy = sinon.spy()
 
-          var fetcher = new jet.Fetcher()
+          const fetcher = new jet.Fetcher()
             .sortByValue('number')
             .range(11, 13)
             .differential()
@@ -1167,8 +1167,8 @@ var portBase = 4345
             })
 
           setTimeout(function () {
-            var expectedChanges = []
-            for (var i = 20; i < 23; ++i) {
+            let expectedChanges = []
+            for (let i = 20; i < 23; ++i) {
               expectedChanges.push({
                 path: i.toString(),
                 value: i * i,
@@ -1179,7 +1179,7 @@ var portBase = 4345
             expect(fetchSpy.callCount).to.equal(2)
             expect(fetchSpy.calledWith(expectedChanges, 3)).to.be.true
             expectedChanges = []
-            for (i = 21; i < 24; ++i) {
+            for (let i = 21; i < 24; ++i) {
               expectedChanges.push({
                 path: i.toString(),
                 value: i * i,
@@ -1235,9 +1235,9 @@ var portBase = 4345
         })
 
         states.addAll().then(function () {
-          var fetchSpy = sinon.spy()
+          const fetchSpy = sinon.spy()
 
-          var fetcher = new jet.Fetcher()
+          const fetcher = new jet.Fetcher()
             .sortByKey('age', 'number')
             .range(2, 4)
             .differential()
@@ -1245,7 +1245,7 @@ var portBase = 4345
 
           peer.fetch(fetcher).then(function () {
             setTimeout(function () {
-              var expectedChanges = []
+              const expectedChanges = []
               expectedChanges.push({
                 path: 'b',
                 value: {
@@ -1322,7 +1322,7 @@ var portBase = 4345
       })
 
       it('byValueField nested works', function (done) {
-        for (var i = 10; i < 30; ++i) {
+        for (let i = 10; i < 30; ++i) {
           states.push({
             path: i.toString(),
             value: {
@@ -1339,9 +1339,9 @@ var portBase = 4345
         })
 
         states.addAll().then(function () {
-          var fetchSpy = sinon.spy()
+          const fetchSpy = sinon.spy()
 
-          var fetcher = new jet.Fetcher()
+          const fetcher = new jet.Fetcher()
             .sortByKey('deep.age', 'number')
             .differential()
             .range(11, 13)
@@ -1350,8 +1350,8 @@ var portBase = 4345
           peer.fetch(fetcher)
 
           setTimeout(function () {
-            var expectedChanges = []
-            for (var i = 20; i < 23; ++i) {
+            const expectedChanges = []
+            for (let i = 20; i < 23; ++i) {
               expectedChanges.push({
                 path: i.toString(),
                 value: {
@@ -1373,7 +1373,7 @@ var portBase = 4345
     })
 
     describe('byPath and byValue', function () {
-      var states
+      let states
 
       beforeEach(function () {
         states = new StateArray(peer)
@@ -1400,9 +1400,9 @@ var portBase = 4345
         })
 
         states.addAll().then(function () {
-          var fetchSpy = sinon.spy()
+          const fetchSpy = sinon.spy()
 
-          var fetcher = new jet.Fetcher()
+          const fetcher = new jet.Fetcher()
             .path('startsWith', 'ab')
             .value('lessThan', 3)
             .on('data', fetchSpy)
@@ -1438,9 +1438,9 @@ var portBase = 4345
         })
 
         states.addAll().then(function () {
-          var fetchSpy = sinon.spy()
+          const fetchSpy = sinon.spy()
 
-          var fetcher = new jet.Fetcher()
+          const fetcher = new jet.Fetcher()
             .path('startsWith', 'ab')
             .value('lessThan', 3)
             .on('data', fetchSpy)
@@ -1465,9 +1465,9 @@ var portBase = 4345
 })
 
 describe('A Daemon with features.fetch = "simple" and two states', function () {
-  var daemon
-  var peer
-  var port = ++portBase
+  let daemon
+  let peer
+  const port = ++portBase
 
   before(function (done) {
     daemon = new jet.Daemon({
@@ -1498,7 +1498,7 @@ describe('A Daemon with features.fetch = "simple" and two states', function () {
   })
 
   describe('raw message tests', function () {
-    var sock
+    let sock
 
     beforeEach(function (done) {
       sock = new MessageSocket(port)
@@ -1508,9 +1508,9 @@ describe('A Daemon with features.fetch = "simple" and two states', function () {
     })
 
     it('"fetch" call returns a string and ignores fetch params and triggers fetch ALL', function (done) {
-      var cnt = 0
-      var fetchId
-      var request = {
+      let cnt = 0
+      let fetchId
+      const request = {
         id: 99,
         method: 'fetch',
         params: {
@@ -1539,8 +1539,8 @@ describe('A Daemon with features.fetch = "simple" and two states', function () {
     })
 
     it('fetching twice fails', function (done) {
-      var cnt = 0
-      var request = {
+      let cnt = 0
+      const request = {
         id: 100,
         method: 'fetch',
         params: {}
@@ -1563,8 +1563,8 @@ describe('A Daemon with features.fetch = "simple" and two states', function () {
     })
 
     it('fetch/unfetch succeeds', function (done) {
-      var cnt = 0
-      var request = {
+      let cnt = 0
+      const request = {
         id: 200,
         method: 'fetch',
         params: {}
@@ -1588,7 +1588,7 @@ describe('A Daemon with features.fetch = "simple" and two states', function () {
     })
 
     it('unfetch fails', function (done) {
-      var request = {
+      const request = {
         id: 300,
         method: 'unfetch',
         params: {}

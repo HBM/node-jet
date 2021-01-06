@@ -1,11 +1,11 @@
 /* global describe it  beforeEach */
-var expect = require('chai').expect
-var sinon = require('sinon')
-var fetchChainer = require('../lib/jet/peer/fetch-chainer')
+const expect = require('chai').expect
+const sinon = require('sinon')
+const fetchChainer = require('../lib/jet/peer/fetch-chainer')
 
 describe('The jet.peer.fetch-chainer module', function () {
-  var fakePeer
-  var fc
+  let fakePeer
+  let fc
 
   beforeEach(function () {
     fakePeer = {
@@ -20,8 +20,8 @@ describe('The jet.peer.fetch-chainer module', function () {
   })
 
   it('.run("data", cb) does not throw and is chaining', function () {
-    var cb = function () {}
-    var ret = fc.on('data', cb)
+    const cb = function () {}
+    const ret = fc.on('data', cb)
     expect(ret).to.equal(fc)
   })
 

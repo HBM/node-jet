@@ -1,13 +1,13 @@
 /* globals describe it beforeEach */
 /* eslint-disable no-unused-expressions */
-var expect = require('chai').expect
-var sorter = require('../lib/jet/sorter')
-var sinon = require('sinon')
+const expect = require('chai').expect
+const sorter = require('../lib/jet/sorter')
+const sinon = require('sinon')
 
 describe('sorter', function () {
   describe('byPath', function () {
-    var inst
-    var onNotify
+    let inst
+    let onNotify
     beforeEach(function () {
       onNotify = sinon.spy()
       inst = sorter.create({
@@ -110,8 +110,8 @@ describe('sorter', function () {
   })
 
   describe('byValue', function () {
-    var inst
-    var onNotify
+    let inst
+    let onNotify
     beforeEach(function () {
       onNotify = sinon.spy()
       inst = sorter.create({

@@ -1,7 +1,7 @@
 /* global describe it beforeEach */
-var expect = require('chai').expect
-var Jsonrpc = require('../lib/jet/daemon/jsonrpc')
-var sinon = require('sinon')
+const expect = require('chai').expect
+const Jsonrpc = require('../lib/jet/daemon/jsonrpc')
+const sinon = require('sinon')
 
 describe('The (daemon) jsonrpc module', function () {
   it('provides jsonrpc.JsonRPC ctor', function () {
@@ -9,10 +9,10 @@ describe('The (daemon) jsonrpc module', function () {
   })
 
   describe('a JsonRPC instance ji.dispatch', function () {
-    var ji
-    var services = {}
-    var router = {}
-    var peer = {}
+    let ji
+    const services = {}
+    const router = {}
+    const peer = {}
 
     beforeEach(function () {
       services.test = sinon.spy()
@@ -22,7 +22,7 @@ describe('The (daemon) jsonrpc module', function () {
     })
 
     it('valid request known method/service gets called', function () {
-      var msg = {
+      const msg = {
         id: 1,
         method: 'test'
       }
@@ -32,7 +32,7 @@ describe('The (daemon) jsonrpc module', function () {
     })
 
     it('valid notification known method/service gets called', function () {
-      var msg = {
+      const msg = {
         method: 'test'
       }
       ji.dispatch(peer, JSON.stringify(msg))
@@ -41,20 +41,20 @@ describe('The (daemon) jsonrpc module', function () {
     })
 
     it('valid request unknown method/service gets not called', function () {
-      var msg = {
+      const msg = {
         id: 1,
         method: 'xxx'
       }
       ji.dispatch(peer, JSON.stringify(msg))
       expect(services.test.callCount).to.equal(0)
       expect(peer.sendMessage.callCount).to.equal(1)
-      var errMsg = peer.sendMessage.args[0][0]
+      const errMsg = peer.sendMessage.args[0][0]
       expect(errMsg.error.code).to.equal(-32601)
       expect(errMsg.error.message).to.equal('Method not found')
     })
 
     it('valid notification unknown method/service gets not called', function () {
-      var msg = {
+      const msg = {
         method: 'xxx'
       }
       ji.dispatch(peer, JSON.stringify(msg))
@@ -63,20 +63,20 @@ describe('The (daemon) jsonrpc module', function () {
     })
 
     it('invalid request', function () {
-      var msg = {
+      const msg = {
         id: 123,
         abc: 'xxx'
       }
       ji.dispatch(peer, JSON.stringify(msg))
       expect(services.test.callCount).to.equal(0)
       expect(peer.sendMessage.callCount).to.equal(1)
-      var errMsg = peer.sendMessage.args[0][0]
+      const errMsg = peer.sendMessage.args[0][0]
       expect(errMsg.error.code).to.equal(-32600)
       expect(errMsg.error.message).to.equal('Invalid Request')
     })
 
     it('invalid notification', function () {
-      var msg = {
+      const msg = {
         abc: 'xxx'
       }
       ji.dispatch(peer, JSON.stringify(msg))
@@ -85,13 +85,13 @@ describe('The (daemon) jsonrpc module', function () {
     })
 
     it('parse error', function () {
-      var dispatchNonJson = function () {
+      const dispatchNonJson = function () {
         ji.dispatch(peer, '{foobar')
       }
       expect(dispatchNonJson).to.throw(/Unexpected token/)
       expect(services.test.callCount).to.equal(0)
       expect(peer.sendMessage.callCount).to.equal(1)
-      var errMsg = peer.sendMessage.args[0][0]
+      const errMsg = peer.sendMessage.args[0][0]
       expect(errMsg.error.code).to.equal(-32700)
       expect(errMsg.error.message).to.equal('Parse error')
     })

@@ -1,7 +1,7 @@
 /* global describe it */
 /* eslint-disable no-unused-expressions */
-var expect = require('chai').expect
-var access = require('../lib/jet/daemon/access')
+const expect = require('chai').expect
+const access = require('../lib/jet/daemon/access')
 
 describe('The jet.daemon.access module', function () {
   it('intersects(["a","b"],["b","c"]) === true', function () {

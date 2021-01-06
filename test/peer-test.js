@@ -1,13 +1,13 @@
 /* global describe it before afterEach beforeEach */
 /* eslint-disable no-unused-expressions */
-var expect = require('chai').expect
-var uuid = require('uuid')
-var jet = require('../lib/jet')
+const expect = require('chai').expect
+const uuid = require('uuid')
+const jet = require('../lib/jet')
 
-var testPort = 2314
-var testWsPort = 2315
+const testPort = 2314
+const testWsPort = 2315
 
-var daemon
+let daemon
 
 before(function () {
   daemon = new jet.Daemon({})
@@ -28,7 +28,7 @@ describe('Jet module', function () {
   })
 
   it('a jet peer can connect to the jet daemon', function (done) {
-    var peer = new jet.Peer({
+    const peer = new jet.Peer({
       port: testPort
     })
     peer.connect().then(function () {
@@ -37,7 +37,7 @@ describe('Jet module', function () {
   })
 
   it('a jet peer can connect to the jet daemon and isConnected() === true', function (done) {
-    var peer = new jet.Peer({
+    const peer = new jet.Peer({
       port: testPort
     })
     expect(peer.isConnected()).to.equal(false)
@@ -48,7 +48,7 @@ describe('Jet module', function () {
   })
 
   it('peer.close immediatly does not brake', function (done) {
-    var peer = new jet.Peer({
+    const peer = new jet.Peer({
       port: testPort
     })
     peer.connect().catch(function (err) {
@@ -59,7 +59,7 @@ describe('Jet module', function () {
   })
 
   it('peer.close onopen does not brake', function (done) {
-    var peer = new jet.Peer({
+    const peer = new jet.Peer({
       port: testPort
     })
     peer.connect().then(function () {
@@ -71,11 +71,11 @@ describe('Jet module', function () {
   })
 
   it('peer.connect() is resolved and provides peer and daemonInfo as argument', function (done) {
-    var peer = new jet.Peer({
+    const peer = new jet.Peer({
       port: testPort
     })
     peer.connect().then(function (peer) {
-      var daemonInfo = peer.daemonInfo
+      const daemonInfo = peer.daemonInfo
       expect(daemonInfo).to.be.an('object')
       expect(daemonInfo.name).to.equal('node-jet')
       expect(daemonInfo.version).to.be.a('string')
@@ -89,7 +89,7 @@ describe('Jet module', function () {
   })
 
   it('peer.closed() gets resolved', function (done) {
-    var peer = new jet.Peer({
+    const peer = new jet.Peer({
       port: testPort
     })
     peer.connect().catch(function () {})
@@ -100,7 +100,7 @@ describe('Jet module', function () {
   })
 
   it('can connect via WebSocket', function (done) {
-    var peer = new jet.Peer({
+    const peer = new jet.Peer({
       url: 'ws://localhost:' + testWsPort
     })
     peer.connect().then(function () {
@@ -110,9 +110,9 @@ describe('Jet module', function () {
   })
 
   describe('a connected jet peer', function () {
-    var peer
+    let peer
 
-    var randomPath = function () {
+    const randomPath = function () {
       return 'jet-js/' + uuid.v1()
     }
 
@@ -146,7 +146,7 @@ describe('Jet module', function () {
     })
 
     it('new jet.State() returns object with correct interface', function () {
-      var state = new jet.State(randomPath(), 123)
+      const state = new jet.State(randomPath(), 123)
       expect(state).to.be.an('object')
       expect(state.add).to.be.a('function')
       expect(state.remove).to.be.a('function')
@@ -156,18 +156,18 @@ describe('Jet module', function () {
     })
 
     it('new jet.State().on returns self', function () {
-      var state = new jet.State(randomPath(), 123)
+      const state = new jet.State(randomPath(), 123)
       expect(state.on('set', function () {})).to.equal(state)
     })
 
     it('new jet.Method().on returns self', function () {
-      var method = new jet.Method(randomPath())
+      const method = new jet.Method(randomPath())
       expect(method.on('call', function () {})).to.equal(method)
     })
 
     it('can add and get a state', function (done) {
-      var random = randomPath()
-      var state = new jet.State(random, 123)
+      const random = randomPath()
+      const state = new jet.State(random, 123)
       peer.add(state)
         .then(function () {
           return peer.get({ path: { equals: random } })
@@ -187,10 +187,10 @@ describe('Jet module', function () {
     })
 
     it('can add and get sorted states', function (done) {
-      var random = randomPath()
-      var state = new jet.State(random, 123)
-      var random2 = randomPath()
-      var state2 = new jet.State(random2, 333)
+      const random = randomPath()
+      const state = new jet.State(random, 123)
+      const random2 = randomPath()
+      const state2 = new jet.State(random2, 333)
       peer.add(state)
         .then(function () {
           return peer.add(state2)
@@ -219,15 +219,15 @@ describe('Jet module', function () {
     })
 
     it('can add, fetch and set a state', function (done) {
-      var random = randomPath()
-      var state = new jet.State(random, 123)
-      var changedValue
+      const random = randomPath()
+      const state = new jet.State(random, 123)
+      let changedValue
       state.on('set', function (newValue) {
         expect(newValue).to.equal(876)
         changedValue = newValue
       })
 
-      var fetcher = new jet.Fetcher()
+      const fetcher = new jet.Fetcher()
       fetcher.path('contains', random)
       fetcher.on('data', function (data) {
         expect(data.path).to.equal(random)
@@ -253,13 +253,13 @@ describe('Jet module', function () {
     })
 
     it('can fetch and add state', function (done) {
-      var random = randomPath()
-      var state = new jet.State(random, 123)
+      const random = randomPath()
+      const state = new jet.State(random, 123)
       state.on('set', function (newValue) {
         expect(newValue).to.equal(876)
       })
 
-      var fetcher = new jet.Fetcher()
+      const fetcher = new jet.Fetcher()
       fetcher.path('contains', random)
       fetcher.on('data', function (data) {
         expect(data.path).to.equal(random)
@@ -276,10 +276,10 @@ describe('Jet module', function () {
     })
 
     it('can add and fetch and a fetchOnly state', function (done) {
-      var random = randomPath()
-      var state = new jet.State(random, 123)
+      const random = randomPath()
+      const state = new jet.State(random, 123)
 
-      var fetcher = new jet.Fetcher()
+      const fetcher = new jet.Fetcher()
       fetcher.path('contains', random)
       fetcher.on('data', function (data) {
         expect(data.path).to.equal(random)
@@ -296,8 +296,8 @@ describe('Jet module', function () {
     })
 
     it('can add a fetch-only state and setting it fails', function (done) {
-      var random = randomPath()
-      var state = new jet.State(random, 123)
+      const random = randomPath()
+      const state = new jet.State(random, 123)
       peer.add(state)
       peer.set(random, 6237).catch(function (err) {
         expect(err).is.instanceof(jet.FetchOnly)
@@ -306,8 +306,8 @@ describe('Jet module', function () {
     })
 
     it('set event handler has the state as this', function (done) {
-      var random = randomPath()
-      var state = new jet.State(random, 123)
+      const random = randomPath()
+      const state = new jet.State(random, 123)
       state.on('set', function () {
         expect(this).to.be.an.instanceof(jet.State)
         done()
@@ -317,8 +317,8 @@ describe('Jet module', function () {
     })
 
     it('can add a state and non InvalidArgument error propagates as PeerError', function (done) {
-      var random = randomPath()
-      var state = new jet.State(random, 123)
+      const random = randomPath()
+      const state = new jet.State(random, 123)
       state.on('set', function (newval) {
         if (newval > 200) {
           throw new Error('out of range')
@@ -333,8 +333,8 @@ describe('Jet module', function () {
     })
 
     it('can add a state and InvalidArgument error propagates as InvalidArgument with message', function (done) {
-      var random = randomPath()
-      var state = new jet.State(random, 123)
+      const random = randomPath()
+      const state = new jet.State(random, 123)
       state.on('set', function (newval) {
         if (newval > 200) {
           throw new jet.InvalidArgument('out of range')
@@ -350,8 +350,8 @@ describe('Jet module', function () {
     })
 
     it('can add a state and InvalidArgument error propagates as InvalidArgument with default message', function (done) {
-      var random = randomPath()
-      var state = new jet.State(random, 123)
+      const random = randomPath()
+      const state = new jet.State(random, 123)
       state.on('set', function (newval) {
         if (newval > 200) {
           throw new jet.InvalidArgument()
@@ -367,8 +367,8 @@ describe('Jet module', function () {
     })
 
     it('can add, fetch and set a state with async set handler', function (done) {
-      var random = randomPath()
-      var state = new jet.State(random, 123)
+      const random = randomPath()
+      const state = new jet.State(random, 123)
       state.on('set', function (newval, reply) {
         setTimeout(function () {
           expect(newval).to.equal(876)
@@ -376,7 +376,7 @@ describe('Jet module', function () {
         }, 10)
       })
 
-      var fetcher = new jet.Fetcher().path('contains', random)
+      const fetcher = new jet.Fetcher().path('contains', random)
       fetcher.on('data', function (data) {
         expect(data.path).to.equal(random)
         expect(data.event).to.equal('add')
@@ -394,13 +394,13 @@ describe('Jet module', function () {
     })
 
     it('can add, fetch and set a boolean state from true to false', function (done) {
-      var random = randomPath()
-      var state = new jet.State(random, true)
+      const random = randomPath()
+      const state = new jet.State(random, true)
       state.on('set', function (newval) {
 
       })
 
-      var fetcher = new jet.Fetcher().path('contains', random)
+      const fetcher = new jet.Fetcher().path('contains', random)
       fetcher.on('data', function (data) {
         expect(data.path).to.equal(random)
         expect(data.event).to.equal('add')
@@ -419,13 +419,13 @@ describe('Jet module', function () {
     })
 
     it('can add, fetch and set a boolean state from true to false', function (done) {
-      var random = randomPath()
-      var state = new jet.State(random, false)
+      const random = randomPath()
+      const state = new jet.State(random, false)
       state.on('set', function (newval) {
 
       })
 
-      var fetcher = new jet.Fetcher().path('contains', random)
+      const fetcher = new jet.Fetcher().path('contains', random)
       fetcher.on('data', function (data) {
         expect(data.path).to.equal(random)
         expect(data.event).to.equal('add')
@@ -444,8 +444,8 @@ describe('Jet module', function () {
     })
 
     it('set may throw a PeerTimeout error', function (done) {
-      var random = randomPath()
-      var state = new jet.State(random, 123)
+      const random = randomPath()
+      const state = new jet.State(random, 123)
       state.on('set', function (newval, reply) {
         setTimeout(function () {
           reply()
@@ -463,8 +463,8 @@ describe('Jet module', function () {
     })
 
     it('can add and set a state with async set handler that throws', function (done) {
-      var random = randomPath()
-      var state = new jet.State(random, 123)
+      const random = randomPath()
+      const state = new jet.State(random, 123)
       state.on('set', function (newval, reply) {
         throw new Error('always fails')
       })
@@ -477,16 +477,16 @@ describe('Jet module', function () {
     })
 
     it('peer.add(state) resolves', function (done) {
-      var random = randomPath()
-      var state = new jet.State(random, 'asd')
+      const random = randomPath()
+      const state = new jet.State(random, 'asd')
       peer.add(state).then(function () {
         done()
       })
     })
 
     it('can add and remove a state', function (done) {
-      var random = randomPath()
-      var state = new jet.State(random, 'asd')
+      const random = randomPath()
+      const state = new jet.State(random, 'asd')
       Promise.all([
         peer.add(state),
         peer.remove(state),
@@ -500,8 +500,8 @@ describe('Jet module', function () {
     })
 
     it('can add and remove a method', function (done) {
-      var random = randomPath()
-      var method = new jet.Method(random)
+      const random = randomPath()
+      const method = new jet.Method(random)
       method.on('call', function () {})
       Promise.all([
         peer.add(method),
@@ -516,23 +516,23 @@ describe('Jet module', function () {
     })
 
     it('events other than "call" are not available for Method', function () {
-      var method = new jet.Method('test')
+      const method = new jet.Method('test')
       expect(function () {
         method.on('bla', function () {})
       }).to.throw()
     })
 
     it('events other than "set" are not available for State', function () {
-      var state = new jet.State('test')
+      const state = new jet.State('test')
       expect(function () {
         state.on('bla', function () {})
       }).to.throw()
     })
 
     it('remove a state twice fails', function (done) {
-      var random = randomPath()
-      var removed
-      var state = new jet.State(random, 'asd')
+      const random = randomPath()
+      let removed
+      const state = new jet.State(random, 'asd')
       peer.add(state).then(function () {
         state.remove().then(function () {
           expect(state.isAdded()).to.be.false
@@ -548,8 +548,8 @@ describe('Jet module', function () {
     })
 
     it('add a state twice fails', function (done) {
-      var random = randomPath()
-      var state = new jet.State(random, 'asd')
+      const random = randomPath()
+      const state = new jet.State(random, 'asd')
       peer.add(state).then(function () {
         expect(state.isAdded()).to.be.true
         state.add().catch(function (err) {
@@ -561,9 +561,9 @@ describe('Jet module', function () {
     })
 
     it('can add and remove and add a state again', function (done) {
-      var random = randomPath()
-      var state = new jet.State(random, 'asd')
-      var fetcher = new jet.Fetcher().path('equals', random)
+      const random = randomPath()
+      const state = new jet.State(random, 'asd')
+      const fetcher = new jet.Fetcher().path('equals', random)
       fetcher.on('data', function (data) {
         expect(data.value).to.equal('asd')
         done()
@@ -580,13 +580,13 @@ describe('Jet module', function () {
     })
 
     it('can add and remove and add a state again with new value', function (done) {
-      var random = randomPath()
-      var state = new jet.State(random, 'asd')
+      const random = randomPath()
+      const state = new jet.State(random, 'asd')
       peer.add(state)
       state.remove().then(function () {
         state.value(123)
         state.add().then(function () {
-          var fetcher = new jet.Fetcher().path('equals', random)
+          const fetcher = new jet.Fetcher().path('equals', random)
           fetcher.on('data', function (data) {
             expect(data.value).to.equal(123)
             done()
@@ -597,9 +597,9 @@ describe('Jet module', function () {
     })
 
     it('can add a state and post a state change', function (done) {
-      var random = randomPath()
-      var state = new jet.State(random, 675)
-      var fetcher = new jet.Fetcher().path('contains', random)
+      const random = randomPath()
+      const state = new jet.State(random, 675)
+      const fetcher = new jet.Fetcher().path('contains', random)
       fetcher.on('data', function (data) {
         if (data.event === 'change') {
           expect(data.value).to.equal('foobarX')
@@ -619,8 +619,8 @@ describe('Jet module', function () {
 
     it('can batch', function (done) {
       peer.batch(function () {
-        var random = randomPath()
-        var state = new jet.State(random, 'asd')
+        const random = randomPath()
+        const state = new jet.State(random, 'asd')
         peer.add(state)
         state.remove().then(function () {
           done()
@@ -629,8 +629,8 @@ describe('Jet module', function () {
     })
 
     it('can add and call a method with array args', function (done) {
-      var path = randomPath()
-      var m = new jet.Method(path)
+      const path = randomPath()
+      const m = new jet.Method(path)
       m.on('call', function (args) {
         expect(this).to.be.an.instanceof(jet.Method)
         expect(args[0]).to.equal(1)
@@ -649,8 +649,8 @@ describe('Jet module', function () {
     })
 
     it('can add and call a method which returns false', function (done) {
-      var path = randomPath()
-      var m = new jet.Method(path)
+      const path = randomPath()
+      const m = new jet.Method(path)
       m.on('call', function () {
         return false
       })
@@ -665,8 +665,8 @@ describe('Jet module', function () {
     })
 
     it('can add and call a method which returns 0', function (done) {
-      var path = randomPath()
-      var m = new jet.Method(path)
+      const path = randomPath()
+      const m = new jet.Method(path)
       m.on('call', function () {
         return 0
       })
@@ -681,8 +681,8 @@ describe('Jet module', function () {
     })
 
     it('can add and call a method which returns null', function (done) {
-      var path = randomPath()
-      var m = new jet.Method(path)
+      const path = randomPath()
+      const m = new jet.Method(path)
       m.on('call', function () {
         return null
       })
@@ -697,8 +697,8 @@ describe('Jet module', function () {
     })
 
     it('can add and call a method which returns 1', function (done) {
-      var path = randomPath()
-      var m = new jet.Method(path)
+      const path = randomPath()
+      const m = new jet.Method(path)
       m.on('call', function () {
         return 1
       })
@@ -713,8 +713,8 @@ describe('Jet module', function () {
     })
 
     it('can add and call a method which returns an empty Object', function (done) {
-      var path = randomPath()
-      var m = new jet.Method(path)
+      const path = randomPath()
+      const m = new jet.Method(path)
       m.on('call', function () {
         return {}
       })
@@ -731,8 +731,8 @@ describe('Jet module', function () {
     })
 
     it('a method call handler with no args works synchronous', function (done) {
-      var path = randomPath()
-      var m = new jet.Method(path)
+      const path = randomPath()
+      const m = new jet.Method(path)
       m.on('call', function () {
         return 'hello'
       })
@@ -747,8 +747,8 @@ describe('Jet module', function () {
     })
 
     it('can add and call a method with object arg', function (done) {
-      var path = randomPath()
-      var m = new jet.Method(path)
+      const path = randomPath()
+      const m = new jet.Method(path)
       m.on('call', function (arg) {
         expect(this).to.be.an.instanceof(jet.Method)
         expect(arg.x).to.equal(1)
@@ -768,8 +768,8 @@ describe('Jet module', function () {
     })
 
     it('can add and call a method (call impl is "safe")', function (done) {
-      var path = randomPath()
-      var m = new jet.Method(path)
+      const path = randomPath()
+      const m = new jet.Method(path)
       m.on('call', function (args) {
         throw new Error('argh')
       })
@@ -783,8 +783,8 @@ describe('Jet module', function () {
     })
 
     it('can add and call a method with async call handler and array args', function (done) {
-      var path = randomPath()
-      var m = new jet.Method(path)
+      const path = randomPath()
+      const m = new jet.Method(path)
       m.on('call', function (args, reply) {
         expect(args[0]).to.equal(1)
         expect(args[1]).to.equal(2)
@@ -805,8 +805,8 @@ describe('Jet module', function () {
     })
 
     it('can add and call a method with async call handler and object args', function (done) {
-      var path = randomPath()
-      var m = new jet.Method(path)
+      const path = randomPath()
+      const m = new jet.Method(path)
       m.on('call', function (arg, reply) {
         expect(arg.x).to.equal(1)
         expect(arg.y).to.equal(2)
@@ -829,8 +829,8 @@ describe('Jet module', function () {
     })
 
     it('can add and call a method with async call handler which fails', function (done) {
-      var path = randomPath()
-      var m = new jet.Method(path)
+      const path = randomPath()
+      const m = new jet.Method(path)
       m.on('call', function (args, reply) {
         expect(args[0]).to.equal(1)
         expect(args[1]).to.equal(2)
@@ -851,8 +851,8 @@ describe('Jet module', function () {
     })
 
     it('can add and call a method with async call hander and replying with nothing fails', function (done) {
-      var path = randomPath()
-      var m = new jet.Method(path)
+      const path = randomPath()
+      const m = new jet.Method(path)
       m.on('call', function (args, reply) {
         setTimeout(function () {
           reply()
@@ -867,8 +867,8 @@ describe('Jet module', function () {
     })
 
     it('callAsync is "safe"', function (done) {
-      var path = randomPath()
-      var m = new jet.Method(path)
+      const path = randomPath()
+      const m = new jet.Method(path)
       m.on('call', function (args, reply) {
         throw new Error('argh')
       })
@@ -884,21 +884,21 @@ describe('Jet module', function () {
     })
 
     it('states and methods have .path()', function () {
-      var spath = randomPath()
-      var s = new jet.State(spath, 123)
+      const spath = randomPath()
+      const s = new jet.State(spath, 123)
       expect(s.path()).to.equal(spath)
-      var mpath = randomPath()
-      var m = new jet.Method(mpath)
+      const mpath = randomPath()
+      const m = new jet.Method(mpath)
       expect(m.path()).to.equal(mpath)
     })
 
     it('cannot add the same state twice', function (done) {
-      var path = randomPath()
-      var state = new jet.State(path, 123)
+      const path = randomPath()
+      const state = new jet.State(path, 123)
 
       peer.add(state).catch(done)
 
-      var state2 = new jet.State(path, 222)
+      const state2 = new jet.State(path, 222)
 
       peer.add(state2)
         .catch(function (err) {
@@ -908,8 +908,8 @@ describe('Jet module', function () {
     })
 
     it('can set with valueAsResult to get the "new" value', function (done) {
-      var path = randomPath()
-      var state = new jet.State(path, true)
+      const path = randomPath()
+      const state = new jet.State(path, true)
       state.on('set', function (newVal) {
         return {
           value: false
@@ -928,8 +928,8 @@ describe('Jet module', function () {
     })
 
     it('can set with valueAsResult to get the "new" value with async set handler', function (done) {
-      var path = randomPath()
-      var state = new jet.State(path, true)
+      const path = randomPath()
+      const state = new jet.State(path, true)
       state.on('set', function (newValue, reply) {
         setTimeout(function () {
           reply({
@@ -949,7 +949,7 @@ describe('Jet module', function () {
     })
 
     it('can fetch and unfetch', function (done) {
-      var fetcher = new jet.Fetcher().path('contains', 'bla')
+      const fetcher = new jet.Fetcher().path('contains', 'bla')
 
       expect(fetcher.isFetching()).to.be.false
       peer.fetch(fetcher).then(function () {

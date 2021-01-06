@@ -1,19 +1,19 @@
 /* global describe it before */
 /* eslint-disable no-unused-expressions */
-var expect = require('chai').expect
-var net = require('net')
-var EventEmitter = require('events').EventEmitter
+const expect = require('chai').expect
+const net = require('net')
+const EventEmitter = require('events').EventEmitter
 /* this is a private module, so load directly */
-var MessageSocket = require('../lib/jet/message-socket').MessageSocket
-var jet = require('../lib/jet')
-var http = require('http')
-var https = require('https')
-var fs = require('fs')
-var WebSocket = require('ws')
+const MessageSocket = require('../lib/jet/message-socket').MessageSocket
+const jet = require('../lib/jet')
+const http = require('http')
+const https = require('https')
+const fs = require('fs')
+const WebSocket = require('ws')
 
-var commandRequestTest = function (port, command, params, checkResult) {
+const commandRequestTest = function (port, command, params, checkResult) {
   describe('who sends "' + command + '" as request', function () {
-    var sender
+    let sender
     before(function () {
       sender = new MessageSocket(port)
       sender.sendMessage = function (message) {
@@ -21,8 +21,8 @@ var commandRequestTest = function (port, command, params, checkResult) {
       }
     })
 
-    var id = Math.random()
-    var request = {
+    const id = Math.random()
+    const request = {
       id: id,
       method: command,
       params: params
@@ -45,18 +45,18 @@ var commandRequestTest = function (port, command, params, checkResult) {
   })
 }
 
-var testPort = 33301
+const testPort = 33301
 
 describe('A Daemon with websockets', function () {
-  var daemon
-  var wsPort = 11145
+  let daemon
+  const wsPort = 11145
   before(function () {
     daemon = new jet.Daemon()
     daemon.listen({ wsPingInterval: 10, wsPort: wsPort })
   })
 
   it('a ws client gets pinged', function (done) {
-    var client = new WebSocket('ws://localhost:' + wsPort, 'jet')
+    const client = new WebSocket('ws://localhost:' + wsPort, 'jet')
     client.on('ping', function () {
       client.close()
       done()
@@ -64,7 +64,7 @@ describe('A Daemon with websockets', function () {
   })
 
   it('a ws client which closes does not break the server', function (done) {
-    var client = new WebSocket('ws://localhost:' + wsPort, 'jet')
+    const client = new WebSocket('ws://localhost:' + wsPort, 'jet')
     client.on('open', function () {
       client.close()
       setTimeout(function () {
@@ -75,7 +75,7 @@ describe('A Daemon with websockets', function () {
 })
 
 describe('A Daemon', function () {
-  var daemon
+  let daemon
   before(function () {
     daemon = new jet.Daemon()
     daemon.listen({
@@ -98,7 +98,7 @@ describe('A Daemon', function () {
       expect(peerMs).to.be.an('object')
       done()
     })
-    var sock = net.connect(testPort)
+    const sock = net.connect(testPort)
     expect(sock).is.exist
   })
 
@@ -110,7 +110,7 @@ describe('A Daemon', function () {
 
     commandRequestTest(testPort, 'info', {}, function (result) {
       expect(result.name).to.equal('node-jet')
-      expect(result.version).to.equal('1.5.2')
+      expect(result.version).to.equal('2.0.0')
       expect(result.protocolVersion).to.equal('1.1.0')
       expect(result.features.fetch).to.equal('full')
       expect(result.features.batches).to.be.true
@@ -128,12 +128,12 @@ describe('A Daemon', function () {
   })
 
   it('releasing a peer (with fetchers and elements) does not brake', function (done) {
-    var peer = new jet.Peer({
+    const peer = new jet.Peer({
       port: testPort
     })
 
-    var state = new jet.State('pathdoesnotmatter', 32)
-    var fetcher = new jet.Fetcher()
+    const state = new jet.State('pathdoesnotmatter', 32)
+    const fetcher = new jet.Fetcher()
 
     Promise.all([
       peer.connect(),
@@ -149,7 +149,7 @@ describe('A Daemon', function () {
   })
 
   it('daemon emits disconnect event when peer disconnects', function (done) {
-    var peer = new jet.Peer({
+    const peer = new jet.Peer({
       port: testPort
     })
     daemon.on('disconnect', function (peerMS) {
@@ -162,11 +162,11 @@ describe('A Daemon', function () {
   })
 
   it('timeout response is generated', function (done) {
-    var peer = new jet.Peer({
+    const peer = new jet.Peer({
       port: testPort
     })
 
-    var tooLate = new jet.Method('alwaysTooLate')
+    const tooLate = new jet.Method('alwaysTooLate')
     tooLate.on('call', function (args, reply) {
       setTimeout(function () {
         reply({
@@ -188,8 +188,8 @@ describe('A Daemon', function () {
   })
 
   describe('hooking to a (http) server', function () {
-    var server
-    var daemon
+    let server
+    let daemon
 
     before(function () {
       server = http.createServer(function (req, res) {
@@ -218,7 +218,7 @@ describe('A Daemon', function () {
     })
 
     it('peer can connect via websockets on same port', function (done) {
-      var peer = new jet.Peer({
+      const peer = new jet.Peer({
         url: 'ws://localhost:23456',
         name: 'blabla'
       })
@@ -231,11 +231,11 @@ describe('A Daemon', function () {
   })
 
   describe('hooking to a (https) server', function () {
-    var server
-    var daemon
+    let server
+    let daemon
 
     before(function () {
-      var options = {
+      const options = {
         key: fs.readFileSync('test/fixtures/key.pem'),
         cert: fs.readFileSync('test/fixtures/certificate.pem')
       }
@@ -266,7 +266,7 @@ describe('A Daemon', function () {
     })
 
     it('peer can connect via secure websockets (wss) on same port', function (done) {
-      var peer = new jet.Peer({
+      const peer = new jet.Peer({
         url: 'wss://localhost:23490',
         name: 'blabla',
         rejectUnauthorized: false
@@ -281,7 +281,7 @@ describe('A Daemon', function () {
 })
 
 describe('A Daemon with simple fetching', function () {
-  var daemon
+  let daemon
   before(function () {
     daemon = new jet.Daemon({
       name: 'simple-jet',
@@ -297,7 +297,7 @@ describe('A Daemon with simple fetching', function () {
   describe('when connected to a peer sending "handmade" message', function () {
     commandRequestTest(testPort + 1, 'info', {}, function (result) {
       expect(result.name).to.equal('simple-jet')
-      expect(result.version).to.equal('1.5.2')
+      expect(result.version).to.equal('2.0.0')
       expect(result.protocolVersion).to.equal('1.1.0')
       expect(result.features.fetch).to.equal('simple')
       expect(result.features.batches).to.be.true
@@ -307,7 +307,7 @@ describe('A Daemon with simple fetching', function () {
 })
 
 describe('A Daemon with specified users (authentication)', function () {
-  var john = {
+  const john = {
     password: '12345',
     auth: {
       fetchGroups: [],
@@ -316,7 +316,7 @@ describe('A Daemon with specified users (authentication)', function () {
     }
   }
 
-  var daemon
+  let daemon
   before(function () {
     daemon = new jet.Daemon({
       users: {

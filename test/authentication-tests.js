@@ -1,13 +1,13 @@
 /* global describe it before afterEach beforeEach after */
-var expect = require('chai').expect
-var jet = require('../lib/jet')
-var WebSocket = require('ws')
+const expect = require('chai').expect
+const jet = require('../lib/jet')
+const WebSocket = require('ws')
 
-var testWsPort = 3333
+const testWsPort = 3333
 
-var daemon
+let daemon
 
-var users = {}
+const users = {}
 
 users['John Doe'] = {
   password: '12345',
@@ -46,10 +46,10 @@ before(function () {
 })
 
 describe('Jet authentication', function () {
-  var url = 'ws://localhost:' + testWsPort
+  const url = 'ws://localhost:' + testWsPort
 
   it('can authenticate with a valid user/password', function (done) {
-    var peer = new jet.Peer({
+    const peer = new jet.Peer({
       url: url,
       user: 'John Doe',
       password: '12345'
@@ -63,7 +63,7 @@ describe('Jet authentication', function () {
   })
 
   it('cannot authenticate with a valid user and invalid password', function (done) {
-    var peer = new jet.Peer({
+    const peer = new jet.Peer({
       url: url,
       user: 'John Doe',
       password: 'wrongpass'
@@ -77,7 +77,7 @@ describe('Jet authentication', function () {
   })
 
   it('cannot authenticate with a invalid user and invalid password', function (done) {
-    var peer = new jet.Peer({
+    const peer = new jet.Peer({
       url: url,
       user: 'foo',
       password: 'wrongpass'
@@ -92,9 +92,9 @@ describe('Jet authentication', function () {
 })
 
 describe('access tests', function () {
-  var provider, consumer
-  var everyoneState, pubApiState, pubAdminState
-  var url = 'ws://localhost:' + testWsPort
+  let provider, consumer
+  let everyoneState, pubApiState, pubAdminState
+  const url = 'ws://localhost:' + testWsPort
 
   beforeEach(function (done) {
     provider = new jet.Peer({
@@ -116,7 +116,7 @@ describe('access tests', function () {
       fetchGroups: ['public', 'api']
     })
 
-    var squareMethod = new jet.Method('square', {
+    const squareMethod = new jet.Method('square', {
       fetchGroups: [],
       callGroups: ['admin']
     })
@@ -147,7 +147,7 @@ describe('access tests', function () {
       password: '12345'
     })
 
-    var all = new jet.Fetcher()
+    const all = new jet.Fetcher()
     all.sortByPath().range(1, 10)
     all.on('data', function (states) {
       expect(states[0].path).to.equal('everyone')
@@ -168,7 +168,7 @@ describe('access tests', function () {
       password: '12345'
     })
 
-    var all = new jet.Fetcher()
+    const all = new jet.Fetcher()
     all.sortByPath().range(1, 10)
     all.on('data', function (states) {
       expect(states[0].path).to.equal('everyone')
@@ -182,14 +182,14 @@ describe('access tests', function () {
   })
 
   it('Linus can fetch everyone and pub-admin and gets correct updates', function (done) {
-    var callCount = 0
+    let callCount = 0
     consumer = new jet.Peer({
       url: url,
       user: 'Linus',
       password: '12345'
     })
 
-    var all = new jet.Fetcher()
+    const all = new jet.Fetcher()
     all.sortByPath().range(1, 10)
     all.on('data', function (states) {
       callCount++
@@ -224,7 +224,7 @@ describe('access tests', function () {
       password: '12345'
     })
 
-    var all = new jet.Fetcher().sortByPath().range(1, 10)
+    const all = new jet.Fetcher().sortByPath().range(1, 10)
     all.on('data', function (states) {
       expect(states[0].path).to.equal('everyone')
       expect(states).to.has.length(1)
@@ -281,7 +281,7 @@ describe('access tests', function () {
       password: '12345'
     })
 
-    var fetcher = new jet.Fetcher()
+    const fetcher = new jet.Fetcher()
       .path('equals', 'pub-admin')
       .on('data', function (data) {
         expect(data.path).to.equal('pub-admin')
@@ -299,7 +299,7 @@ describe('access tests', function () {
       password: '12345'
     })
 
-    var fetcher = new jet.Fetcher()
+    const fetcher = new jet.Fetcher()
       .path('equals', 'pub-admin')
       .on('data', function (data) {
         expect(data.path).to.equal('pub-admin')
@@ -356,9 +356,9 @@ describe('A Daemon with specified wsGetAuthentication option', function () {
     setGroups: ['foo'],
     callGroups: []
   }
-  var returnAuth
+  let returnAuth
 
-  var daemon
+  let daemon
   before(function () {
     daemon = new jet.Daemon()
     daemon.listen({
@@ -374,14 +374,13 @@ describe('A Daemon with specified wsGetAuthentication option', function () {
   })
 
   it('attaches the returned auth object to the peer', function (done) {
-    var client
-    var _auth
+    let _auth
     returnAuth = auth
     daemon.on('connection', function (peer) {
       _auth = peer.auth
     })
 
-    client = new WebSocket('ws://localhost:' + (testWsPort + 3), 'jet')
+    const client = new WebSocket('ws://localhost:' + (testWsPort + 3), 'jet')
     client.on('open', function () {
       expect(_auth).to.deep.equals(auth)
       client.close()
@@ -390,9 +389,8 @@ describe('A Daemon with specified wsGetAuthentication option', function () {
   })
 
   it('refuses the connection when returning false', function (done) {
-    var client
     returnAuth = false
-    client = new WebSocket('ws://localhost:' + (testWsPort + 3), 'jet')
+    const client = new WebSocket('ws://localhost:' + (testWsPort + 3), 'jet')
     client.on('error', function () {
       daemon.wsServer.close()
       done()
@@ -401,8 +399,8 @@ describe('A Daemon with specified wsGetAuthentication option', function () {
 })
 
 it('A Peer can send custom headers', function (done) {
-  var headers
-  var daemon = new jet.Daemon()
+  let headers
+  const daemon = new jet.Daemon()
   daemon.listen({
     wsPort: testWsPort + 4,
     wsGetAuthentication: function (info) {
@@ -411,7 +409,7 @@ it('A Peer can send custom headers', function (done) {
     }
   })
 
-  var peer = new jet.Peer({ url: 'ws://localhost:' + (testWsPort + 4), headers: { foo: 'bar' } })
+  const peer = new jet.Peer({ url: 'ws://localhost:' + (testWsPort + 4), headers: { foo: 'bar' } })
   peer.connect().then(function () {
     expect(headers.foo).to.equal('bar')
     peer.close()

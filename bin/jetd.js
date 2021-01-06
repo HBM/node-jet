@@ -1,20 +1,20 @@
 #!/usr/bin/env node
 
-var fs = require('fs')
-var http = require('http')
-var jet = require('../lib/jet')
-var path = require('path')
+const fs = require('fs')
+const http = require('http')
+const jet = require('../lib/jet')
+const path = require('path')
 
-var radarPort = parseInt(process.argv[3], 10) || 8080
-var radarDir = process.argv[2] || '../radar/'
+const radarPort = parseInt(process.argv[3], 10) || 8080
+const radarDir = process.argv[2] || '../radar/'
 
-var mime = {
+const mime = {
   '.js': 'application/javascript',
   '.html': 'text/html',
   '.css': 'text/css'
 }
 
-var daemon = new jet.Daemon()
+const daemon = new jet.Daemon()
 
 daemon.listen({
   tcpPort: 11122,

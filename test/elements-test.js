@@ -1,12 +1,12 @@
 /* global describe it beforeEach */
-var expect = require('chai').expect
-var element = require('../lib/jet/element')
+const expect = require('chai').expect
+const element = require('../lib/jet/element')
 
 describe('The jet.element module', function () {
-  var elements
-  var fakePeer = {}
-  var fetchers
-  var fetchIterator
+  let elements
+  const fakePeer = {}
+  let fetchers
+  let fetchIterator
 
   beforeEach(function () {
     elements = new element.Elements(function () {})
@@ -19,7 +19,7 @@ describe('The jet.element module', function () {
         cb(fetcher.id, fetcher.fetch)
       })
     }
-    var state = {
+    const state = {
       path: 'asd2',
       value: 123,
       fetchOnly: true
@@ -28,13 +28,13 @@ describe('The jet.element module', function () {
   })
 
   it('elements.add', function () {
-    var state = {
+    const state = {
       path: 'asd',
       value: 123,
       fetchOnly: true
     }
     elements.add(fetchIterator, fakePeer, state)
-    var el = elements.get('asd')
+    const el = elements.get('asd')
     expect(el).to.be.an.instanceof(element.Element)
     expect(el.value).to.equal(123)
   })
@@ -55,7 +55,7 @@ describe('The jet.element module', function () {
   })
 
   it('other peer cannot remove the element', function () {
-    var otherPeer = {}
+    const otherPeer = {}
 
     try {
       elements.remove('asd2', otherPeer)
@@ -76,7 +76,7 @@ describe('The jet.element module', function () {
   })
 
   it('other peer cannot change the element', function () {
-    var other = {}
+    const other = {}
     try {
       elements.change('asd2', 444, other)
     } catch (err) {

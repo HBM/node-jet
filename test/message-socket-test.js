@@ -1,21 +1,21 @@
 /* global describe it before */
-var net = require('net')
-var expect = require('chai').expect
-var EventEmitter = require('events').EventEmitter
+const net = require('net')
+const expect = require('chai').expect
+const EventEmitter = require('events').EventEmitter
 /* this is a private module, so load directly */
-var MessageSocket = require('../lib/jet/message-socket').MessageSocket
+const MessageSocket = require('../lib/jet/message-socket').MessageSocket
 
-var echoPort = 1389
-var byteEchoPort = 1312
-var testMessageA = 'asdddd'
+const echoPort = 1389
+const byteEchoPort = 1312
+const testMessageA = 'asdddd'
 
 before(function () {
-  var echoServer = net.createServer(function (socket) {
+  const echoServer = net.createServer(function (socket) {
     socket.pipe(socket)
   })
   echoServer.listen(echoPort)
 
-  var byteEchoServer = net.createServer(function (socket) {
+  const byteEchoServer = net.createServer(function (socket) {
     socket.on('data', function (data) {
       data.toString().split('').forEach(function (char, i) {
         setTimeout(function () {
@@ -28,7 +28,7 @@ before(function () {
 })
 
 describe('A MessageSocket', function () {
-  var ms
+  let ms
   before(function (done) {
     ms = new MessageSocket(echoPort)
     ms.on('open', function () {
@@ -55,7 +55,7 @@ describe('A MessageSocket', function () {
       })
 
       it('can echo utf-16', function (done) {
-        var utf16TestMessage = 'öäü\uD83D\uDCA9'
+        const utf16TestMessage = 'öäü\uD83D\uDCA9'
         ms.once('message', function (message) {
           expect(message).to.be.a('string')
           expect(message).to.equal(utf16TestMessage)
@@ -73,7 +73,7 @@ describe('A MessageSocket', function () {
       })
 
       it('(byte per byte) should emit "message"', function (done) {
-        var ms2 = new MessageSocket(byteEchoPort)
+        const ms2 = new MessageSocket(byteEchoPort)
         ms2.once('message', function (message) {
           expect(message).to.be.a('string')
           expect(message).to.equal(testMessageA)
@@ -83,8 +83,8 @@ describe('A MessageSocket', function () {
       })
 
       it('can be constructed from sock', function () {
-        var sock = net.connect(echoPort)
-        var ms = new MessageSocket(sock)
+        const sock = net.connect(echoPort)
+        const ms = new MessageSocket(sock)
         expect(ms).to.be.exist // eslint-disable-line no-unused-expressions
       })
     })

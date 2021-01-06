@@ -1,15 +1,15 @@
-var jet = require('../lib/jet')
+const jet = require('../lib/jet')
 
-var daemon = new jet.Daemon()
+const daemon = new jet.Daemon()
 
-var provider = new jet.Peer()
+const provider = new jet.Peer()
 
-var n = 10000
-var changes = 1000
-var states = {}
+const n = 10000
+const changes = 1000
+const states = {}
 
-for (var i = 0; i < n; ++i) {
-  var state = new jet.State('#' + i, Math.random())
+for (let i = 0; i < n; ++i) {
+  const state = new jet.State('#' + i, Math.random())
   states['#' + i] = state
   provider.add(state)
 }
@@ -18,17 +18,17 @@ provider.connect().then(function () {
   console.log('provider ready')
 })
 
-var consumer = new jet.Peer()
+const consumer = new jet.Peer()
 
-var fetcher = new jet.Fetcher()
+const fetcher = new jet.Fetcher()
   .sortByValue('number')
   .range(20, 100)
 
-var changeCount = 0
+let changeCount = 0
 fetcher.on('data', function (data) {
   changeCount++
-  var first = states[data[0].path]
-  var last = states[data[data.length - 1].path]
+  const first = states[data[0].path]
+  const last = states[data[data.length - 1].path]
   first.value(last.value() + Math.random())
   if (changeCount === changes) {
     console.log('done', changeCount)
