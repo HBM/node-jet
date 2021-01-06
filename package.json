@@ -42,10 +42,10 @@
   },
   "main": "./lib/jet.js",
   "bin": {
-    "jetd.js": "./bin/jetd.js",
-    "fetch.js": "./bin/fetch.js"
+    "jetd.js": "bin/jetd.js",
+    "fetch.js": "bin/fetch.js"
   },
-  "version": "2.1.0",
+  "version": "2.1.1",
   "repository": {
     "type": "git",
     "url": "https://github.com/lipp/node-jet"
