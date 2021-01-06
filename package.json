@@ -45,7 +45,7 @@
     "jetd.js": "./bin/jetd.js",
     "fetch.js": "./bin/fetch.js"
   },
-  "version": "2.0.0",
+  "version": "2.1.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/lipp/node-jet"
@@ -54,7 +54,7 @@
   "scripts": {
     "test": "standard && istanbul cover node_modules/mocha/bin/_mocha -- --exit --recursive test",
     "test_nocover": "npx mocha --exit test",
-    "release": "np",
+    "release": "npx np",
     "start": "./bin/jetd.js"
   },
   "engines": {
