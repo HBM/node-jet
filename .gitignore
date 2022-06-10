@@ -5,6 +5,8 @@ coverage
 .#*
 */#*
 */*/#*
+lib/*
+.cache/*
 .DS_Store
 *~
 npm-debug.log

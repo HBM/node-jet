@@ -7,7 +7,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node todo-server.js",
-    "build": "browserify todo-client.js > bundle.js"
+    "build": "browserify todo-client.js > public/bundle.js"
   },
   "author": "Gerhard Preuss",
   "license": "MIT",

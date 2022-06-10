@@ -2,13 +2,14 @@
  * Jet client-server communications:
  */
 
-var jet = require('node-jet')
-
+// var jet = require('node-jet')
+var jet = require("../../lib/jet")
+const protocol = window.location.protocol === 'http:' ? 'ws://' : 'wss://'
 var peer = new jet.Peer({
-  url: (window.location.protocol === 'http:' ? 'ws://' : 'wss://') + window.location.host
+  url: `${protocol}${window.location.host}:8080`
 })
 
-var addTodo = function (title) {
+var addTodo = (title) => {
   peer.call('todo/add', [title])
 }
 

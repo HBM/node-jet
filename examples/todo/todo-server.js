@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 
-var jet = require('node-jet')
+var jet = require("../../lib/jet")
 var finalhandler = require('finalhandler')
 var http = require('http')
 var serveStatic = require('serve-static')
 
-var port = parseInt(process.argv[2]) || 80
+var port = parseInt(process.argv[2]) || 8080
 var internalPort = 11128
 
 // Serve this dir as static content
@@ -21,11 +21,11 @@ httpServer.listen(port)
 
 // Create Jet Daemon
 var daemon = new jet.Daemon()
+
 daemon.listen({
   server: httpServer, // embed jet websocket upgrade handler
   tcpPort: internalPort // nodejitsu prevents internal websocket connections
 })
-
 // Declare Todo Class
 var todoId = 0
 
@@ -58,6 +58,7 @@ var todoStates = {}
 // Provide a "todo/add" method to create new todos
 var addTodo = new jet.Method('todo/add')
 addTodo.on('call', function (args) {
+  console.log("Called add",args)
   var title = args[0]
   var todo = new Todo(title)
 
@@ -108,14 +109,15 @@ setCompleted.on('call', function (args) {
   })
 })
 
-// connect peer and register methods
-Promise.all([
-  peer.connect(),
-  peer.add(addTodo),
+peer.connect()
+.then(()=>{
+  peer.add(addTodo)
   peer.add(removeTodo),
   peer.add(setCompleted),
   peer.add(clearCompletedTodos)
-]).then(function () {
   console.log('todo-server ready')
   console.log('listening on port', port)
 })
+.catch(()=>console.log("Failed"))
+.finally(()=>"Ended promise")
+

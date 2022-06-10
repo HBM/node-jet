@@ -23,22 +23,30 @@
     {
       "name": "Fahri Sönmez",
       "email": "fahri.soenmez@hbmworld.com"
+    },
+    {
+      "name": "Florian Schopp",
+      "email": "schopp@hbm.com"
     }
   ],
   "devDependencies": {
-    "chai": "4.2.0",
-    "coveralls": "3.1.0",
+    "chai": "4.3.6",
+    "coveralls": "3.1.1",
     "istanbul": "0.4.5",
-    "mocha": "^8.2.1",
-    "np": "*",
-    "sinon": "9.2.3",
-    "standard": "^16.0.3",
-    "uglify-js": "3.12.4"
+    "jest": "^28.1.0",
+    "mocha": "^10.0.0",
+    "np": "7.6.1",
+    "sinon": "14.0.0",
+    "standard": "^17.0.0",
+    "uglify-js": "3.15.5"
   },
   "dependencies": {
+    "@types/jest": "^27.5.1",
+    "jest-environment-jsdom": "^28.1.0",
+    "ts-jest": "^28.0.3",
     "uuid": "^8.3.2",
-    "ws": "^7.4.2",
-    "yargs": "^16.2.0"
+    "ws": "^8.6.0",
+    "yargs": "^17.5.1"
   },
   "main": "./lib/jet.js",
   "bin": {
@@ -52,9 +60,9 @@
   },
   "license": "MIT",
   "scripts": {
-    "test": "standard && istanbul cover node_modules/mocha/bin/_mocha -- --exit --recursive test",
-    "test_nocover": "npx mocha --exit test",
+    "test": "jest",
     "release": "npx np",
+    "build": "npx tsc",
     "start": "./bin/jetd.js"
   },
   "engines": {
@@ -72,7 +80,8 @@
   "standard": {
     "ignore": [
       "build/",
-      "examples/"
+      "examples/",
+      "src/"
     ]
   },
   "publishConfig": {
