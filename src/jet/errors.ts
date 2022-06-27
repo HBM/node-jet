@@ -4,7 +4,7 @@ const INVALID_PARAMS_CODE = -32602;
 const INTERNAL_ERROR_CODE = -32603;
 const RESPONSE_TIMEOUT_CODE = -32001;
 
-export const invalidParams = (data) => {
+export const invalidParams = (data: any) => {
   return {
     message: "Invalid params",
     code: INVALID_PARAMS_CODE,
@@ -12,7 +12,7 @@ export const invalidParams = (data) => {
   };
 };
 
-export const methodNotFound = (data) => {
+export const methodNotFound = (data: any) => {
   return {
     message: "Method not found",
     code: -32601,
@@ -20,7 +20,7 @@ export const methodNotFound = (data) => {
   };
 };
 
-export const invalidRequest = (data) => {
+export const invalidRequest = (data: any) => {
   return {
     message: "Invalid Request",
     code: -32600,
@@ -28,7 +28,7 @@ export const invalidRequest = (data) => {
   };
 };
 
-export const responseTimeout = (data) => {
+export const responseTimeout = (data: any) => {
   return {
     message: "Response Timeout",
     code: RESPONSE_TIMEOUT_CODE,
@@ -60,7 +60,7 @@ export const responseTimeout = (data) => {
 export class BaseError extends Error {
   url = "";
   stack = undefined as any;
-  constructor(name, message, stack = undefined) {
+  constructor(name: string, message: string | undefined, stack = undefined) {
     super(message);
     this.name = "jet." + name;
     const errorUrlBase =
@@ -99,7 +99,7 @@ export class BaseError extends Error {
  */
 
 export class DaemonError extends BaseError {
-  constructor(msg) {
+  constructor(msg: any) {
     super("DaemonError", msg);
   }
 }
@@ -113,7 +113,7 @@ export class DaemonError extends BaseError {
  */
 
 export class PeerError extends BaseError {
-  constructor(err) {
+  constructor(err: any) {
     super("PeerError", err);
   }
 }
@@ -166,7 +166,7 @@ export class Unauthorized extends BaseError {
  *
  */
 export class ConnectionClosed extends BaseError {
-  constructor(err) {
+  constructor(err: string) {
     super("ConnectionClosed", err);
   }
 }
@@ -196,7 +196,7 @@ export class NotFound extends BaseError {
  */
 
 export class InvalidArgument extends BaseError {
-  constructor(msg) {
+  constructor(msg: any) {
     super(
       "InvalidArgument",
       msg || "The provided argument(s) have been refused by the State/Method"
@@ -253,7 +253,7 @@ export class FetchOnly extends BaseError {
   }
 }
 
-export const createTypedError = (jsonrpcError) => {
+export const createTypedError = (jsonrpcError: { code: any; data: any }) => {
   const code = jsonrpcError.code;
   const data = jsonrpcError.data;
   const dataType = typeof data;

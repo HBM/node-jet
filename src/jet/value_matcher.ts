@@ -1,14 +1,14 @@
 import { accessField, eachKeyValue, invalidParams, isDefined } from "./utils";
 
-const generators = {
-  lessThan: (other) => (x) => x < other,
-  greaterThan: (other) => (x) => x > other,
-  equals: (other) => (x) => x === other,
-  equalsNot: (other) => (x) => x !== other,
-  isType: (type) => (x) => typeof x === type,
+const generators: Record<string, (other: any) => (x: any) => boolean> = {
+  lessThan: (other: number) => (x: number) => x < other,
+  greaterThan: (other: number) => (x: number) => x > other,
+  equals: (other: any) => (x: any) => x === other,
+  equalsNot: (other: any) => (x: any) => x !== other,
+  isType: (type: string) => (x: any) => typeof x === type,
 };
 
-const generatePredicate = (op, val) => {
+const generatePredicate = (op: string, val: any) => {
   const gen = generators[op];
   if (!gen) {
     throw invalidParams("unknown generator " + op);
@@ -17,7 +17,7 @@ const generatePredicate = (op, val) => {
   }
 };
 
-const createValuePredicates = (valueOptions) => {
+const createValuePredicates = (valueOptions: Record<any, any>) => {
   const predicates: any[] = [];
   eachKeyValue(valueOptions)((op, val) => {
     predicates.push(generatePredicate(op, val));
@@ -25,7 +25,7 @@ const createValuePredicates = (valueOptions) => {
   return predicates;
 };
 
-const createValueFieldPredicates = (valueFieldOptions) => {
+const createValueFieldPredicates = (valueFieldOptions: Record<any, any>) => {
   const predicates: any[] = [];
   eachKeyValue(valueFieldOptions)((fieldStr, rule) => {
     const fieldPredicates: any[] = [];
@@ -33,7 +33,7 @@ const createValueFieldPredicates = (valueFieldOptions) => {
     eachKeyValue(rule)((op, val) => {
       fieldPredicates.push(generatePredicate(op, val));
     });
-    const fieldPredicate = (value) => {
+    const fieldPredicate = (value: any) => {
       if (typeof value !== "object") {
         return false;
       }
@@ -55,7 +55,7 @@ const createValueFieldPredicates = (valueFieldOptions) => {
   return predicates;
 };
 
-export const create = (options) => {
+export const create = (options: any) => {
   // sorting by value implicitly defines value matcher rule against expected type
   if (options.sort) {
     if (options.sort.byValue) {
@@ -74,7 +74,7 @@ export const create = (options) => {
     return;
   }
 
-  let predicates;
+  let predicates: string | any[];
 
   if (isDefined(options.value)) {
     predicates = createValuePredicates(options.value);
@@ -82,7 +82,7 @@ export const create = (options) => {
     predicates = createValueFieldPredicates(options.valueField);
   }
 
-  return (value) => {
+  return (value: any) => {
     // eslint-disable-line consistent-return
     try {
       for (let i = 0; i < predicates.length; ++i) {

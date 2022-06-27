@@ -1,7 +1,8 @@
 "use strict";
 
+import { Message } from "../daemon/access";
 import { ConnectionClosed, createTypedError } from "../errors";
-import { PeerConfig } from "../peer";
+import { JsonParams, PeerConfig } from "../peer";
 import { errorObject, isDefined as isDef } from "../utils";
 
 const MessageSocket =
@@ -25,10 +26,20 @@ const decode = JSON.parse;
  * or installs "hook" as callbacks[callbackName].
  * @private
  */
-export const addHook = (callbacks, callbackName, hook) => {
+export const addHook = (
+  callbacks: {
+    [x: string]: any;
+    success?: (
+      value: Record<any, any> | PromiseLike<Object | null> | null
+    ) => void;
+    error?: (reason?: any) => void;
+  },
+  callbackName: string,
+  hook: any
+) => {
   if (callbacks[callbackName]) {
     const orig = callbacks[callbackName];
-    callbacks[callbackName] = (result) => {
+    callbacks[callbackName] = (result: any) => {
       hook(result);
       orig(result);
     };
@@ -45,17 +56,18 @@ export class JsonRPC {
   _isOpen = false;
   sock: WebSocket | any;
   config: PeerConfig;
-  messages: Array<Object>;
+  messages: Array<Message>;
   willFlush: Boolean;
-  requestDispatchers: Object;
-  responseDispatchers: Object;
+  requestDispatchers: any;
+  responseDispatchers: any;
+  fakeContext: any;
   id: number;
-  constructor(config) {
+  constructor(config: PeerConfig) {
     this.config = config;
     this.messages = [];
     this.willFlush = false;
-    this.requestDispatchers = {};
-    this.responseDispatchers = {};
+    this.requestDispatchers = [];
+    this.responseDispatchers = [];
     this.id = 0;
   }
   _onOpen = () => {
@@ -72,7 +84,7 @@ export class JsonRPC {
       }
     }
     this._isOpen = false;
-    this.responseDispatchers = {};
+    this.responseDispatchers = [];
   };
 
   connect = (): Promise<void> => {
@@ -119,7 +131,7 @@ export class JsonRPC {
    *
    * @api private
    */
-  _dispatchMessage = (event) => {
+  _dispatchMessage = (event: { data: any }) => {
     const message = event.data;
     let decoded;
     try {
@@ -133,7 +145,6 @@ export class JsonRPC {
     }
 
     this.willFlush = true;
-    /* istanbul ignore else */
     if ((this.config as any).onReceive) {
       (this.config as any).onReceive(message, decoded);
     }
@@ -152,7 +163,7 @@ export class JsonRPC {
    *
    * @api private
    */
-  _dispatchSingleMessage = (message) => {
+  _dispatchSingleMessage = (message: Message) => {
     if (message.method && message.params) {
       this._dispatchRequest(message);
     } else if (
@@ -168,7 +179,7 @@ export class JsonRPC {
    *
    * @api private
    */
-  _dispatchResponse = (message) => {
+  _dispatchResponse = (message: Message) => {
     const mid = message.id;
     const callbacks = this.responseDispatchers[mid];
     delete this.responseDispatchers[mid];
@@ -190,13 +201,12 @@ export class JsonRPC {
    *
    * @api private
    */
-  _dispatchRequest = (message) => {
+  _dispatchRequest = (message: Message) => {
+    if (!message.method) return;
     const dispatcher = this.requestDispatchers[message.method];
-
     try {
       dispatcher(message);
     } catch (err) {
-      /* istanbul ignore if */
       if (isDef(message.id)) {
         this.queue({
           id: message.id,
@@ -209,7 +219,7 @@ export class JsonRPC {
   /**
    * Queue.
    */
-  queue = (message) => {
+  queue = (message: Message) => {
     this.messages.push(message);
   };
 
@@ -224,7 +234,6 @@ export class JsonRPC {
       encoded = encode(this.messages);
     }
     if (encoded) {
-      /* istanbul ignore else */
       if (this.config.onSend) {
         this.config.onSend(encoded, this.messages);
       }
@@ -237,21 +246,21 @@ export class JsonRPC {
   /**
    * AddRequestDispatcher.
    */
-  addRequestDispatcher = (id, dispatch) => {
+  addRequestDispatcher = (id: any, dispatch: any) => {
     this.requestDispatchers[id] = dispatch;
   };
 
   /**
    * RemoveRequestDispatcher.
    */
-  removeRequestDispatcher = (id) => {
+  removeRequestDispatcher = (id: any) => {
     delete this.requestDispatchers[id];
   };
 
   /**
    * HasRequestDispatcher.
    */
-  hasRequestDispatcher = (id) => {
+  hasRequestDispatcher = (id: any) => {
     return isDef(this.requestDispatchers[id]);
   };
 
@@ -259,10 +268,10 @@ export class JsonRPC {
    * Service.
    */
   service = (
-    method,
-    params,
+    method: string,
+    params: JsonParams,
     complete:
-      | ((completed: boolean, result?: Object) => void)
+      | ((completed: boolean, result?: Record<any, any>) => void)
       | undefined = undefined,
     asNotification = true
   ): Promise<Object | null> => {
@@ -284,9 +293,13 @@ export class JsonRPC {
           };
           /* istanbul ignore else */
           if (complete) {
-            addHook(callbacks, "success", (result) => {
-              complete(true, result);
-            });
+            addHook(
+              callbacks,
+              "success",
+              (result: Record<any, any> | undefined) => {
+                complete(true, result);
+              }
+            );
             addHook(callbacks, "error", () => {
               complete(false);
             });
@@ -299,7 +312,7 @@ export class JsonRPC {
             complete(true);
           }
         }
-        const message = {
+        const message: Message = {
           id: rpcId,
           method: method,
           params: params,
@@ -323,7 +336,7 @@ export class JsonRPC {
   /**
    * Batch.
    */
-  batch = (action) => {
+  batch = (action: () => void) => {
     this.willFlush = true;
     action();
     this.flush();

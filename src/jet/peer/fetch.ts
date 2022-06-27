@@ -11,57 +11,60 @@ import JsonRPC from "./jsonrpc";
 
 let globalFetchId = 1;
 
-const createFetchDispatcher = (params, f, ref) => {
+const createFetchDispatcher = (params: any, f: any, ref: any) => {
   if (isDefined(params.sort)) {
     if (params.sort.asArray) {
       delete params.sort.asArray; // peer internal param
       const arr: any[] = [];
       const from = params.sort.from;
-      return (message) => {
+      return (message: { params: { n: number; changes: any[] } }) => {
         arr.length = message.params.n;
-        message.params.changes.forEach((change) => {
+        message.params.changes.forEach((change: { index: number }) => {
           arr[change.index - from] = change;
         });
         f.call(ref, arr, ref);
       };
     } else {
-      return (message) => {
+      return (message: { params: { changes: any; n: any } }) => {
         f.call(ref, message.params.changes, message.params.n);
       };
     }
   } else {
-    return (message) => {
-      f.call(ref, message.params);
+    return (message: { params: any }) => {
+      f.call(ref, message.params, undefined);
     };
   }
 };
 
 export class FakePeer {
-  fetchers: Object;
+  fetchers: Record<any, any>;
   id: String;
   eachFetcher: Function;
   constructor() {
     this.fetchers = {};
     this.id = "fakePeer";
     const eachFetcherIterator = eachKeyValue(this.fetchers);
-    this.eachFetcher = (element, initElementFetching) => {
+    this.eachFetcher = (
+      element: { fetchOnly: any },
+      initElementFetching: (arg0: string, arg1: any, arg2: boolean) => void
+    ) => {
       const hasSetAccess = !element.fetchOnly;
-      const initElementFetchingAccess = (peerFetchId, fetcher) => {
+      const initElementFetchingAccess = (peerFetchId: string, fetcher: any) => {
         initElementFetching("fakePeer" + peerFetchId, fetcher, hasSetAccess);
       };
       eachFetcherIterator(initElementFetchingAccess);
     };
   }
 
-  addFetcher = (fetchId, fetcher) => {
+  addFetcher = (fetchId: string | number, fetcher: any) => {
     this.fetchers[fetchId] = fetcher;
   };
 
-  removeFetcher = (fetchId) => {
+  removeFetcher = (fetchId: string | number) => {
     delete this.fetchers[fetchId];
   };
 
-  hasFetcher = (fetchId) => {
+  hasFetcher = (fetchId: string | number) => {
     return (this.fetchers[fetchId] && true) || false;
   };
 }
@@ -84,7 +87,21 @@ export class FakeFetcher {
   fetchSimpleDispatcher: Function;
   fetchParams;
   jsonrpc;
-  constructor(jsonrpc, fetchParams, fetchCb, asNotification) {
+  constructor(
+    jsonrpc: {
+      fakeContext: any;
+      service: (
+        arg0: string,
+        arg1: {},
+        arg2: (_: any, fetchSimpleId: any) => void,
+        arg3: any
+      ) => Promise<any>;
+      addRequestDispatcher: (arg0: any, arg1: Function) => void;
+    },
+    fetchParams: any,
+    fetchCb: any,
+    asNotification: any
+  ) {
     this.jsonrpc = jsonrpc;
     this.fetchParams = fetchParams;
     const id = "__f__" + globalFetchId;
@@ -92,9 +109,9 @@ export class FakeFetcher {
 
     fetchParams.id = id;
 
-    let fetchDispatcher;
+    let fetchDispatcher: (arg0: { params: any }) => void;
     this.fetchSimpleDispatcher = () => {};
-    this.wrappedFetchDispatcher = (nparams) => {
+    this.wrappedFetchDispatcher = (nparams: any) => {
       fetchDispatcher =
         fetchDispatcher || createFetchDispatcher(fetchParams, fetchCb, this);
       fetchDispatcher({
@@ -111,7 +128,7 @@ export class FakeFetcher {
       context.elements = new jetElements(null);
       context.peer = new FakePeer();
 
-      this.fetchSimpleDispatcher = (message) => {
+      this.fetchSimpleDispatcher = (message: { params: any }) => {
         const params = message.params;
         const event = params.event;
 
@@ -134,7 +151,7 @@ export class FakeFetcher {
           .service(
             "fetch",
             {},
-            (_, fetchSimpleId) => {
+            (_: any, fetchSimpleId: any) => {
               jsonrpc.addRequestDispatcher(
                 fetchSimpleId,
                 this.fetchSimpleDispatcher
@@ -188,16 +205,37 @@ export class FakeFetcher {
 export class Fetcher {
   fetchDispatcher: Function;
   addFetchDispatcher:
-    | ((completed: boolean, result?: Object) => void)
+    | ((completed: boolean, result?: Record<any, any>) => void)
     | undefined = undefined;
   removeFetchDispatcher:
-    | ((completed: boolean, result?: Object) => void)
+    | ((completed: boolean, result?: Record<any, any>) => void)
     | undefined = undefined;
   id: String;
   jsonrpc: JsonRPC;
   asNotification = true;
   params;
-  constructor(jsonrpc, params, fetchCb, asNotification) {
+  constructor(
+    jsonrpc: JsonRPC,
+    params: {
+      path?: { caseInsensitive?: Boolean | undefined } | undefined;
+      valueField?: Record<any, any> | undefined;
+      value?: Record<any, any> | undefined;
+      sort?:
+        | {
+            asArray?: Boolean | undefined;
+            descending?: Boolean | undefined;
+            byPath?: Boolean | undefined;
+            byValueField?: Record<any, any> | undefined;
+            byValue?: Boolean | undefined;
+            from?: Record<any, any> | undefined;
+            to?: Record<any, any> | undefined;
+          }
+        | undefined;
+      id?: any;
+    },
+    fetchCb: any,
+    asNotification: boolean
+  ) {
     this.params = params;
     this.jsonrpc = jsonrpc;
     this.id = "__f__" + globalFetchId;

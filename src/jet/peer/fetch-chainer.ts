@@ -1,4 +1,5 @@
 import { FakeFetcher, Fetcher } from "./fetch";
+import JsonRPC from "./jsonrpc";
 
 const defaultSort = () => ({
   asArray: true,
@@ -6,25 +7,22 @@ const defaultSort = () => ({
 
 export class FetchChainer {
   rule: {
-    path?: { caseInsensitive?: Boolean };
-    valueField?: Object;
-    value?: Object;
-    sort?: {
-      asArray?: Boolean;
-      descending?: Boolean;
-      byPath?: Boolean;
-      byValueField?: Object;
-      byValue?: Boolean;
-      from?: Object;
-      to?: Object;
-    };
+    path?: any;
+    valueField?: Record<any, any>;
+    value?: Record<any, any>;
+    sort?: any;
   } = {};
   _stopped = false;
-  _dataDispatcher;
-  _fetcher;
-  variant;
-  jsonrpc;
-  on = (event, cb) => {
+  _dataDispatcher: any;
+  _fetcher!: FakeFetcher | Fetcher;
+  variant!: string;
+  jsonrpc!: JsonRPC;
+  on = (
+    event: string,
+    cb: {
+      (data: any): void;
+    }
+  ) => {
     if (event === "data") {
       this._dataDispatcher = cb;
       return this;
@@ -32,7 +30,7 @@ export class FetchChainer {
       throw new Error("invalid event");
     }
   };
-  fetch = (asNotification) => {
+  fetch = (asNotification: boolean) => {
     if (this._stopped) {
       return Promise.resolve();
     }
@@ -71,11 +69,26 @@ export class FetchChainer {
     }
   };
   all = () => this;
-  expression = (expression) => {
+  expression = (expression: {
+    path?: { caseInsensitive?: Boolean | undefined } | undefined;
+    valueField?: Record<any, any> | undefined;
+    value?: Record<any, any> | undefined;
+    sort?:
+      | {
+          asArray?: Boolean | undefined;
+          descending?: Boolean | undefined;
+          byPath?: Boolean | undefined;
+          byValueField?: Record<any, any> | undefined;
+          byValue?: Boolean | undefined;
+          from?: Record<any, any> | undefined;
+          to?: Record<any, any> | undefined;
+        }
+      | undefined;
+  }) => {
     this.rule = expression;
     return this;
   };
-  path = (match, comp) => {
+  path = (match: string, comp: any) => {
     this.rule.path = this.rule.path || {};
     this.rule.path[match] = comp;
     return this;
@@ -85,14 +98,14 @@ export class FetchChainer {
     this.rule.path.caseInsensitive = true;
     return this;
   };
-  key = (key, match, comp) => {
+  key = (key: string | number, match: string | number, comp: any) => {
     this.rule.valueField = this.rule.valueField || {};
     this.rule.valueField[key] = {};
     this.rule.valueField[key][match] = comp;
     return this;
   };
   //TODO value = (arg1,arg2,...rest)
-  value = (...args) => {
+  value = (...args: any[]) => {
     if (args.length === 2) {
       const match = args[0];
       const comp = args[1];
@@ -124,13 +137,13 @@ export class FetchChainer {
     this._sortObject().byPath = true;
     return this;
   };
-  sortByKey = (key, type) => {
+  sortByKey = (key: string | number, type: any) => {
     const sort = this._sortObject();
     sort.byValueField = {};
     sort.byValueField[key] = type;
     return this;
   };
-  sortByValue = (...args) => {
+  sortByValue = (...args: any[]) => {
     const sort = this._sortObject();
     if (args.length === 1) {
       sort.byValue = args[0];
@@ -139,7 +152,7 @@ export class FetchChainer {
     }
     return this;
   };
-  range = (from, to) => {
+  range = (from: number, to: any) => {
     const sort = this._sortObject();
     sort.from = from;
     sort.to = to || from + 20;

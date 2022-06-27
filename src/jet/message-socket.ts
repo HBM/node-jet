@@ -9,7 +9,7 @@ export class MessageSocket extends EventEmitter.EventEmitter {
   last = Buffer.alloc(0);
   len = -1;
   socket;
-  constructor(port, ip = undefined) {
+  constructor(port: net.Socket | net.NetConnectOpts, ip = undefined) {
     super();
     if (port instanceof net.Socket) {
       this.socket = port;
@@ -66,7 +66,7 @@ export class MessageSocket extends EventEmitter.EventEmitter {
    * Send.
    * @private
    */
-  send = (msg) => {
+  send = (msg: string) => {
     const utf8Length = Buffer.byteLength(msg, "utf8");
     const buf = Buffer.alloc(4 + utf8Length);
     buf.writeUInt32BE(utf8Length, 0);
@@ -91,10 +91,13 @@ export class MessageSocket extends EventEmitter.EventEmitter {
    * See https://github.com/websockets/ws/blob/master/lib/WebSocket.js#L410
    * That way we can use node-jet with via browserify inside the browser.
    */
-  addEventListener = (method, listener) => {
+  addEventListener = (
+    method: string | symbol,
+    listener: { (...args: any[]): void; call?: any }
+  ) => {
     const target = this;
 
-    function onMessage(data, flags) {
+    function onMessage(data: any, flags: { binary: any }) {
       listener.call(
         target,
         new MessageEvent(
@@ -105,11 +108,11 @@ export class MessageSocket extends EventEmitter.EventEmitter {
       );
     }
 
-    function onClose(code, message) {
+    function onClose(code: any, message: any) {
       listener.call(target, new CloseEvent(code, message, target));
     }
 
-    function onError(event) {
+    function onError(event: any) {
       event.target = target;
       listener.call(target, event);
     }
@@ -157,7 +160,7 @@ class MessageEvent {
   data;
   type;
   target;
-  constructor(dataArg, typeArg, target) {
+  constructor(dataArg: any, typeArg: string, target: any) {
     this.data = dataArg;
     this.type = typeArg;
     this.target = target;
@@ -171,15 +174,17 @@ class MessageEvent {
  * @constructor
  * @api private
  */
-function CloseEvent(code, reason, target) {
-  // @ts-ignore
-  this.wasClean = typeof code === "undefined" || code === 1000;
-  // @ts-ignore
-  this.code = code;
-  // @ts-ignore
-  this.reason = reason;
-  // @ts-ignore
-  this.target = target;
+class CloseEvent {
+  wasClean;
+  code;
+  reason;
+  target;
+  constructor(code: number, reason: any, target: any) {
+    this.wasClean = typeof code === "undefined" || code === 1000;
+    this.code = code;
+    this.reason = reason;
+    this.target = target;
+  }
 }
 
 /**
@@ -189,9 +194,11 @@ function CloseEvent(code, reason, target) {
  * @constructor
  * @api private
  */
-function OpenEvent(target) {
-  // @ts-ignore
-  this.target = target;
+class OpenEvent {
+  target: any;
+  constructor(target: any) {
+    this.target = target;
+  }
 }
 
 export default MessageSocket;

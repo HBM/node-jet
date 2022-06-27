@@ -6,18 +6,24 @@ import Peer from "./peer";
 import { invalidParams, eachKeyValue } from "./utils";
 
 export class jetElement {
-  fetchers: Object;
-  fetcherIsReadOnly: Object;
+  fetchers: Record<any, any>;
+  fetcherIsReadOnly: Record<any, any>;
   eachFetcher: Function;
-  peer: Object;
+  peer: Record<any, any>;
   access: any;
   path: any;
   lowerPath: any;
   fetchOnly: any;
   value: any;
   logError: any;
+  timeout: any;
 
-  constructor(eachPeerFetcherWithAccess, owningPeer, params, logError) {
+  constructor(
+    eachPeerFetcherWithAccess: any,
+    owningPeer: Record<any, any>,
+    params: { path: any; value: any; fetchOnly: any; access: any },
+    logError: { (err: any): void; (arg0: unknown): void }
+  ) {
     this.fetchers = {};
     this.fetcherIsReadOnly = {};
     this.eachFetcher = eachKeyValue(this.fetchers);
@@ -32,72 +38,99 @@ export class jetElement {
     const fetcherIsReadOnly = this.fetcherIsReadOnly;
     this.logError = logError;
 
-    eachPeerFetcherWithAccess(this, (peerFetchId, fetcher, hasSetAccess) => {
-      try {
-        const isReadOnly = fetchOnly || !hasSetAccess;
-        const mayHaveInterest = fetcher(
-          path,
-          lowerPath,
-          "add",
-          value,
-          isReadOnly
-        );
-        if (mayHaveInterest) {
-          fetchers[peerFetchId] = fetcher;
-          fetcherIsReadOnly[peerFetchId] = isReadOnly;
+    eachPeerFetcherWithAccess(
+      this,
+      (
+        peerFetchId: string | number,
+        fetcher: (
+          arg0: any,
+          arg1: any,
+          arg2: string,
+          arg3: any,
+          arg4: any
+        ) => any,
+        hasSetAccess: any
+      ) => {
+        try {
+          const isReadOnly = fetchOnly || !hasSetAccess;
+          const mayHaveInterest = fetcher(
+            path,
+            lowerPath,
+            "add",
+            value,
+            isReadOnly
+          );
+          if (mayHaveInterest) {
+            fetchers[peerFetchId] = fetcher;
+            fetcherIsReadOnly[peerFetchId] = isReadOnly;
+          }
+        } catch (err) {
+          logError(err);
         }
-      } catch (err) {
-        logError(err);
       }
-    });
+    );
   }
-  _publish = (event) => {
+  _publish = (event: string) => {
     const lowerPath = this.lowerPath;
     const value = this.value;
     const path = this.path;
     const isReadOnly = this.fetcherIsReadOnly;
     const logError = this.logError;
-    this.eachFetcher((id, fetcher) => {
-      try {
-        fetcher(path, lowerPath, event, value, isReadOnly[id]);
-      } catch (err) {
-        logError(err);
+    this.eachFetcher(
+      (
+        id: string | number,
+        fetcher: (arg0: any, arg1: any, arg2: any, arg3: any, arg4: any) => void
+      ) => {
+        try {
+          fetcher(path, lowerPath, event, value, isReadOnly[id]);
+        } catch (err) {
+          logError(err);
+        }
       }
-    });
+    );
   };
-  change = (value) => {
+  change = (value: any) => {
     this.value = value;
     this._publish("change");
   };
   remove = () => {
     this._publish("remove");
   };
-  addFetcher = (id, fetcher, isReadOnly) => {
+  addFetcher = (id: string | number, fetcher: any, isReadOnly: any) => {
     this.fetchers[id] = fetcher;
     this.fetcherIsReadOnly[id] = isReadOnly;
   };
-  removeFetcher = (id) => {
+  removeFetcher = (id: string | number) => {
     delete this.fetchers[id];
     delete this.fetcherIsReadOnly[id];
   };
 }
 
 export class jetElements {
-  instances: jetElement[];
+  instances: Record<any, jetElement>;
   log: Function;
   each: Function;
 
-  constructor(log) {
-    this.instances = [];
+  constructor(
+    log: {
+      (...data: any[]): void;
+      (message?: any, ...optionalParams: any[]): void;
+    } | null
+  ) {
+    this.instances = {};
     this.log = log || console.log;
     this.logError = this.logError.bind(this);
     this.each = eachKeyValue(this.instances);
   }
-  logError = (err) => {
+  logError = (err: { stack: any }) => {
     this.log("fetcher failed:", err);
     this.log("Trace:", err.stack);
   };
-  add = (peers: PeerType, owningPeer: Peer, params: Para) => {
+  add = (
+    peers: PeerType,
+    owningPeer: Peer,
+    params: { path: any; value?: any; fetchOnly?: any; access?: any }
+  ) => {
     const path = params.path;
     if (this.instances[path]) {
       throw invalidParams({
@@ -107,8 +140,8 @@ export class jetElements {
       this.instances[path] = new jetElement(
         peers,
         owningPeer,
-        params,
-        this.logError
+        params as any,
+        this.logError as any
       );
     }
   };
@@ -122,7 +155,7 @@ export class jetElements {
       return el;
     }
   };
-  change = (path, value, peer) => {
+  change = (path: string, value: any, peer: any) => {
     const el = this.get(path);
     if (el.peer !== peer) {
       throw invalidParams({
@@ -132,20 +165,22 @@ export class jetElements {
       el.change(value);
     }
   };
-  removePeer = (peer) => {
+  removePeer = (peer: any) => {
     const toDelete: any[] = [];
-    this.each((path, element) => {
-      if (element.peer === peer) {
-        element.remove(path);
-        toDelete.push(path);
+    this.each(
+      (path: any, element: { peer: any; remove: (arg0: any) => void }) => {
+        if (element.peer === peer) {
+          element.remove(path);
+          toDelete.push(path);
+        }
       }
-    });
+    );
     const instances = this.instances;
     toDelete.forEach((path) => {
       delete instances[path];
     });
   };
-  remove = (path, peer) => {
+  remove = (path: string, peer: any) => {
     const el = this.get(path);
     if (el.peer !== peer) {
       throw invalidParams({
@@ -155,31 +190,71 @@ export class jetElements {
     el.remove();
     delete this.instances[path];
   };
-  addFetcher = (id, fetcher, peer) => {
+  addFetcher = (
+    id: string,
+    fetcher: {
+      (
+        path: any,
+        lowerPath: any,
+        event: any,
+        value: any,
+        fetchOnly: any
+      ): boolean;
+      (arg0: any, arg1: any, arg2: string, arg3: any, arg4: boolean): any;
+    },
+    peer: {
+      fetchingSimple: boolean;
+      sendMessage: (arg0: {
+        method?: string | undefined;
+        params?: any;
+        id?: any;
+        result?: string | undefined;
+      }) => void;
+      addFetcher: (
+        arg0: string,
+        arg1: (
+          path: any,
+          lowerPath: any,
+          event: any,
+          value: any,
+          fetchOnly: any
+        ) => boolean
+      ) => void;
+      id: string;
+    }
+  ) => {
     const logError = this.logError;
-    this.each((path, element) => {
-      if (hasAccess("fetch", peer, element)) {
-        let mayHaveInterest;
-        try {
-          const isReadOnly = isFetchOnly(peer, element);
-          mayHaveInterest = fetcher(
-            path,
-            path.toLowerCase(),
-            "add",
-            element.value,
-            isReadOnly
-          );
-          if (mayHaveInterest) {
-            element.addFetcher(id, fetcher, isReadOnly);
+    this.each(
+      (
+        path: string,
+        element: {
+          value: any;
+          addFetcher: (arg0: any, arg1: any, arg2: boolean) => void;
+        }
+      ) => {
+        if (hasAccess("fetch", peer, element as any)) {
+          let mayHaveInterest;
+          try {
+            const isReadOnly = isFetchOnly(peer, element);
+            mayHaveInterest = fetcher(
+              path,
+              path.toLowerCase(),
+              "add",
+              element.value,
+              isReadOnly
+            );
+            if (mayHaveInterest) {
+              element.addFetcher(id, fetcher, isReadOnly);
+            }
+          } catch (err: any) {
+            logError(err);
           }
-        } catch (err) {
-          logError(err);
         }
       }
-    });
+    );
   };
-  removeFetcher = (id) => {
-    this.each((_, element) => {
+  removeFetcher = (id: string) => {
+    this.each((_: any, element: { removeFetcher: (arg0: any) => void }) => {
       element.removeFetcher(id);
     });
   };

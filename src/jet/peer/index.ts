@@ -1,7 +1,7 @@
 "use strict";
 
-import { Method, State } from "../browser";
-import JsonRPC from "./peer/jsonrpc";
+import { Method, State } from "../../browser";
+import JsonRPC from "./jsonrpc";
 
 const fallbackDaemonInfo = {
   name: "unknown-daemon",
@@ -13,6 +13,16 @@ const fallbackDaemonInfo = {
     batches: true,
   },
 };
+export interface JsonParams {
+  path?: any;
+  args?: any;
+  timeout?: any;
+  user?: any;
+  password?: any;
+  value?: any;
+  valueAsResult?: any;
+  id?: String | undefined;
+}
 
 export interface PeerConfig {
   url?: string;
@@ -52,9 +62,9 @@ export interface PeerConfig {
 export class Peer {
   config: PeerConfig;
   jsonrpc: JsonRPC;
-  daemonInfo: Object | null;
+  daemonInfo: Record<any, any> | null;
   connected = false;
-  access;
+  access: any;
   constructor(config: PeerConfig) {
     this.config = config || {};
     this.jsonrpc = new JsonRPC(config);
@@ -155,7 +165,7 @@ export class Peer {
    * @param {function} action A function performing multiple peer actions.
    *
    */
-  batch = (action) => {
+  batch = (action: () => void) => {
     this.jsonrpc.batch(action);
   };
 
@@ -167,7 +177,10 @@ export class Peer {
    * @param {asNotification} When set we do not want to wait on a result response before handling received add/change events.
    * @returns {external:Promise} Gets resolved as soon as the Daemon has registered the fetch expression.
    */
-  fetch = (fetcher, asNotification = false) => {
+  fetch = (
+    fetcher: { jsonrpc: JsonRPC; variant: any; fetch: (arg0: boolean) => any },
+    asNotification = false
+  ) => {
     if (this.connected) {
       fetcher.jsonrpc = this.jsonrpc;
       // @ts-ignore
@@ -182,7 +195,7 @@ export class Peer {
    * @returns {external:Promise} Gets resolved as soon as the Daemon has unregistered the fetch expression.
    *
    */
-  unfetch = (fetcher) => fetcher.unfetch();
+  unfetch = (fetcher: { unfetch: () => any }) => fetcher.unfetch();
 
   /**
    * Get {State}s and/or {Method}s defined by a Peer.
@@ -190,7 +203,7 @@ export class Peer {
    * @param {object} expression A Fetch expression to retrieve a snapshot of the currently matching data.
    * @returns {external:Promise}
    */
-  get = (expression) => this.jsonrpc.service("get", expression);
+  get = (expression: JsonParams) => this.jsonrpc.service("get", expression);
 
   /**
    * Adds a state or method to the Daemon.
@@ -209,7 +222,7 @@ export class Peer {
    * @param {State|Method} content The content to be removed.
    * @returns {external:Promise} Gets resolved as soon as the content has been removed from the Daemon.
    */
-  remove = (stateOrMethod) => stateOrMethod.remove();
+  remove = (stateOrMethod: { remove: () => any }) => stateOrMethod.remove();
 
   /**
    * Call a {Method} defined by another Peer.
@@ -220,7 +233,11 @@ export class Peer {
    * @param {number} [options.timeout] A timeout for invoking the {Method} after which a timeout error rejects the promise.
    * @returns {external:Promise}
    */
-  call = (path, callparams, options): Promise<Object | null> => {
+  call = (
+    path: any,
+    callparams: any,
+    options: { timeout?: any; skipResult?: any }
+  ): Promise<Object | null> => {
     options = options || {};
     const params = {
       path: path,
@@ -243,7 +260,7 @@ export class Peer {
    * Authenticate
    * @private
    */
-  authenticate = (user, password) =>
+  authenticate = (user: string, password: string | undefined) =>
     this.jsonrpc.service("authenticate", {
       user: user,
       password: password,
@@ -253,7 +270,16 @@ export class Peer {
    *
    * @private
    */
-  configure = (params) => {
+  configure = (params: {
+    path?: any;
+    args?: any;
+    timeout?: any;
+    user?: any;
+    password?: any;
+    value?: any;
+    valueAsResult?: any;
+    id?: String | undefined;
+  }) => {
     return this.jsonrpc.service("config", params);
   };
 
@@ -266,7 +292,11 @@ export class Peer {
    * @param {number} [options.timeout]
    *
    */
-  set = (path, value, options) => {
+  set = (
+    path: any,
+    value: any,
+    options: { timeout?: any; valueAsResult?: any; skipResult?: any }
+  ) => {
     options = options || {};
     const params = {
       path: path,

@@ -1,29 +1,42 @@
 import { accessField, isDefined } from "./utils";
 
-const createSort = (options) => {
+const createSort = (options: {
+  sort: { byValue: any; byValueField: {}; byPath: any; descending: any };
+}) => {
   let sort;
-  let lt, gt;
+  let lt: {
+      (a: any, b: any): boolean;
+      (a: any, b: any): boolean;
+      (a: any, b: any): boolean;
+    },
+    gt: {
+      (a: any, b: any): boolean;
+      (a: any, b: any): boolean;
+      (a: any, b: any): boolean;
+    };
 
   if (
     (!isDefined(options.sort.byValue) &&
       !isDefined(options.sort.byValueField)) ||
     options.sort.byPath
   ) {
-    gt = (a, b) => a.path > b.path;
+    gt = (a: { path: number }, b: { path: number }) => a.path > b.path;
 
-    lt = (a, b) => a.path < b.path;
+    lt = (a: { path: number }, b: { path: number }) => a.path < b.path;
   } else {
     if (options.sort.byValue) {
-      lt = (a, b) => a.value < b.value;
-      gt = (a, b) => a.value > b.value;
+      lt = (a: { value: number }, b: { value: number }) => a.value < b.value;
+      gt = (a: { value: number }, b: { value: number }) => a.value > b.value;
     } else if (options.sort.byValueField) {
       const fieldStr = Object.keys(options.sort.byValueField)[0];
       const getField = accessField(fieldStr);
-      lt = (a, b) => getField(a.value) < getField(b.value);
-      gt = (a, b) => getField(a.value) > getField(b.value);
+      lt = (a: { value: any }, b: { value: any }) =>
+        getField(a.value) < getField(b.value);
+      gt = (a: { value: any }, b: { value: any }) =>
+        getField(a.value) > getField(b.value);
     }
   }
-  const psort = (s, a, b) => {
+  const psort = (s: (arg0: any, arg1: any) => any, a: any, b: any) => {
     try {
       if (s(a, b)) {
         return -1;
@@ -33,26 +46,30 @@ const createSort = (options) => {
   };
 
   if (options.sort.descending) {
-    sort = (a, b) => psort(gt, a, b);
+    sort = (a: any, b: any) => psort(gt, a, b);
   } else {
-    sort = (a, b) => psort(lt, a, b);
+    sort = (a: any, b: any) => psort(lt, a, b);
   }
   return sort;
 };
 
-export const create = (options, notify) => {
+export const create = (options: any, notify: Function) => {
   const matches: any[] = [];
-  const sorted = {};
-  const index = {};
+  const sorted: any = {};
+  const index: any = {};
   let n = -1;
 
   const from = options.sort.from || 1;
   const to = options.sort.to || 10;
   const sort = createSort(options);
 
-  const isInRange = (i) => typeof i === "number" && i >= from && i <= to;
+  const isInRange = (i: number) =>
+    typeof i === "number" && i >= from && i <= to;
 
-  const sorter = (notification, initializing) => {
+  const sorter = (
+    notification: { event: any; path: any; value: any; fetchOnly: any },
+    initializing: any
+  ) => {
     const event = notification.event;
     const path = notification.path;
     const value = notification.value;
@@ -74,7 +91,7 @@ export const create = (options, notify) => {
       match = {
         path: path,
         value: value,
-      };
+      } as any;
       if (notification.fetchOnly) {
         match.fetchOnly = true;
       }
@@ -96,7 +113,7 @@ export const create = (options, notify) => {
       match = {
         path: path,
         value: value,
-      };
+      } as any;
       if (notification.fetchOnly) {
         match.fetchOnly = true;
       }
@@ -128,7 +145,7 @@ export const create = (options, notify) => {
           path: path,
           value: value,
           index: newIndex,
-        };
+        } as any;
         if (matches[newIndex - 1].fetchOnly) {
           change.fetchOnly = true;
         }
@@ -166,7 +183,7 @@ export const create = (options, notify) => {
           path: news.path,
           value: news.value,
           index: i,
-        };
+        } as any;
         if (news.fetchOnly) {
           change.fetchOnly = true;
         }

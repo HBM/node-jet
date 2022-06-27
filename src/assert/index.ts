@@ -1,7 +1,12 @@
 import assert from "assert";
 import { FetchChainer } from "../browser";
 
-export const changesTo = (peer, path, value, done) => {
+export const changesTo = (
+  peer: { fetch: (arg0: FetchChainer) => void },
+  path: any,
+  value: any,
+  done: () => void
+) => {
   const fetcher = new FetchChainer().path("equals", path).on("data", (data) => {
     if (data.event !== "change") {
       return;
@@ -16,7 +21,11 @@ export const changesTo = (peer, path, value, done) => {
   });
   peer.fetch(fetcher);
 };
-export const getsRemoved = (peer, path, done) => {
+export const getsRemoved = (
+  peer: { fetch: (arg0: FetchChainer) => void },
+  path: any,
+  done: () => void
+) => {
   const fetcher = new FetchChainer().path("equals", path).on("data", (data) => {
     if (data.event !== "remove") {
       return;
@@ -30,7 +39,12 @@ export const getsRemoved = (peer, path, done) => {
   });
   peer.fetch(fetcher);
 };
-export const isState = (peer, path, value, done) => {
+export const isState = (
+  peer: { fetch: (arg0: FetchChainer) => void },
+  path: any,
+  value: any,
+  done: () => void
+) => {
   if (!done) {
     done = value;
     value = undefined;
@@ -52,7 +66,11 @@ export const isState = (peer, path, value, done) => {
   });
   peer.fetch(fetcher);
 };
-export const isMethod = (peer, path, done) => {
+export const isMethod = (
+  peer: { fetch: (arg0: FetchChainer) => void },
+  path: any,
+  done: () => void
+) => {
   const fetcher = new FetchChainer().path("equals", path).on("data", (data) => {
     assert.equal(data.event, "add");
     assert.equal(data.path, path);

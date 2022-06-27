@@ -1,6 +1,7 @@
 "use strict";
 
 import { isDefined, errorObject } from "../utils";
+import JsonRPC from "./jsonrpc";
 
 /**
  * Create a Jet State instance
@@ -21,13 +22,13 @@ export const noop = () => {};
 export class State {
   _path;
   _value;
-  _access;
-  _dispatcher;
+  _access: null;
+  _dispatcher: any;
   _isAddedPromise;
-  _isAddedPromiseResolve;
-  _isAddedPromiseReject;
-  jsonrpc;
-  constructor(path, initialValue, access = null) {
+  _isAddedPromiseResolve!: (value: unknown) => void;
+  _isAddedPromiseReject!: (arg0: string) => void;
+  jsonrpc!: JsonRPC;
+  constructor(path: any, initialValue: any, access = null) {
     this._path = path;
     this._value = initialValue;
     this._access = access;
@@ -132,7 +133,7 @@ export class State {
    * @param {State~setCallback} setCallback A callback which is invoked to handle a remotely invoked 'set' request.
    *
    */
-  on = (event, cb) => {
+  on = (event: string, cb: string | any[]) => {
     if (event === "set") {
       if (cb.length === 1) {
         this._dispatcher = this.createSyncDispatcher(cb);
@@ -145,9 +146,12 @@ export class State {
     }
   };
 
-  createSyncDispatcher = (cb) => {
+  createSyncDispatcher = (cb: any) => {
     const that = this;
-    const dispatcher = (message) => {
+    const dispatcher = (message: {
+      params: { value: any; valueAsResult: any };
+      id: number;
+    }) => {
       const value = message.params.value;
       try {
         const result = cb.call(that, value) || {};
@@ -190,20 +194,20 @@ export class State {
     return dispatcher;
   };
 
-  createAsyncDispatcher = (cb) => {
-    const that = this;
-
-    const dispatch = (message) => {
+  createAsyncDispatcher = (cb: any) => {
+    const dispatch = (message: {
+      params: { value: any; valueAsResult: any };
+      id: any;
+    }) => {
       const value = message.params.value;
       const mid = message.id;
-      const reply = (resp) => {
+      const reply = (resp: { value?: any; error?: any; dontNotify?: any }) => {
         resp = resp || {};
         if (isDefined(resp.value)) {
-          that._value = resp.value;
+          this._value = resp.value;
         } else {
-          that._value = value;
+          this._value = value;
         }
-        /* istanbul ignore else */
         if (isDefined(mid)) {
           const response = {
             id: mid,
@@ -212,18 +216,17 @@ export class State {
           };
           if (!isDefined(resp.error)) {
             if (message.params.valueAsResult) {
-              response.result = that._value;
+              response.result = this._value;
             } else {
               response.result = true;
             }
           } else {
             response.error = errorObject(resp.error);
           }
-          that.jsonrpc.queue(response);
+          this.jsonrpc.queue(response);
         }
-        /* istanbul ignore else */
         if (!isDefined(resp.error) && !isDefined(resp.dontNotify)) {
-          that.jsonrpc.queue({
+          this.jsonrpc.queue({
             method: "change",
             params: {
               path: that._path,
@@ -231,14 +234,13 @@ export class State {
             },
           });
         }
-        that.jsonrpc.flush(resp.dontNotify);
+        this.jsonrpc.flush();
       };
       try {
-        cb.call(that, value, reply);
+        cb.call(this, value, reply);
       } catch (err) {
-        /* istanbul ignore else */
         if (isDefined(mid)) {
-          that.jsonrpc.queue({
+          this.jsonrpc.queue({
             id: mid,
             error: errorObject(err),
           });
@@ -250,10 +252,10 @@ export class State {
 
   add = () => {
     const that = this;
-    const addDispatcher = (success) => {
+    const addDispatcher = (success: any) => {
       if (success) {
         that.jsonrpc.addRequestDispatcher(that._path, that._dispatcher);
-        that._isAddedPromiseResolve();
+        that._isAddedPromiseResolve(null);
       } else {
         that._isAddedPromise.catch(() => {});
         that._isAddedPromiseReject("add failed");
@@ -272,39 +274,36 @@ export class State {
   };
 
   remove = () => {
-    const that = this;
     const params = {
       path: this._path,
     };
-    const removeDispatcher = (success) => {
-      /* istanbul ignore else */
+    const removeDispatcher = (success: any) => {
       if (success) {
-        that._isAddedPromise = new Promise((resolve, reject) => {
-          that._isAddedPromiseResolve = resolve;
-          that._isAddedPromiseReject = reject;
+        this._isAddedPromise = new Promise((resolve, reject) => {
+          this._isAddedPromiseResolve = resolve;
+          this._isAddedPromiseReject = reject;
         });
-        that.jsonrpc.removeRequestDispatcher(that._path, that._dispatcher);
+        this.jsonrpc.removeRequestDispatcher(this._path);
       }
     };
-    return that.jsonrpc.service("remove", params, removeDispatcher);
+    return this.jsonrpc.service("remove", params, removeDispatcher);
   };
 
   isAdded = () => {
     return this.jsonrpc.hasRequestDispatcher(this._path);
   };
 
-  value = (newValue, notAsNotification) => {
+  value = (newValue: any, notAsNotification: any) => {
     if (isDefined(newValue)) {
       this._value = newValue;
-      const that = this;
       return this._isAddedPromise.then(() => {
-        return that.jsonrpc.service(
+        return this.jsonrpc.service(
           "change",
           {
-            path: that._path,
+            path: this._path,
             value: newValue,
           },
-          null,
+          undefined,
           !notAsNotification
         );
       });

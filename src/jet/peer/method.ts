@@ -2,19 +2,20 @@
  * Helpers
  */
 import { errorObject, isDefined } from "../utils";
+import JsonRPC from "./jsonrpc";
 /**
  * Method
  */
 export class Method {
   _path;
-  _access;
-  _dispatcher;
-  jsonrpc;
-  constructor(path, access = null) {
+  _access: null;
+  _dispatcher!: { (message: any): void; (message: any): void };
+  jsonrpc!: JsonRPC;
+  constructor(path: any, access = null) {
     this._path = path;
     this._access = access;
   }
-  on = (event, cb) => {
+  on = (event: string, cb: any) => {
     if (event === "call") {
       if (cb.length <= 1) {
         this._dispatcher = this.createSyncDispatcher(cb);
@@ -26,8 +27,8 @@ export class Method {
       throw new Error("event not available");
     }
   };
-  createSyncDispatcher = (cb) => {
-    const dispatch = (message) => {
+  createSyncDispatcher = (cb: any) => {
+    const dispatch = (message: { params: any; id: any }) => {
       const params = message.params;
       let result;
       let err;
@@ -53,10 +54,10 @@ export class Method {
     };
     return dispatch;
   };
-  createAsyncDispatcher = (cb) => {
-    const dispatch = (message) => {
+  createAsyncDispatcher = (cb: any) => {
+    const dispatch = (message: { id: any; params: any }) => {
       const mid = message.id;
-      const reply = (resp) => {
+      const reply = (resp: { result?: any; error?: any }) => {
         resp = resp || {};
         if (isDefined(mid)) {
           const response = {
@@ -97,7 +98,7 @@ export class Method {
     return this._path;
   };
   add = () => {
-    const addDispatcher = (success) => {
+    const addDispatcher = (success: any) => {
       if (success) {
         this.jsonrpc.addRequestDispatcher(this._path, this._dispatcher);
       }
@@ -113,7 +114,7 @@ export class Method {
       path: this._path,
     };
     const removeDispatcher = () => {
-      this.jsonrpc.removeRequestDispatcher(this._path, this._dispatcher);
+      this.jsonrpc.removeRequestDispatcher(this._path);
     };
     return this.jsonrpc.service("remove", params, removeDispatcher);
   };
