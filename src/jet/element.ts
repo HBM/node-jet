@@ -223,6 +223,7 @@ export class jetElements {
       id: string;
     }
   ) => {
+    console.log("adding fetcher");
     const logError = this.logError;
     this.each(
       (
@@ -233,6 +234,7 @@ export class jetElements {
         }
       ) => {
         if (hasAccess("fetch", peer, element as any)) {
+          console.log("Received fetch");
           let mayHaveInterest;
           try {
             const isReadOnly = isFetchOnly(peer, element);
@@ -246,8 +248,8 @@ export class jetElements {
             if (mayHaveInterest) {
               element.addFetcher(id, fetcher, isReadOnly);
             }
-          } catch (err: any) {
-            logError(err);
+          } catch (err) {
+            logError(err as any);
           }
         }
       }

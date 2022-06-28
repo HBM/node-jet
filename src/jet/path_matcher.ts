@@ -33,7 +33,8 @@ const containsOneOf = (whatArray: string | any[]) => {
 
 const startsWith = (what: string | any[]) => {
   return (path: string) => {
-    return path.substr(0, what.length) === what;
+    console.log(path);
+    return path.substring(0, what.length) === what;
   };
 };
 
@@ -154,6 +155,7 @@ export const create = (options: any) => {
     if (predicates.length === 1) {
       pred = predicates[0];
       pathMatcher = ({ path }: Notification) => pred(path);
+      console.log("Pathmatcher", pathMatcher);
     } else {
       pathMatcher = ({ path }: Notification) => applyPredicates(path);
     }

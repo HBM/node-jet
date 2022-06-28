@@ -5,13 +5,7 @@ import { ConnectionClosed, createTypedError } from "../errors";
 import { JsonParams, PeerConfig } from "../peer";
 import { errorObject, isDefined as isDef } from "../utils";
 
-const MessageSocket =
-  typeof window === "undefined" && require("../message-socket").MessageSocket;
-const WebSocket =
-  global.WebSocket ||
-  (typeof window !== "undefined" && window.WebSocket) ||
-  require("ws"); // eslint-disable-line no-use-before-define
-
+import { MessageSocket } from "../message-socket";
 /**
  * Helper shorthands.
  */

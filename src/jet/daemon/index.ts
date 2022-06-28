@@ -16,9 +16,9 @@ import {
 } from "../fetch-common";
 import { Router } from "./router";
 import { Peers } from "./peers";
-import { jetElement, jetElements } from "../element";
+import { jetElements } from "../element";
 import { JsonRPC } from "./jsonrpc";
-import { create } from "../fetcher";
+import { create, Notification } from "../fetcher";
 import EventEmitter from "events";
 import { noop } from "../../browser";
 
@@ -143,20 +143,7 @@ export class Daemon extends EventEmitter.EventEmitter {
 
   // dispatches the 'fetch' (simple variant) jet call.
   // sets up simple fetching for this peer (fetch all (with access), unsorted).
-  fetchSimple = (
-    peer: {
-      fetchingSimple: boolean;
-      sendMessage: (arg0: {
-        method?: string;
-        params?: any;
-        id?: any;
-        result?: string;
-      }) => void;
-      addFetcher: (arg0: string, arg1: (_: jetElement) => boolean) => void;
-      id: string;
-    },
-    message: { id: any }
-  ) => {
+  fetchSimple = (peer: any, message: { id: any }) => {
     if (peer.fetchingSimple === true) {
       throw invalidParams("already fetching");
     }
@@ -175,7 +162,7 @@ export class Daemon extends EventEmitter.EventEmitter {
         result: this.fetchSimpleId,
       });
     }
-    peer.addFetcher(this.fetchSimpleId, fetcher);
+    peer.addFetcher(this.fetchSimpleId, fetcher as any);
     this.elements.addFetcher(peer.id + this.fetchSimpleId, fetcher, peer);
   };
 
@@ -206,7 +193,7 @@ export class Daemon extends EventEmitter.EventEmitter {
     let result;
 
     if (params.sort) {
-      queueNotification = (nparams: { changes: any }) => {
+      queueNotification = (nparams: Notification) => {
         result = nparams.changes;
       };
     } else {
@@ -240,7 +227,7 @@ export class Daemon extends EventEmitter.EventEmitter {
     message: { id: any }
   ) => {
     const params = checked(message, "params", "object");
-    const fetchId = checked(params, "id", null);
+    const fetchId = checked(params, "id");
 
     const queueNotification = (nparams: any) => {
       peer.sendMessage({
@@ -272,7 +259,7 @@ export class Daemon extends EventEmitter.EventEmitter {
   // creates an entry in the "route" table if it is a request and sets up a timer
   // which will respond a response timeout error to the requestor if
   // no corresponding response is received.
-  route = (peer: any, message: { params: any; method: string; id: any }) => {
+  route = (peer: any, message: any) => {
     const params = message.params;
     const path = checked(params, "path", "string");
     const element = this.elements.get(path);
@@ -323,7 +310,7 @@ export class Daemon extends EventEmitter.EventEmitter {
     removeCore(peer, this.elements, params);
   };
 
-  config = (peer: { name: any }, message: { params: any }) => {
+  config = (peer: any, message: any) => {
     const params = message.params;
     const name = params.name;
     delete params.name;
@@ -374,9 +361,9 @@ export class Daemon extends EventEmitter.EventEmitter {
   safe = (f: any) => {
     return (
       peer: {
-        sendMessage: (arg0: { id: any; result?: any; error?: any }) => void;
+        sendMessage: (arg0: any) => void;
       },
-      message: { id: any }
+      message: any
     ) => {
       try {
         const result = f(peer, message) || true;
@@ -399,7 +386,7 @@ export class Daemon extends EventEmitter.EventEmitter {
 
   safeForward = (f: any) => {
     return (
-      peer: { sendMessage: (arg0: { id: any; error: any }) => void },
+      peer: { sendMessage: (arg0: any) => void },
       message: { id: any }
     ) => {
       try {
@@ -522,7 +509,7 @@ export class Daemon extends EventEmitter.EventEmitter {
       });
       this.wsServer.on(
         "connection",
-        (ws: { readyState: any; ping: () => void }, req: { _jetAuth: any }) => {
+        (ws: { readyState: any; ping: () => void }, req: any) => {
           const peer = this.peers.add(ws as any);
           peer.auth = req._jetAuth;
           const pingMs = listenOptions.wsPingInterval || 5000;

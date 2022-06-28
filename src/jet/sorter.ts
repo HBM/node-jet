@@ -66,10 +66,7 @@ export const create = (options: any, notify: Function) => {
   const isInRange = (i: number) =>
     typeof i === "number" && i >= from && i <= to;
 
-  const sorter = (
-    notification: { event: any; path: any; value: any; fetchOnly: any },
-    initializing: any
-  ) => {
+  const sorter = (notification: any, initializing: any) => {
     const event = notification.event;
     const path = notification.path;
     const value = notification.value;

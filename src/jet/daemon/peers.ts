@@ -74,13 +74,14 @@ export class Peers {
     const peerId = genPeerId(sock);
 
     peer.sendMessage = (message) => {
-      console.log("Now sending for real", message);
+      console.log("Now sending:", message);
       message = JSON.stringify(message);
       sock.send(message);
     };
 
     sock.on("message", (message: string) => {
       try {
+        console.log("Received:", message);
         this.jsonrpc.dispatch(peer, message);
       } catch (e) {
         this.remove(peer);

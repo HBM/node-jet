@@ -6,6 +6,7 @@ import {
   removeCore,
   unfetchCore,
 } from "../fetch-common";
+import { Notification } from "../fetcher";
 import { eachKeyValue, isDefined } from "../utils";
 import JsonRPC from "./jsonrpc";
 
@@ -83,10 +84,10 @@ export class FakePeer {
  * @private
  */
 export class FakeFetcher {
-  wrappedFetchDispatcher: Function;
+  wrappedFetchDispatcher: (_: Notification) => void;
   fetchSimpleDispatcher: Function;
-  fetchParams;
-  jsonrpc;
+  fetchParams: any;
+  jsonrpc: any;
   constructor(
     jsonrpc: {
       fakeContext: any;
@@ -213,7 +214,7 @@ export class Fetcher {
   id: String;
   jsonrpc: JsonRPC;
   asNotification = true;
-  params;
+  params: any;
   constructor(
     jsonrpc: JsonRPC,
     params: {

@@ -8,6 +8,7 @@ export interface Notification {
   fetchOnly?: boolean;
   path: any;
   lowerPath?: any;
+  changes?: any;
   event: any;
   value: any;
 }
@@ -39,7 +40,8 @@ export const create = (options: any, notify: (_: Notification) => void) => {
 
   if (isDefined(pathMatcher) && !isDefined(valueMatcher)) {
     return (n: Notification) => {
-      if (pathMatcher && !pathMatcher(n.path, n.lowerPath)) {
+      console.log("Notification:", n);
+      if (pathMatcher && !pathMatcher(n)) {
         // return false to indicate no further interest.
         return false;
       }
@@ -56,7 +58,8 @@ export const create = (options: any, notify: (_: Notification) => void) => {
     };
   } else if (isDefined(pathMatcher) && isDefined(valueMatcher)) {
     return (n: Notification) => {
-      if (pathMatcher && !pathMatcher(n.path, n.lowerPath)) {
+      console.log("Notification:", n);
+      if (pathMatcher && !pathMatcher(n)) {
         return false;
       }
       return matchValue(n);

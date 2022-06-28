@@ -32,14 +32,14 @@ export const invalidRequest = (data: any) => {
   };
 };
 
-export const isDefined = (x: unknown) => {
+export const isDefined = (x: any) => {
   if (typeof x === "undefined" || x === null) {
     return false;
   }
   return true;
 };
 
-export const checked = (tab: any, key: string, typename: string | null) => {
+export const checked = (tab: any, key: any, typename: any = "") => {
   const p = tab[key];
   if (isDefined(p)) {
     if (typename) {
@@ -63,11 +63,7 @@ export const checked = (tab: any, key: string, typename: string | null) => {
   }
 };
 
-export const optional = (
-  tab: { [x: string]: any },
-  key: string,
-  typename: string
-) => {
+export const optional = (tab: any, key: string, typename: string) => {
   const p = tab[key];
   if (isDefined(p)) {
     if (typename) {
@@ -84,7 +80,7 @@ export const optional = (
   }
 };
 
-export const accessField = (fieldStr: string) => {
+export const accessField = (fieldStr: any) => {
   if (fieldStr.substr(0, 1) !== "[") {
     fieldStr = "." + fieldStr;
   }
@@ -125,7 +121,7 @@ export const errorObject = (err: any) => {
   }
 };
 
-export const eachKeyValue = (obj: Record<any, any>) => {
+export const eachKeyValue = (obj: any) => {
   return (f: (arg0: string, arg1: any) => void) => {
     for (const key in obj) {
       if (Object.hasOwnProperty.call(obj, key)) {

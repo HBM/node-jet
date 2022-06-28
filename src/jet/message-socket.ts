@@ -1,5 +1,5 @@
 import EventEmitter from "events";
-import * as net from "net";
+import net from "net";
 
 /**
  * MessageSocket constructor function.
@@ -8,8 +8,8 @@ import * as net from "net";
 export class MessageSocket extends EventEmitter.EventEmitter {
   last = Buffer.alloc(0);
   len = -1;
-  socket;
-  constructor(port: net.Socket | net.NetConnectOpts, ip = undefined) {
+  socket: net.Socket;
+  constructor(port: any, ip: string = "") {
     super();
     if (port instanceof net.Socket) {
       this.socket = port;
@@ -20,7 +20,7 @@ export class MessageSocket extends EventEmitter.EventEmitter {
       });
     }
 
-    this.socket.on("data", (buf) => {
+    this.socket.on("data", (buf: Uint8Array) => {
       let bigBuf = Buffer.concat([this.last, buf]);
       while (true) {
         // eslint-disable-line no-constant-condition
@@ -58,7 +58,7 @@ export class MessageSocket extends EventEmitter.EventEmitter {
       this.emit("close");
     });
 
-    this.socket.once("error", (e) => {
+    this.socket.once("error", (e: any) => {
       this.emit("error", e);
     });
   }
@@ -157,9 +157,9 @@ export class MessageSocket extends EventEmitter.EventEmitter {
  * @api private
  */
 class MessageEvent {
-  data;
-  type;
-  target;
+  data: any;
+  type: any;
+  target: any;
   constructor(dataArg: any, typeArg: string, target: any) {
     this.data = dataArg;
     this.type = typeArg;
@@ -175,10 +175,10 @@ class MessageEvent {
  * @api private
  */
 class CloseEvent {
-  wasClean;
-  code;
-  reason;
-  target;
+  wasClean: any;
+  code: any;
+  reason: any;
+  target: any;
   constructor(code: number, reason: any, target: any) {
     this.wasClean = typeof code === "undefined" || code === 1000;
     this.code = code;

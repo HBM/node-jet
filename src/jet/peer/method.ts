@@ -7,7 +7,7 @@ import JsonRPC from "./jsonrpc";
  * Method
  */
 export class Method {
-  _path;
+  _path: any;
   _access: null;
   _dispatcher!: { (message: any): void; (message: any): void };
   jsonrpc!: JsonRPC;

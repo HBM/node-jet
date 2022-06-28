@@ -1,9 +1,10 @@
 "use strict";
 
 import { create } from "./sorter";
-import { create as createFetcher } from "./fetcher";
+import { create as createFetcher, Notification } from "./fetcher";
 import { checked, isDefined } from "./utils";
 import { jetElements } from "./element";
+import { Message } from "./daemon/access";
 
 // dispatches the 'fetch' jet call.
 // creates a fetch operation and optionally a sorter.
@@ -12,21 +13,16 @@ import { jetElements } from "./element";
 // it "shows interest".
 export const fetchCore = (
   peer: {
-    sendMessage?: (arg0: {
-      method?: any;
-      params?: any;
-      id?: any;
-      result?: boolean | undefined;
-    }) => void;
+    sendMessage?: (arg0: Message) => void;
     addFetcher?: any;
     id?: any;
   },
   elements: jetElements,
   params: any[],
-  notify: Function,
+  notify: (_: Notification) => void,
   success: { (): void; (): void; (): void } | null
 ) => {
-  const fetchId = checked(params, "id", null);
+  const fetchId = checked(params, "id");
 
   let fetcher;
   let sorter: any;
