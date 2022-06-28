@@ -39,13 +39,13 @@ export const isDefined = (x: any) => {
   return true;
 };
 
-export const checked = (tab: any, key: any, typename: any = "") => {
+export const checked = <Type>(tab: any, key: any): Type => {
   const p = tab[key];
   if (isDefined(p)) {
-    if (typename) {
+    if (Type) {
       if (typeof p === typename) {
         // eslint-disable-line
-        return p;
+        return p as Type;
       } else {
         throw invalidParams({
           wrongType: key,
@@ -80,8 +80,8 @@ export const optional = (tab: any, key: string, typename: string) => {
   }
 };
 
-export const accessField = (fieldStr: any) => {
-  if (fieldStr.substr(0, 1) !== "[") {
+export const accessField = (fieldStr: string) => {
+  if (fieldStr.substring(0, 1) !== "[") {
     fieldStr = "." + fieldStr;
   }
   const funStr = "return t" + fieldStr;

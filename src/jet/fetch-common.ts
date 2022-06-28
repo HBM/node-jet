@@ -4,7 +4,6 @@ import { create } from "./sorter";
 import { create as createFetcher, Notification } from "./fetcher";
 import { checked, isDefined } from "./utils";
 import { jetElements } from "./element";
-import { Message } from "./daemon/access";
 
 // dispatches the 'fetch' jet call.
 // creates a fetch operation and optionally a sorter.
@@ -13,14 +12,14 @@ import { Message } from "./daemon/access";
 // it "shows interest".
 export const fetchCore = (
   peer: {
-    sendMessage?: (arg0: Message) => void;
+    sendMessage?: any;
     addFetcher?: any;
     id?: any;
   },
   elements: jetElements,
-  params: any[],
+  params: any,
   notify: (_: Notification) => void,
-  success: { (): void; (): void; (): void } | null
+  success: () => void | null
 ) => {
   const fetchId = checked(params, "id");
 
@@ -58,20 +57,18 @@ export const unfetchCore = (
   peer: { id: any; removeFetcher: (arg0: any) => void },
   elements: jetElements,
   params: {
-    path?: { caseInsensitive?: Boolean | undefined } | undefined;
-    valueField?: Record<any, any> | undefined;
-    value?: Record<any, any> | undefined;
-    sort?:
-      | {
-          asArray?: Boolean | undefined;
-          descending?: Boolean | undefined;
-          byPath?: Boolean | undefined;
-          byValueField?: Record<any, any> | undefined;
-          byValue?: Boolean | undefined;
-          from?: Record<any, any> | undefined;
-          to?: Record<any, any> | undefined;
-        }
-      | undefined;
+    path?: { caseInsensitive?: Boolean };
+    valueField?: Record<any, any>;
+    value?: Record<any, any>;
+    sort?: {
+      asArray?: Boolean;
+      descending?: Boolean;
+      byPath?: Boolean;
+      byValueField?: Record<any, any>;
+      byValue?: Boolean;
+      from?: Record<any, any>;
+      to?: Record<any, any>;
+    };
     id?: any;
   }
 ) => {

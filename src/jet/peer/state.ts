@@ -20,7 +20,7 @@ import JsonRPC from "./jsonrpc";
  */
 export const noop = () => {};
 export class State {
-  _path: any;
+  _path: string;
   _value: any;
   _access: null;
   _dispatcher: any;
@@ -28,7 +28,7 @@ export class State {
   _isAddedPromiseResolve!: (value: unknown) => void;
   _isAddedPromiseReject!: (arg0: string) => void;
   jsonrpc!: JsonRPC;
-  constructor(path: any, initialValue: any, access = null) {
+  constructor(path: string, initialValue: any, access = null) {
     this._path = path;
     this._value = initialValue;
     this._access = access;

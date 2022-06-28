@@ -7,11 +7,11 @@ import JsonRPC from "./jsonrpc";
  * Method
  */
 export class Method {
-  _path: any;
+  _path: string;
   _access: null;
   _dispatcher!: { (message: any): void; (message: any): void };
   jsonrpc!: JsonRPC;
-  constructor(path: any, access = null) {
+  constructor(path: string, access = null) {
     this._path = path;
     this._access = access;
   }

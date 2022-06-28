@@ -14,7 +14,7 @@ const fallbackDaemonInfo = {
   },
 };
 export interface JsonParams {
-  path?: any;
+  path?: string;
   args?: any;
   timeout?: any;
   user?: any;
@@ -234,7 +234,7 @@ export class Peer {
    * @returns {external:Promise}
    */
   call = (
-    path: any,
+    path: string,
     callparams: any,
     options: { timeout?: any; skipResult?: any }
   ): Promise<Object | null> => {
@@ -271,7 +271,7 @@ export class Peer {
    * @private
    */
   configure = (params: {
-    path?: any;
+    path?: string;
     args?: any;
     timeout?: any;
     user?: any;
@@ -293,7 +293,7 @@ export class Peer {
    *
    */
   set = (
-    path: any,
+    path: string,
     value: any,
     options: { timeout?: any; valueAsResult?: any; skipResult?: any }
   ) => {

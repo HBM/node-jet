@@ -1,14 +1,14 @@
-import { Notification } from "./fetcher";
+// import { Notification } from "./fetcher";
 import { isDefined } from "./utils";
 
-const contains = (what: any) => {
-  return (path: string | any[]) => {
+const contains = (what: string) => {
+  return (path: string) => {
     return path.indexOf(what) !== -1;
   };
 };
 
-const containsAllOf = (whatArray: string | any[]) => {
-  return (path: string | any[]) => {
+const containsAllOf = (whatArray: string | string[]) => {
+  return (path: string | string[]) => {
     let i;
     for (i = 0; i < whatArray.length; i = i + 1) {
       if (path.indexOf(whatArray[i]) === -1) {
@@ -19,8 +19,8 @@ const containsAllOf = (whatArray: string | any[]) => {
   };
 };
 
-const containsOneOf = (whatArray: string | any[]) => {
-  return (path: string | any[]) => {
+const containsOneOf = (whatArray: string | string[]) => {
+  return (path: string | string[]) => {
     let i;
     for (i = 0; i < whatArray.length; i = i + 1) {
       if (path.indexOf(whatArray[i]) !== -1) {
@@ -31,9 +31,8 @@ const containsOneOf = (whatArray: string | any[]) => {
   };
 };
 
-const startsWith = (what: string | any[]) => {
+const startsWith = (what: string) => {
   return (path: string) => {
-    console.log(path);
     return path.substring(0, what.length) === what;
   };
 };
@@ -50,8 +49,8 @@ const equals = (what: any) => {
   };
 };
 
-const equalsOneOf = (whatArray: string | any[]) => {
-  return (path: any) => {
+const equalsOneOf = (whatArray: string | string[]) => {
+  return (path: string) => {
     let i;
     for (i = 0; i < whatArray.length; i = i + 1) {
       if (path === whatArray[i]) {
@@ -62,14 +61,7 @@ const equalsOneOf = (whatArray: string | any[]) => {
   };
 };
 
-const negate = (gen: {
-  (what: any): (path: any) => boolean;
-  (what: any): (path: any) => boolean;
-  (what: any): (path: any) => boolean;
-  (what: any): (path: any) => boolean;
-  (whatArray: any): (path: any) => boolean;
-  apply?: any;
-}) => {
+const negate = (gen: any) => {
   return (...args: any) => {
     const f = gen.apply(undefined, args);
     return () => {
@@ -133,7 +125,7 @@ export const create = (options: any) => {
     }
   });
 
-  const applyPredicates = (path: any) => {
+  const applyPredicates = (path: string) => {
     for (let i = 0; i < predicates.length; ++i) {
       if (!predicates[i](path)) {
         return false;
@@ -147,17 +139,24 @@ export const create = (options: any) => {
   if (ci) {
     if (predicates.length === 1) {
       pred = predicates[0];
-      pathMatcher = ({ lowerPath }: Notification) => pred(lowerPath);
+      pathMatcher = function (path: string, _lowerPath: string) {
+        return pred(path);
+      };
     } else {
-      pathMatcher = ({ lowerPath }: Notification) => applyPredicates(lowerPath);
+      pathMatcher = function (path: string, _lowerPath: string) {
+        return applyPredicates(path);
+      };
     }
   } else {
     if (predicates.length === 1) {
       pred = predicates[0];
-      pathMatcher = ({ path }: Notification) => pred(path);
-      console.log("Pathmatcher", pathMatcher);
+      pathMatcher = function (path: any, _lowerPath: any) {
+        return pred(path);
+      };
     } else {
-      pathMatcher = ({ path }: Notification) => applyPredicates(path);
+      pathMatcher = function (path: any, _lowerPath: any) {
+        return applyPredicates(path);
+      };
     }
   }
 

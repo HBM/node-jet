@@ -30,8 +30,8 @@ export const hasAccess = (
   accessName: string,
   peer: {
     fetchingSimple?: boolean;
-    sendMessage?: (arg0: any) => void;
-    addFetcher?: (arg0: string, arg1: () => boolean) => void;
+    sendMessage?: any;
+    addFetcher?: any;
     id?: string;
     auth?: any;
   },
@@ -49,8 +49,8 @@ export const hasAccess = (
 export const isFetchOnly = (
   peer: {
     fetchingSimple: boolean;
-    sendMessage: (arg0: Message) => void;
-    addFetcher: (arg0: string, arg1: () => boolean) => void;
+    sendMessage: any;
+    addFetcher: any;
     id: string;
   },
   element: any

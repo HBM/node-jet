@@ -60,7 +60,7 @@ export const responseTimeout = (data: any) => {
 export class BaseError extends Error {
   url = "";
   stack = undefined as any;
-  constructor(name: string, message: string | undefined, stack = undefined) {
+  constructor(name: any, message: any, stack = undefined) {
     super(message);
     this.name = "jet." + name;
     const errorUrlBase =

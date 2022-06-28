@@ -6,12 +6,12 @@ import Peer from "./peer";
 import { invalidParams, eachKeyValue } from "./utils";
 
 export class jetElement {
-  fetchers: Record<any, any>;
-  fetcherIsReadOnly: Record<any, any>;
+  fetchers: any;
+  fetcherIsReadOnly: any;
   eachFetcher: Function;
-  peer: Record<any, any>;
+  peer: any;
   access: any;
-  path: any;
+  path: string;
   lowerPath: any;
   fetchOnly: any;
   value: any;
@@ -21,8 +21,8 @@ export class jetElement {
   constructor(
     eachPeerFetcherWithAccess: any,
     owningPeer: Record<any, any>,
-    params: { path: any; value: any; fetchOnly: any; access: any },
-    logError: { (err: any): void; (arg0: unknown): void }
+    params: any,
+    logError: any
   ) {
     this.fetchers = {};
     this.fetcherIsReadOnly = {};
@@ -49,7 +49,7 @@ export class jetElement {
           arg3: any,
           arg4: any
         ) => any,
-        hasSetAccess: any
+        hasSetAccess: boolean
       ) => {
         try {
           const isReadOnly = fetchOnly || !hasSetAccess;
@@ -111,12 +111,7 @@ export class jetElements {
   log: Function;
   each: Function;
 
-  constructor(
-    log: {
-      (...data: any[]): void;
-      (message?: any, ...optionalParams: any[]): void;
-    } | null
-  ) {
+  constructor(log: any | null) {
     this.instances = {};
     this.log = log || console.log;
     this.logError = this.logError.bind(this);
@@ -129,7 +124,7 @@ export class jetElements {
   add = (
     peers: PeerType,
     owningPeer: Peer,
-    params: { path: any; value?: any; fetchOnly?: any; access?: any }
+    params: { path: string; value?: any; fetchOnly?: any; access?: any }
   ) => {
     const path = params.path;
     if (this.instances[path]) {
@@ -192,38 +187,20 @@ export class jetElements {
   };
   addFetcher = (
     id: string,
-    fetcher: {
-      (
-        path: any,
-        lowerPath: any,
-        event: any,
-        value: any,
-        fetchOnly: any
-      ): boolean;
-      (arg0: any, arg1: any, arg2: string, arg3: any, arg4: boolean): any;
-    },
+    fetcher: (
+      path: string,
+      lowerPath: string,
+      event: any,
+      value: any,
+      fetchOnly: boolean
+    ) => boolean,
     peer: {
       fetchingSimple: boolean;
-      sendMessage: (arg0: {
-        method?: string | undefined;
-        params?: any;
-        id?: any;
-        result?: string | undefined;
-      }) => void;
-      addFetcher: (
-        arg0: string,
-        arg1: (
-          path: any,
-          lowerPath: any,
-          event: any,
-          value: any,
-          fetchOnly: any
-        ) => boolean
-      ) => void;
+      sendMessage: any;
+      addFetcher: any;
       id: string;
     }
   ) => {
-    console.log("adding fetcher");
     const logError = this.logError;
     this.each(
       (
@@ -234,7 +211,6 @@ export class jetElements {
         }
       ) => {
         if (hasAccess("fetch", peer, element as any)) {
-          console.log("Received fetch");
           let mayHaveInterest;
           try {
             const isReadOnly = isFetchOnly(peer, element);

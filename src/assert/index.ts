@@ -3,7 +3,7 @@ import { FetchChainer } from "../browser";
 
 export const changesTo = (
   peer: { fetch: (arg0: FetchChainer) => void },
-  path: any,
+  path: string,
   value: any,
   done: () => void
 ) => {
@@ -23,7 +23,7 @@ export const changesTo = (
 };
 export const getsRemoved = (
   peer: { fetch: (arg0: FetchChainer) => void },
-  path: any,
+  path: string,
   done: () => void
 ) => {
   const fetcher = new FetchChainer().path("equals", path).on("data", (data) => {
@@ -41,7 +41,7 @@ export const getsRemoved = (
 };
 export const isState = (
   peer: { fetch: (arg0: FetchChainer) => void },
-  path: any,
+  path: string,
   value: any,
   done: () => void
 ) => {
@@ -68,7 +68,7 @@ export const isState = (
 };
 export const isMethod = (
   peer: { fetch: (arg0: FetchChainer) => void },
-  path: any,
+  path: string,
   done: () => void
 ) => {
   const fetcher = new FetchChainer().path("equals", path).on("data", (data) => {

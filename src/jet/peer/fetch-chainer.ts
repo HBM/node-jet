@@ -7,7 +7,7 @@ const defaultSort = () => ({
 
 export class FetchChainer {
   rule: {
-    path?: any;
+    path?: string;
     valueField?: Record<any, any>;
     value?: Record<any, any>;
     sort?: any;

@@ -30,7 +30,7 @@ export class MessageSocket extends EventEmitter.EventEmitter {
             return;
           } else {
             this.len = bigBuf.readUInt32BE(0);
-            bigBuf = bigBuf.slice(4);
+            bigBuf = bigBuf.subarray(4);
           }
         }
         if (this.len > 0) {
@@ -38,13 +38,8 @@ export class MessageSocket extends EventEmitter.EventEmitter {
             this.last = bigBuf;
             return;
           } else {
-            console.log(
-              "MSGSocket",
-              "Received data",
-              bigBuf.toString(undefined, 0, this.len)
-            );
             this.emit("message", bigBuf.toString(undefined, 0, this.len));
-            bigBuf = bigBuf.slice(this.len);
+            bigBuf = bigBuf.subarray(this.len);
             this.len = -1;
           }
         }

@@ -4,16 +4,7 @@ const createSort = (options: {
   sort: { byValue: any; byValueField: {}; byPath: any; descending: any };
 }) => {
   let sort;
-  let lt: {
-      (a: any, b: any): boolean;
-      (a: any, b: any): boolean;
-      (a: any, b: any): boolean;
-    },
-    gt: {
-      (a: any, b: any): boolean;
-      (a: any, b: any): boolean;
-      (a: any, b: any): boolean;
-    };
+  let lt: any, gt: any;
 
   if (
     (!isDefined(options.sort.byValue) &&
@@ -21,7 +12,6 @@ const createSort = (options: {
     options.sort.byPath
   ) {
     gt = (a: { path: number }, b: { path: number }) => a.path > b.path;
-
     lt = (a: { path: number }, b: { path: number }) => a.path < b.path;
   } else {
     if (options.sort.byValue) {
