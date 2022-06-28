@@ -28,7 +28,7 @@ export class Method {
     }
   };
   createSyncDispatcher = (cb: any) => {
-    const dispatch = (message: { params: any; id: any }) => {
+    const dispatch = (message: { params: any; id: string }) => {
       const params = message.params;
       let result;
       let err;
@@ -55,7 +55,7 @@ export class Method {
     return dispatch;
   };
   createAsyncDispatcher = (cb: any) => {
-    const dispatch = (message: { id: any; params: any }) => {
+    const dispatch = (message: { id: string; params: any }) => {
       const mid = message.id;
       const reply = (resp: { result?: any; error?: any }) => {
         resp = resp || {};

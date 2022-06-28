@@ -106,7 +106,6 @@ export const create = (options: any) => {
   }
   const po = options.path;
   const ci = po.caseInsensitive;
-  let pred: (arg0: any) => any;
   const predicates: any[] = [];
 
   predicateOrder.forEach((name) => {
@@ -134,31 +133,10 @@ export const create = (options: any) => {
     return true;
   };
 
-  let pathMatcher;
-
-  if (ci) {
-    if (predicates.length === 1) {
-      pred = predicates[0];
-      pathMatcher = function (path: string, _lowerPath: string) {
-        return pred(path);
-      };
-    } else {
-      pathMatcher = function (path: string, _lowerPath: string) {
-        return applyPredicates(path);
-      };
-    }
-  } else {
-    if (predicates.length === 1) {
-      pred = predicates[0];
-      pathMatcher = function (path: any, _lowerPath: any) {
-        return pred(path);
-      };
-    } else {
-      pathMatcher = function (path: any, _lowerPath: any) {
-        return applyPredicates(path);
-      };
-    }
-  }
+  const pathMatcher =
+    predicates.length === 1
+      ? (path: any, _lowerPath: any) => predicates[0](path)
+      : (path: any, _lowerPath: any) => applyPredicates(path);
 
   return pathMatcher; // eslint-disable-line consistent-return
 };

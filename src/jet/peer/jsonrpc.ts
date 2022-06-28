@@ -12,6 +12,9 @@ import { MessageSocket } from "../message-socket";
 const encode = JSON.stringify;
 const decode = JSON.parse;
 
+export type resultCallback =
+  | ((_success: boolean, _result?: any) => void)
+  | undefined;
 /**
  * Adds a function ("hook") to callbacks[callbackName]
  *
@@ -55,14 +58,14 @@ export class JsonRPC {
   requestDispatchers: any;
   responseDispatchers: any;
   fakeContext: any;
-  id: number;
+  id!: string;
   constructor(config: PeerConfig) {
     this.config = config;
     this.messages = [];
     this.willFlush = false;
     this.requestDispatchers = [];
     this.responseDispatchers = [];
-    this.id = 0;
+    this.id = "";
   }
   _onOpen = () => {
     this._isOpen = true;
@@ -240,21 +243,21 @@ export class JsonRPC {
   /**
    * AddRequestDispatcher.
    */
-  addRequestDispatcher = (id: any, dispatch: any) => {
+  addRequestDispatcher = (id: string, dispatch: any) => {
     this.requestDispatchers[id] = dispatch;
   };
 
   /**
    * RemoveRequestDispatcher.
    */
-  removeRequestDispatcher = (id: any) => {
+  removeRequestDispatcher = (id: string) => {
     delete this.requestDispatchers[id];
   };
 
   /**
    * HasRequestDispatcher.
    */
-  hasRequestDispatcher = (id: any) => {
+  hasRequestDispatcher = (id: string) => {
     return isDef(this.requestDispatchers[id]);
   };
 
@@ -264,16 +267,14 @@ export class JsonRPC {
   service = (
     method: string,
     params: JsonParams,
-    complete:
-      | ((completed: boolean, result?: Record<any, any>) => void)
-      | undefined = undefined,
+    complete: resultCallback = undefined,
     asNotification = true
   ): Promise<Object | null> => {
     return new Promise((resolve, reject) => {
       if (!this._isOpen) {
         reject(new ConnectionClosed(""));
       } else {
-        let rpcId;
+        let rpcId = "";
         // Only make a Request, if callbacks are specified.
         // Make complete call in case of success.
         // If no id is specified in the message, no Response
@@ -287,13 +288,9 @@ export class JsonRPC {
           };
           /* istanbul ignore else */
           if (complete) {
-            addHook(
-              callbacks,
-              "success",
-              (result: Record<any, any> | undefined) => {
-                complete(true, result);
-              }
-            );
+            addHook(callbacks, "success", (result: any) => {
+              complete(true, result);
+            });
             addHook(callbacks, "error", () => {
               complete(false);
             });

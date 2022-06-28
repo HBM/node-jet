@@ -22,7 +22,7 @@ export const grantAccess = (accessName: string, access: any, auth: any) => {
 export interface Message {
   method?: string;
   params?: any;
-  id: any;
+  id: string;
   result?: any;
   error?: any;
 }

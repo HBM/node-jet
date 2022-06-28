@@ -1,5 +1,6 @@
 "use strict";
 
+import { Message } from "../daemon/access";
 import { isDefined, errorObject } from "../utils";
 import JsonRPC from "./jsonrpc";
 
@@ -146,10 +147,7 @@ export class State {
   };
 
   createSyncDispatcher = (cb: any) => {
-    const dispatcher = (message: {
-      params: { value: any; valueAsResult: any };
-      id: number;
-    }) => {
+    const dispatcher = (message: Message) => {
       const value = message.params.value;
       try {
         const result = cb.call(this, value) || {};
@@ -160,7 +158,7 @@ export class State {
         }
         /* istanbul ignore else */
         if (isDefined(message.id)) {
-          const resp = { id: 0, result: undefined as any };
+          const resp = { id: "", result: undefined as any };
           resp.id = message.id;
           if (message.params.valueAsResult) {
             resp.result = this._value;
@@ -196,7 +194,7 @@ export class State {
   createAsyncDispatcher = (cb: any) => {
     const dispatch = (message: {
       params: { value: any; valueAsResult: any };
-      id: any;
+      id: string;
     }) => {
       const value = message.params.value;
       const mid = message.id;

@@ -9,7 +9,7 @@ export class MessageSocket extends EventEmitter.EventEmitter {
   last = Buffer.alloc(0);
   len = -1;
   socket: net.Socket;
-  constructor(port: any, ip: string = "") {
+  constructor(port: number | net.Socket, ip: string = "") {
     super();
     if (port instanceof net.Socket) {
       this.socket = port;
@@ -53,7 +53,7 @@ export class MessageSocket extends EventEmitter.EventEmitter {
       this.emit("close");
     });
 
-    this.socket.once("error", (e: any) => {
+    this.socket.once("error", (e: Error) => {
       this.emit("error", e);
     });
   }
@@ -90,31 +90,25 @@ export class MessageSocket extends EventEmitter.EventEmitter {
     method: string | symbol,
     listener: { (...args: any[]): void; call?: any }
   ) => {
-    const target = this;
-
-    function onMessage(data: any, flags: { binary: any }) {
+    const onMessage = (data: any, flags: { binary: any }) => {
       listener.call(
-        target,
-        new MessageEvent(
-          data,
-          flags && flags.binary ? "Binary" : "Text",
-          target
-        )
+        this,
+        new MessageEvent(data, flags && flags.binary ? "Binary" : "Text", this)
       );
-    }
+    };
 
-    function onClose(code: any, message: any) {
-      listener.call(target, new CloseEvent(code, message, target));
-    }
+    const onClose = (code: number, message: any) => {
+      listener.call(this, new CloseEvent(code, message, this));
+    };
 
-    function onError(event: any) {
-      event.target = target;
-      listener.call(target, event);
-    }
+    const onError = (event: any) => {
+      event.target = this;
+      listener.call(this, event);
+    };
 
-    function onOpen() {
-      listener.call(target, new OpenEvent(target));
-    }
+    const onOpen = () => {
+      listener.call(this, new OpenEvent(this));
+    };
 
     if (typeof listener === "function") {
       if (method === "message") {
@@ -170,11 +164,11 @@ class MessageEvent {
  * @api private
  */
 class CloseEvent {
-  wasClean: any;
-  code: any;
-  reason: any;
+  wasClean: boolean;
+  code: number;
+  reason: string;
   target: any;
-  constructor(code: number, reason: any, target: any) {
+  constructor(code: number, reason: string, target: any) {
     this.wasClean = typeof code === "undefined" || code === 1000;
     this.code = code;
     this.reason = reason;

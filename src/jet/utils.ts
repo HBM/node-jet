@@ -39,13 +39,13 @@ export const isDefined = (x: any) => {
   return true;
 };
 
-export const checked = <Type>(tab: any, key: any): Type => {
+export const checked = <F>(tab: any, key: string, type: string = ""): F => {
   const p = tab[key];
   if (isDefined(p)) {
-    if (Type) {
-      if (typeof p === typename) {
+    if (type) {
+      if (typeof p === type) {
         // eslint-disable-line
-        return p as Type;
+        return p;
       } else {
         throw invalidParams({
           wrongType: key,

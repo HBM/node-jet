@@ -22,22 +22,7 @@ export class Router {
     // same message.id.
     this.rcount = 0;
   }
-  request = (
-    message: { params: any; method?: string; id: any },
-    peer: {
-      id: any;
-      sendMessage: (arg0: {
-        id: any;
-        error: {
-          // same message.id.
-          message: string;
-          code: number;
-          data: any;
-        };
-      }) => void;
-    },
-    element: jetElement
-  ) => {
+  request = (message: any, peer: any, element: jetElement) => {
     const timeout =
       optional(message.params, "timeout", "number") || element.timeout || 5;
     /* jslint bitwise: true */
@@ -64,7 +49,7 @@ export class Router {
   response = (
     _: {
       sendMessage: (arg0: {
-        id: any;
+        id: string;
         error:
           | {
               // counter to make the routed request more unique.
@@ -83,7 +68,7 @@ export class Router {
             };
       }) => void; // same message.id.
     },
-    message: { method?: string | number; id: any; result?: any; error?: any }
+    message: { method?: string | number; id: string; result?: any; error?: any }
   ) => {
     const route = this.routes[message.id];
     if (route) {

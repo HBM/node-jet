@@ -1,6 +1,6 @@
 /* global describe it */
 
-import { eachKeyValue } from "../src/jet/utils";
+import { checked, eachKeyValue } from "../src/jet/utils";
 
 const sinon = require("sinon");
 

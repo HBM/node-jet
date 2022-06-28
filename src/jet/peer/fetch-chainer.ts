@@ -4,25 +4,31 @@ import JsonRPC from "./jsonrpc";
 const defaultSort = () => ({
   asArray: true,
 });
+export type dataCallback = (data: any) => void;
+export interface FetchRule {
+  id?: string;
+  path?: any;
+  valueField?: Record<any, any>;
+  value?: Record<any, any>;
+  sort?: {
+    asArray?: Boolean;
+    descending?: Boolean;
+    byPath?: Boolean;
+    byValueField?: Record<any, any>;
+    byValue?: Boolean;
+    from?: number;
+    to?: number;
+  };
+}
 
 export class FetchChainer {
-  rule: {
-    path?: string;
-    valueField?: Record<any, any>;
-    value?: Record<any, any>;
-    sort?: any;
-  } = {};
+  rule!: FetchRule;
   _stopped = false;
-  _dataDispatcher: any;
+  _dataDispatcher!: dataCallback;
   _fetcher!: FakeFetcher | Fetcher;
   variant!: string;
   jsonrpc!: JsonRPC;
-  on = (
-    event: string,
-    cb: {
-      (data: any): void;
-    }
-  ) => {
+  on = (event: string, cb: dataCallback) => {
     if (event === "data") {
       this._dataDispatcher = cb;
       return this;
@@ -69,22 +75,7 @@ export class FetchChainer {
     }
   };
   all = () => this;
-  expression = (expression: {
-    path?: { caseInsensitive?: Boolean | undefined } | undefined;
-    valueField?: Record<any, any> | undefined;
-    value?: Record<any, any> | undefined;
-    sort?:
-      | {
-          asArray?: Boolean | undefined;
-          descending?: Boolean | undefined;
-          byPath?: Boolean | undefined;
-          byValueField?: Record<any, any> | undefined;
-          byValue?: Boolean | undefined;
-          from?: Record<any, any> | undefined;
-          to?: Record<any, any> | undefined;
-        }
-      | undefined;
-  }) => {
+  expression = (expression: FetchRule) => {
     this.rule = expression;
     return this;
   };
@@ -152,7 +143,7 @@ export class FetchChainer {
     }
     return this;
   };
-  range = (from: number, to: any) => {
+  range = (from: number, to: number) => {
     const sort = this._sortObject();
     sort.from = from;
     sort.to = to || from + 20;

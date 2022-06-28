@@ -1,11 +1,12 @@
 import { eachKeyValue } from "../utils";
 import { v4 as uuidv4 } from "uuid";
-import { hasAccess, isFetchOnly } from "./access";
+import { hasAccess, isFetchOnly, Message } from "./access";
 import EventEmitter from "events";
 import * as net from "net";
 import { JsonRPC } from "./jsonrpc";
 import { jetElement, jetElements } from "../element";
 import MessageSocket from "../message-socket";
+import { FetcherFunction } from "../fetcher";
 
 const genPeerId = (sock: any): string => {
   if (sock instanceof net.Socket) {
@@ -20,15 +21,18 @@ const genPeerId = (sock: any): string => {
     }
   }
 };
+export type MessageFunction = (_msg: Message) => void;
 export class PeerType extends EventEmitter.EventEmitter {
   id = "";
-  fetchers: any = [];
+  fetchers: Record<string, FetcherFunction> = {};
   eachFetcher: any = (_: string) => {};
+  fetchingSimple: boolean = false;
   removeFetcher = (_: string) => {};
   hasFetchers = () => {};
-  sendMessage = (_msg: any) => {};
-  addFetcher = (_id: number, _fetcher: any) => {};
+  sendMessage: MessageFunction = (_msg: Message) => {};
+  addFetcher = (_id: string, _fetcher: FetcherFunction) => {};
   auth: any;
+  name: string = "";
 }
 export class Peers {
   instances: any = [];
@@ -41,7 +45,7 @@ export class Peers {
 
   remove = (peer: PeerType) => {
     if (peer && this.instances[peer.id]) {
-      peer.eachFetcher((fetchId: any) => {
+      peer.eachFetcher((fetchId: string) => {
         this.elements.removeFetcher(peer.id + fetchId);
       });
       peer.fetchers = {};
@@ -74,8 +78,7 @@ export class Peers {
     const peerId = genPeerId(sock);
 
     peer.sendMessage = (message) => {
-      message = JSON.stringify(message);
-      sock.send(message);
+      sock.send(JSON.stringify(message));
     };
 
     sock.on("message", (message: string) => {
@@ -87,7 +90,7 @@ export class Peers {
     });
 
     peer.id = peerId;
-    peer.fetchers = [];
+    peer.fetchers = {};
     peer.eachFetcher = eachKeyValue(peer.fetchers);
     peer.addFetcher = (id, fetcher) => {
       peer.fetchers[id] = fetcher;

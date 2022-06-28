@@ -12,17 +12,27 @@ export interface Notification {
   event: any;
   value: any;
 }
-export const create = (options: any, notify: (_: any) => void) => {
+export type FetcherFunction = (
+  path: string,
+  _lowerPath: string,
+  event: any,
+  value: any,
+  fetchOnly: boolean
+) => boolean;
+export const create = (
+  options: any,
+  notify: (_: any) => void
+): FetcherFunction => {
   const pathMatcher = createPathMatcher(options);
   const valueMatcher = createValueMatcher(options);
   const added = {} as any;
 
-  const matchValue = function (
+  const matchValue = (
     path: string,
     event: any,
     value: any,
     fetchOnly: boolean
-  ) {
+  ) => {
     const isAdded = added[path];
     if (event === "remove" || (valueMatcher && !valueMatcher(value))) {
       if (isAdded) {

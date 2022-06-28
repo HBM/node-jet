@@ -19,9 +19,9 @@ export const fetchCore = (
   elements: jetElements,
   params: any,
   notify: (_: Notification) => void,
-  success: () => void | null
+  success: (() => void) | null
 ) => {
-  const fetchId = checked(params, "id");
+  const fetchId = checked<string>(params, "id");
 
   let fetcher;
   let sorter: any;
@@ -54,25 +54,11 @@ export const fetchCore = (
 // dispatchers the 'unfetch' jet call.
 // removes all ressources associated with the fetcher.
 export const unfetchCore = (
-  peer: { id: any; removeFetcher: (arg0: any) => void },
+  peer: { id: string; removeFetcher: (arg0: any) => void },
   elements: jetElements,
-  params: {
-    path?: { caseInsensitive?: Boolean };
-    valueField?: Record<any, any>;
-    value?: Record<any, any>;
-    sort?: {
-      asArray?: Boolean;
-      descending?: Boolean;
-      byPath?: Boolean;
-      byValueField?: Record<any, any>;
-      byValue?: Boolean;
-      from?: Record<any, any>;
-      to?: Record<any, any>;
-    };
-    id?: any;
-  }
+  params: any
 ) => {
-  const fetchId = checked(params, "id", "string");
+  const fetchId = checked<string>(params, "id", "string");
   const fetchPeerId = peer.id + fetchId;
 
   peer.removeFetcher(fetchId);
@@ -89,15 +75,11 @@ export const addCore = (
 };
 
 export const removeCore = (peer: any, elements: jetElements, params: any) => {
-  const path = checked(params, "path", "string");
+  const path = checked<string>(params, "path", "string");
   elements.remove(path, peer);
 };
 
-export const changeCore = (
-  peer: any,
-  elements: jetElements,
-  params: { value: any }
-) => {
-  const path = checked(params, "path", "string");
+export const changeCore = (peer: any, elements: jetElements, params: any) => {
+  const path = checked<string>(params, "path", "string");
   elements.change(path, params.value, peer);
 };
