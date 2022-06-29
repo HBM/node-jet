@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-var jet = require("../../lib/jet")
+var jet = require("node-jet")
 var finalhandler = require('finalhandler')
 var http = require('http')
 var serveStatic = require('serve-static')
@@ -56,6 +56,7 @@ var peer = new jet.Peer({
 var todoStates = {}
 
 // Provide a "todo/add" method to create new todos
+var value = new jet.State('todo/value')
 var addTodo = new jet.Method('todo/add')
 addTodo.on('call', function (args) {
   console.log("Called add",args)
@@ -111,6 +112,7 @@ setCompleted.on('call', function (args) {
 
 peer.connect()
 .then(()=>{
+  peer.add(value)
   peer.add(addTodo)
   peer.add(removeTodo),
   peer.add(setCompleted),

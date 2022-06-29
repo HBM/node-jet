@@ -1,6 +1,6 @@
 // @ts-nocheck
 "use strict";
-
+import {WebSocket} from "ws"
 import { Message } from "../daemon/access";
 import { ConnectionClosed, createTypedError } from "../errors";
 import { JsonParams, PeerConfig } from "../peer";
@@ -92,12 +92,14 @@ export class JsonRPC {
       (typeof window !== "undefined" &&
         `ws://${window.location.host}:${config.port || 2315}`);
     return new Promise((resolve, reject) => {
+      console.log("Connecting over:", url || `${config.ip}:${config.port}`)
       this.sock = url
         ? new WebSocket(url, "jet")
         : new MessageSocket(config.port || 11122, config.ip);
       this.sock.addEventListener("error", () => {}); // swallow errors, closed event is emitted too
       this.sock.addEventListener("message", this._dispatchMessage);
       this.sock.addEventListener("open", () => {
+        console.log("Opened connection")
         this._onOpen();
         return resolve();
       });

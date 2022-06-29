@@ -36,8 +36,8 @@ export interface InfoOptions {
   features?: Features;
 }
 export interface LisenOptions {
-  tcpPort: number;
-  wsPort: number;
+  tcpPort?: number;
+  wsPort?: number;
   server?: any;
   wsGetAuthentication?: any;
   wsPingInterval?: any;

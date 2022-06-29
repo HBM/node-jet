@@ -30,7 +30,7 @@ export class State {
   _isAddedPromiseResolve!: (value: unknown) => void;
   _isAddedPromiseReject!: (arg0: string) => void;
   jsonrpc!: JsonRPC;
-  constructor(path: string, initialValue: any, access = null) {
+  constructor(path: string, initialValue: any= undefined, access = null) {
     this._path = path;
     this._value = initialValue;
     this._access = access;
@@ -134,7 +134,7 @@ export class State {
    * @param {State~setCallback} setCallback A callback which is invoked to handle a remotely invoked 'set' request.
    *
    */
-  on = (event: string, cb: string | any[]) => {
+  on = (event: string, cb: (value: any) => void) => {
     if (event === "set") {
       if (cb.length === 1) {
         this._dispatcher = this.createSyncDispatcher(cb);
@@ -291,7 +291,7 @@ export class State {
     return this.jsonrpc.hasRequestDispatcher(this._path);
   };
 
-  value = (newValue: any, notAsNotification: any) => {
+  value = (newValue: any= undefined, notAsNotification: boolean= false) => {
     if (isDefined(newValue)) {
       this._value = newValue;
       return this._isAddedPromise.then(() => {
