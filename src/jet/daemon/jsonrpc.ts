@@ -7,16 +7,18 @@ import {
   methodNotFound,
   parseError,
 } from "../utils";
+import { Message } from "./access";
+import { PeerType } from "./peers";
 import { Router } from "./router";
 
 export class JsonRPC {
-  services: Object;
+  services: Record<any, any>;
   router: Router;
-  constructor(services, router: Router) {
+  constructor(services: Record<any, any>, router: Router) {
     this.services = services;
     this.router = router;
   }
-  dispatchMessage = (peer, message) => {
+  dispatchMessage = (peer: PeerType, message: Message) => {
     let service;
     if (message.method) {
       service = this.services[message.method];
@@ -42,21 +44,22 @@ export class JsonRPC {
     }
   };
 
-  dispatch = (peer, message) => {
+  dispatch = (peer: PeerType, message: string) => {
     try {
-      message = JSON.parse(message);
+      const decoded = JSON.parse(message) as Message | Message[];
+      if (Array.isArray(decoded)) {
+        decoded.forEach((msg: Message) => {
+          this.dispatchMessage(peer, msg);
+        });
+      } else {
+        this.dispatchMessage(peer, decoded);
+      }
     } catch (e) {
       peer.sendMessage({
+        id: "",
         error: parseError(e),
       });
       throw e;
-    }
-    if (Array.isArray(message)) {
-      message.forEach((msg) => {
-        this.dispatchMessage(peer, msg);
-      });
-    } else {
-      this.dispatchMessage(peer, message);
     }
   };
 }

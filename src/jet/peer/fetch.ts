@@ -1,5 +1,5 @@
-// @ts-nocheck
-import { jetElements } from "../element";
+import { Message } from "../daemon/access";
+import { jetElement, jetElements } from "../element";
 import {
   addCore,
   changeCore,
@@ -7,62 +7,87 @@ import {
   removeCore,
   unfetchCore,
 } from "../fetch-common";
+import { FetcherFunction, Notification } from "../fetcher";
 import { eachKeyValue, isDefined } from "../utils";
-import JsonRPC from "./jsonrpc";
+import { FetchRule } from "./fetch-chainer";
+import JsonRPC, { resultCallback } from "./jsonrpc";
 
 let globalFetchId = 1;
 
-const createFetchDispatcher = (params, f, ref) => {
+const createFetchDispatcher = (
+  params: FetchRule,
+  f: any,
+  ref: any
+): ((_msg: Message) => void) => {
   if (isDefined(params.sort)) {
-    if (params.sort.asArray) {
+    if (params.sort && params.sort.asArray) {
       delete params.sort.asArray; // peer internal param
       const arr: any[] = [];
-      const from = params.sort.from;
-      return (message) => {
+      const from = params.sort.from || 0;
+      return (message: Message) => {
         arr.length = message.params.n;
-        message.params.changes.forEach((change) => {
+        message.params.changes.forEach((change: { index: number }) => {
           arr[change.index - from] = change;
         });
         f.call(ref, arr, ref);
       };
     } else {
-      return (message) => {
+      return (message: Message) => {
         f.call(ref, message.params.changes, message.params.n);
       };
     }
   } else {
-    return (message) => {
-      f.call(ref, message.params);
+    return (message: Message) => {
+      f.call(ref, message.params, undefined);
     };
   }
 };
 
+export type eachFetcherFunction = (
+  element: jetElement,
+  initElementFetching: (
+    arg0: string,
+    arg1: FetcherFunction,
+    arg2: boolean
+  ) => void
+) => void;
+
 export class FakePeer {
-  fetchers: Object;
+  fetchers: Record<string, FetcherFunction>;
   id: String;
-  eachFetcher: Function;
+  eachFetcher: eachFetcherFunction;
   constructor() {
     this.fetchers = {};
     this.id = "fakePeer";
     const eachFetcherIterator = eachKeyValue(this.fetchers);
-    this.eachFetcher = (element, initElementFetching) => {
+    this.eachFetcher = (
+      element: jetElement,
+      initElementFetching: (
+        arg0: string,
+        arg1: FetcherFunction,
+        arg2: boolean
+      ) => void
+    ) => {
       const hasSetAccess = !element.fetchOnly;
-      const initElementFetchingAccess = (peerFetchId, fetcher) => {
+      const initElementFetchingAccess = (
+        peerFetchId: string,
+        fetcher: FetcherFunction
+      ) => {
         initElementFetching("fakePeer" + peerFetchId, fetcher, hasSetAccess);
       };
       eachFetcherIterator(initElementFetchingAccess);
     };
   }
 
-  addFetcher = (fetchId, fetcher) => {
+  addFetcher = (fetchId: string, fetcher: FetcherFunction) => {
     this.fetchers[fetchId] = fetcher;
   };
 
-  removeFetcher = (fetchId) => {
+  removeFetcher = (fetchId: string) => {
     delete this.fetchers[fetchId];
   };
 
-  hasFetcher = (fetchId) => {
+  hasFetcher = (fetchId: string) => {
     return (this.fetchers[fetchId] && true) || false;
   };
 }
@@ -80,12 +105,27 @@ export class FakePeer {
  * run the fetch = 'simple' mode.
  * @private
  */
-export class FakeFetcher {
-  wrappedFetchDispatcher: Function;
+export interface iFetcher {
+  fetch: () => Promise<object | null>;
+  unfetch: () => Promise<object | null>;
+  isFetching: () => boolean;
+}
+export interface FakeContext {
+  elements: jetElements;
+  peer: FakePeer;
+  fetchAllPromise?: Promise<void>;
+}
+export class FakeFetcher implements iFetcher {
+  wrappedFetchDispatcher: (_: Notification) => void;
   fetchSimpleDispatcher: Function;
-  fetchParams;
-  jsonrpc;
-  constructor(jsonrpc, fetchParams, fetchCb, asNotification) {
+  fetchParams: FetchRule;
+  jsonrpc: JsonRPC;
+  constructor(
+    jsonrpc: JsonRPC,
+    fetchParams: FetchRule,
+    fetchCb: any,
+    asNotification: boolean
+  ) {
     this.jsonrpc = jsonrpc;
     this.fetchParams = fetchParams;
     const id = "__f__" + globalFetchId;
@@ -93,26 +133,25 @@ export class FakeFetcher {
 
     fetchParams.id = id;
 
-    let fetchDispatcher;
+    let fetchDispatcher: (arg0: Message) => void;
     this.fetchSimpleDispatcher = () => {};
-    this.wrappedFetchDispatcher = (nparams) => {
+    this.wrappedFetchDispatcher = (nparams: any) => {
       fetchDispatcher =
         fetchDispatcher || createFetchDispatcher(fetchParams, fetchCb, this);
       fetchDispatcher({
+        id: "",
         params: nparams,
       });
     };
 
     if (jsonrpc.fakeContext === undefined) {
-      const context = (jsonrpc.fakeContext = {
-        elements: undefined as any,
-        peer: undefined as any,
-        fetchAllPromise: undefined as any,
-      });
-      context.elements = new jetElements(null);
-      context.peer = new FakePeer();
+      const newContext: FakeContext = {
+        elements: new jetElements(null),
+        peer: new FakePeer(),
+      };
+      const context = (jsonrpc.fakeContext = newContext);
 
-      this.fetchSimpleDispatcher = (message) => {
+      this.fetchSimpleDispatcher = (message: Message) => {
         const params = message.params;
         const event = params.event;
 
@@ -130,19 +169,12 @@ export class FakeFetcher {
         }
       };
 
+      const fetchCallback = (_: boolean, fetchSimpleId: string) => {
+        jsonrpc.addRequestDispatcher(fetchSimpleId, this.fetchSimpleDispatcher);
+      };
       context.fetchAllPromise = new Promise((resolve, reject) => {
         jsonrpc
-          .service(
-            "fetch",
-            {},
-            (_, fetchSimpleId) => {
-              jsonrpc.addRequestDispatcher(
-                fetchSimpleId,
-                this.fetchSimpleDispatcher
-              );
-            },
-            asNotification
-          )
+          .service("fetch", {}, fetchCallback, asNotification)
           .then(() => {
             setTimeout(resolve, 50); // wait some time to let the FakeFetcher.elements get filled
           })
@@ -186,26 +218,27 @@ export class FakeFetcher {
  *
  * All options are available at [jetbus.io](http://jetbus.io).
  */
-export class Fetcher {
+export class Fetcher implements iFetcher {
   fetchDispatcher: Function;
-  addFetchDispatcher:
-    | ((completed: boolean, result?: Object) => void)
-    | undefined = undefined;
-  removeFetchDispatcher:
-    | ((completed: boolean, result?: Object) => void)
-    | undefined = undefined;
-  id: String;
+  addFetchDispatcher: resultCallback | undefined = undefined;
+  removeFetchDispatcher: resultCallback | undefined = undefined;
+  id: string;
   jsonrpc: JsonRPC;
   asNotification = true;
-  params;
-  constructor(jsonrpc, params, fetchCb, asNotification) {
-    this.params = params;
+  params: FetchRule;
+  constructor(
+    jsonrpc: JsonRPC,
+    rule: FetchRule,
+    fetchCb: any,
+    asNotification: boolean
+  ) {
+    this.params = rule;
     this.jsonrpc = jsonrpc;
     this.id = "__f__" + globalFetchId;
     this.asNotification = asNotification;
-    params.id = this.id;
+    rule.id = this.id;
     ++globalFetchId;
-    this.fetchDispatcher = createFetchDispatcher(params, fetchCb, this);
+    this.fetchDispatcher = createFetchDispatcher(rule, fetchCb, this);
 
     this.addFetchDispatcher = () => {
       jsonrpc.addRequestDispatcher(this.id, this.fetchDispatcher);

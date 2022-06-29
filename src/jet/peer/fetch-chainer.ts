@@ -1,31 +1,35 @@
 // @ts-nocheck
 import { FakeFetcher, Fetcher } from "./fetch";
+import JsonRPC from "./jsonrpc";
 
 const defaultSort = () => ({
   asArray: true,
 });
+export type dataCallback = (data: any) => void;
+export interface FetchRule {
+  id?: string;
+  path?: any;
+  valueField?: Record<any, any>;
+  value?: Record<any, any>;
+  sort?: {
+    asArray?: Boolean;
+    descending?: Boolean;
+    byPath?: Boolean;
+    byValueField?: Record<any, any>;
+    byValue?: Boolean;
+    from?: number;
+    to?: number;
+  };
+}
 
 export class FetchChainer {
-  rule: {
-    path?: { caseInsensitive?: Boolean };
-    valueField?: Object;
-    value?: Object;
-    sort?: {
-      asArray?: Boolean;
-      descending?: Boolean;
-      byPath?: Boolean;
-      byValueField?: Object;
-      byValue?: Boolean;
-      from?: Object;
-      to?: Object;
-    };
-  } = {};
+  rule!: FetchRule;
   _stopped = false;
-  _dataDispatcher;
-  _fetcher;
-  variant;
-  jsonrpc;
-  on = (event, cb) => {
+  _dataDispatcher!: dataCallback;
+  _fetcher!: FakeFetcher | Fetcher;
+  variant!: string;
+  jsonrpc!: JsonRPC;
+  on = (event: string, cb: dataCallback) => {
     if (event === "data") {
       this._dataDispatcher = cb;
       return this;
@@ -33,7 +37,7 @@ export class FetchChainer {
       throw new Error("invalid event");
     }
   };
-  fetch = (asNotification) => {
+  fetch = (asNotification: boolean) => {
     if (this._stopped) {
       return Promise.resolve();
     }
@@ -72,11 +76,11 @@ export class FetchChainer {
     }
   };
   all = () => this;
-  expression = (expression) => {
+  expression = (expression: FetchRule) => {
     this.rule = expression;
     return this;
   };
-  path = (match, comp) => {
+  path = (match: string, comp: any) => {
     this.rule.path = this.rule.path || {};
     this.rule.path[match] = comp;
     return this;
@@ -86,14 +90,14 @@ export class FetchChainer {
     this.rule.path.caseInsensitive = true;
     return this;
   };
-  key = (key, match, comp) => {
+  key = (key: string | number, match: string | number, comp: any) => {
     this.rule.valueField = this.rule.valueField || {};
     this.rule.valueField[key] = {};
     this.rule.valueField[key][match] = comp;
     return this;
   };
   //TODO value = (arg1,arg2,...rest)
-  value = (...args) => {
+  value = (...args: any[]) => {
     if (args.length === 2) {
       const match = args[0];
       const comp = args[1];
@@ -125,13 +129,13 @@ export class FetchChainer {
     this._sortObject().byPath = true;
     return this;
   };
-  sortByKey = (key, type) => {
+  sortByKey = (key: string | number, type: any) => {
     const sort = this._sortObject();
     sort.byValueField = {};
     sort.byValueField[key] = type;
     return this;
   };
-  sortByValue = (...args) => {
+  sortByValue = (...args: any[]) => {
     const sort = this._sortObject();
     if (args.length === 1) {
       sort.byValue = args[0];
@@ -140,7 +144,7 @@ export class FetchChainer {
     }
     return this;
   };
-  range = (from, to) => {
+  range = (from: number, to: number) => {
     const sort = this._sortObject();
     sort.from = from;
     sort.to = to || from + 20;

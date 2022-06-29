@@ -1,6 +1,6 @@
 // @ts-nocheck
 import EventEmitter from "events";
-import * as net from "net";
+import net from "net";
 
 /**
  * MessageSocket constructor function.
@@ -9,8 +9,8 @@ import * as net from "net";
 export class MessageSocket extends EventEmitter.EventEmitter {
   last = Buffer.alloc(0);
   len = -1;
-  socket;
-  constructor(port, ip = undefined) {
+  socket: net.Socket;
+  constructor(port: number | net.Socket, ip: string = "") {
     super();
     if (port instanceof net.Socket) {
       this.socket = port;
@@ -21,7 +21,7 @@ export class MessageSocket extends EventEmitter.EventEmitter {
       });
     }
 
-    this.socket.on("data", (buf) => {
+    this.socket.on("data", (buf: Uint8Array) => {
       let bigBuf = Buffer.concat([this.last, buf]);
       while (true) {
         // eslint-disable-line no-constant-condition
@@ -31,7 +31,7 @@ export class MessageSocket extends EventEmitter.EventEmitter {
             return;
           } else {
             this.len = bigBuf.readUInt32BE(0);
-            bigBuf = bigBuf.slice(4);
+            bigBuf = bigBuf.subarray(4);
           }
         }
         if (this.len > 0) {
@@ -39,13 +39,8 @@ export class MessageSocket extends EventEmitter.EventEmitter {
             this.last = bigBuf;
             return;
           } else {
-            console.log(
-              "MSGSocket",
-              "Received data",
-              bigBuf.toString(undefined, 0, this.len)
-            );
             this.emit("message", bigBuf.toString(undefined, 0, this.len));
-            bigBuf = bigBuf.slice(this.len);
+            bigBuf = bigBuf.subarray(this.len);
             this.len = -1;
           }
         }
@@ -59,7 +54,7 @@ export class MessageSocket extends EventEmitter.EventEmitter {
       this.emit("close");
     });
 
-    this.socket.once("error", (e) => {
+    this.socket.once("error", (e: Error) => {
       this.emit("error", e);
     });
   }
@@ -67,7 +62,7 @@ export class MessageSocket extends EventEmitter.EventEmitter {
    * Send.
    * @private
    */
-  send = (msg) => {
+  send = (msg: string) => {
     const utf8Length = Buffer.byteLength(msg, "utf8");
     const buf = Buffer.alloc(4 + utf8Length);
     buf.writeUInt32BE(utf8Length, 0);
@@ -92,32 +87,29 @@ export class MessageSocket extends EventEmitter.EventEmitter {
    * See https://github.com/websockets/ws/blob/master/lib/WebSocket.js#L410
    * That way we can use node-jet with via browserify inside the browser.
    */
-  addEventListener = (method, listener) => {
-    const target = this;
-
-    function onMessage(data, flags) {
+  addEventListener = (
+    method: string | symbol,
+    listener: { (...args: any[]): void; call?: any }
+  ) => {
+    const onMessage = (data: any, flags: { binary: any }) => {
       listener.call(
-        target,
-        new MessageEvent(
-          data,
-          flags && flags.binary ? "Binary" : "Text",
-          target
-        )
+        this,
+        new MessageEvent(data, flags && flags.binary ? "Binary" : "Text", this)
       );
-    }
+    };
 
-    function onClose(code, message) {
-      listener.call(target, new CloseEvent(code, message, target));
-    }
+    const onClose = (code: number, message: any) => {
+      listener.call(this, new CloseEvent(code, message, this));
+    };
 
-    function onError(event) {
-      event.target = target;
-      listener.call(target, event);
-    }
+    const onError = (event: any) => {
+      event.target = this;
+      listener.call(this, event);
+    };
 
-    function onOpen() {
-      listener.call(target, new OpenEvent(target));
-    }
+    const onOpen = () => {
+      listener.call(this, new OpenEvent(this));
+    };
 
     if (typeof listener === "function") {
       if (method === "message") {
@@ -155,10 +147,10 @@ export class MessageSocket extends EventEmitter.EventEmitter {
  * @api private
  */
 class MessageEvent {
-  data;
-  type;
-  target;
-  constructor(dataArg, typeArg, target) {
+  data: any;
+  type: any;
+  target: any;
+  constructor(dataArg: any, typeArg: string, target: any) {
     this.data = dataArg;
     this.type = typeArg;
     this.target = target;
@@ -172,15 +164,17 @@ class MessageEvent {
  * @constructor
  * @api private
  */
-function CloseEvent(code, reason, target) {
-  // @ts-ignore
-  this.wasClean = typeof code === "undefined" || code === 1000;
-  // @ts-ignore
-  this.code = code;
-  // @ts-ignore
-  this.reason = reason;
-  // @ts-ignore
-  this.target = target;
+class CloseEvent {
+  wasClean: boolean;
+  code: number;
+  reason: string;
+  target: any;
+  constructor(code: number, reason: string, target: any) {
+    this.wasClean = typeof code === "undefined" || code === 1000;
+    this.code = code;
+    this.reason = reason;
+    this.target = target;
+  }
 }
 
 /**
@@ -190,9 +184,11 @@ function CloseEvent(code, reason, target) {
  * @constructor
  * @api private
  */
-function OpenEvent(target) {
-  // @ts-ignore
-  this.target = target;
+class OpenEvent {
+  target: any;
+  constructor(target: any) {
+    this.target = target;
+  }
 }
 
 export default MessageSocket;

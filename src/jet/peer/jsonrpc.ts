@@ -1,23 +1,21 @@
 // @ts-nocheck
 "use strict";
 
+import { Message } from "../daemon/access";
 import { ConnectionClosed, createTypedError } from "../errors";
-import { PeerConfig } from "../peer";
+import { JsonParams, PeerConfig } from "../peer";
 import { errorObject, isDefined as isDef } from "../utils";
 
-const MessageSocket =
-  typeof window === "undefined" && require("../message-socket").MessageSocket;
-const WebSocket =
-  global.WebSocket ||
-  (typeof window !== "undefined" && window.WebSocket) ||
-  require("ws"); // eslint-disable-line no-use-before-define
-
+import { MessageSocket } from "../message-socket";
 /**
  * Helper shorthands.
  */
 const encode = JSON.stringify;
 const decode = JSON.parse;
 
+export type resultCallback =
+  | ((_success: boolean, _result?: any) => void)
+  | undefined;
 /**
  * Adds a function ("hook") to callbacks[callbackName]
  *
@@ -26,10 +24,20 @@ const decode = JSON.parse;
  * or installs "hook" as callbacks[callbackName].
  * @private
  */
-export const addHook = (callbacks, callbackName, hook) => {
+export const addHook = (
+  callbacks: {
+    [x: string]: any;
+    success?: (
+      value: Record<any, any> | PromiseLike<Object | null> | null
+    ) => void;
+    error?: (reason?: any) => void;
+  },
+  callbackName: string,
+  hook: any
+) => {
   if (callbacks[callbackName]) {
     const orig = callbacks[callbackName];
-    callbacks[callbackName] = (result) => {
+    callbacks[callbackName] = (result: any) => {
       hook(result);
       orig(result);
     };
@@ -46,18 +54,19 @@ export class JsonRPC {
   _isOpen = false;
   sock: WebSocket | any;
   config: PeerConfig;
-  messages: Array<Object>;
+  messages: Array<Message>;
   willFlush: Boolean;
-  requestDispatchers: Object;
-  responseDispatchers: Object;
-  id: number;
-  constructor(config) {
+  requestDispatchers: any;
+  responseDispatchers: any;
+  fakeContext: any;
+  id!: string;
+  constructor(config: PeerConfig) {
     this.config = config;
     this.messages = [];
     this.willFlush = false;
-    this.requestDispatchers = {};
-    this.responseDispatchers = {};
-    this.id = 0;
+    this.requestDispatchers = [];
+    this.responseDispatchers = [];
+    this.id = "";
   }
   _onOpen = () => {
     this._isOpen = true;
@@ -73,7 +82,7 @@ export class JsonRPC {
       }
     }
     this._isOpen = false;
-    this.responseDispatchers = {};
+    this.responseDispatchers = [];
   };
 
   connect = (): Promise<void> => {
@@ -120,7 +129,7 @@ export class JsonRPC {
    *
    * @api private
    */
-  _dispatchMessage = (event) => {
+  _dispatchMessage = (event: { data: any }) => {
     const message = event.data;
     let decoded;
     try {
@@ -134,7 +143,6 @@ export class JsonRPC {
     }
 
     this.willFlush = true;
-    /* istanbul ignore else */
     if ((this.config as any).onReceive) {
       (this.config as any).onReceive(message, decoded);
     }
@@ -153,7 +161,7 @@ export class JsonRPC {
    *
    * @api private
    */
-  _dispatchSingleMessage = (message) => {
+  _dispatchSingleMessage = (message: Message) => {
     if (message.method && message.params) {
       this._dispatchRequest(message);
     } else if (
@@ -169,7 +177,7 @@ export class JsonRPC {
    *
    * @api private
    */
-  _dispatchResponse = (message) => {
+  _dispatchResponse = (message: Message) => {
     const mid = message.id;
     const callbacks = this.responseDispatchers[mid];
     delete this.responseDispatchers[mid];
@@ -191,13 +199,12 @@ export class JsonRPC {
    *
    * @api private
    */
-  _dispatchRequest = (message) => {
+  _dispatchRequest = (message: Message) => {
+    if (!message.method) return;
     const dispatcher = this.requestDispatchers[message.method];
-
     try {
       dispatcher(message);
     } catch (err) {
-      /* istanbul ignore if */
       if (isDef(message.id)) {
         this.queue({
           id: message.id,
@@ -210,7 +217,7 @@ export class JsonRPC {
   /**
    * Queue.
    */
-  queue = (message) => {
+  queue = (message: Message) => {
     this.messages.push(message);
   };
 
@@ -225,7 +232,6 @@ export class JsonRPC {
       encoded = encode(this.messages);
     }
     if (encoded) {
-      /* istanbul ignore else */
       if (this.config.onSend) {
         this.config.onSend(encoded, this.messages);
       }
@@ -238,21 +244,21 @@ export class JsonRPC {
   /**
    * AddRequestDispatcher.
    */
-  addRequestDispatcher = (id, dispatch) => {
+  addRequestDispatcher = (id: string, dispatch: any) => {
     this.requestDispatchers[id] = dispatch;
   };
 
   /**
    * RemoveRequestDispatcher.
    */
-  removeRequestDispatcher = (id) => {
+  removeRequestDispatcher = (id: string) => {
     delete this.requestDispatchers[id];
   };
 
   /**
    * HasRequestDispatcher.
    */
-  hasRequestDispatcher = (id) => {
+  hasRequestDispatcher = (id: string) => {
     return isDef(this.requestDispatchers[id]);
   };
 
@@ -260,18 +266,16 @@ export class JsonRPC {
    * Service.
    */
   service = (
-    method,
-    params,
-    complete:
-      | ((completed: boolean, result?: Object) => void)
-      | undefined = undefined,
+    method: string,
+    params: JsonParams,
+    complete: resultCallback = undefined,
     asNotification = true
   ): Promise<Object | null> => {
     return new Promise((resolve, reject) => {
       if (!this._isOpen) {
         reject(new ConnectionClosed(""));
       } else {
-        let rpcId;
+        let rpcId = "";
         // Only make a Request, if callbacks are specified.
         // Make complete call in case of success.
         // If no id is specified in the message, no Response
@@ -285,7 +289,7 @@ export class JsonRPC {
           };
           /* istanbul ignore else */
           if (complete) {
-            addHook(callbacks, "success", (result) => {
+            addHook(callbacks, "success", (result: any) => {
               complete(true, result);
             });
             addHook(callbacks, "error", () => {
@@ -300,7 +304,7 @@ export class JsonRPC {
             complete(true);
           }
         }
-        const message = {
+        const message: Message = {
           id: rpcId,
           method: method,
           params: params,
@@ -324,7 +328,7 @@ export class JsonRPC {
   /**
    * Batch.
    */
-  batch = (action) => {
+  batch = (action: () => void) => {
     this.willFlush = true;
     action();
     this.flush();

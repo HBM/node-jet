@@ -1,19 +1,31 @@
 // @ts-nocheck
 "use strict";
 
-import { Method, State } from "../browser";
-import JsonRPC from "./peer/jsonrpc";
+import { Method, State } from "../../browser";
+import { InfoOptions } from "../daemon";
+import { iFetcher } from "./fetch";
+import JsonRPC from "./jsonrpc";
 
-const fallbackDaemonInfo = {
+const fallbackDaemonInfo: InfoOptions = {
   name: "unknown-daemon",
   version: "0.0.0",
-  protocolVersion: 1,
+  protocolVersion: "1.0.0",
   features: {
     fetch: "full",
     authentication: false,
     batches: true,
   },
 };
+export interface JsonParams {
+  path?: string;
+  args?: any;
+  timeout?: number;
+  user?: string;
+  password?: string;
+  value?: any;
+  valueAsResult?: any;
+  id?: string;
+}
 
 export interface PeerConfig {
   url?: string;
@@ -53,9 +65,9 @@ export interface PeerConfig {
 export class Peer {
   config: PeerConfig;
   jsonrpc: JsonRPC;
-  daemonInfo: Object | null;
+  daemonInfo: Record<any, any> | null;
   connected = false;
-  access;
+  access: any;
   constructor(config: PeerConfig) {
     this.config = config || {};
     this.jsonrpc = new JsonRPC(config);
@@ -156,7 +168,7 @@ export class Peer {
    * @param {function} action A function performing multiple peer actions.
    *
    */
-  batch = (action) => {
+  batch = (action: () => void) => {
     this.jsonrpc.batch(action);
   };
 
@@ -168,7 +180,10 @@ export class Peer {
    * @param {asNotification} When set we do not want to wait on a result response before handling received add/change events.
    * @returns {external:Promise} Gets resolved as soon as the Daemon has registered the fetch expression.
    */
-  fetch = (fetcher, asNotification = false) => {
+  fetch = (
+    fetcher: { jsonrpc: JsonRPC; variant: any; fetch: (arg0: boolean) => any },
+    asNotification = false
+  ) => {
     if (this.connected) {
       fetcher.jsonrpc = this.jsonrpc;
       // @ts-ignore
@@ -183,7 +198,7 @@ export class Peer {
    * @returns {external:Promise} Gets resolved as soon as the Daemon has unregistered the fetch expression.
    *
    */
-  unfetch = (fetcher) => fetcher.unfetch();
+  unfetch = (fetcher: iFetcher) => fetcher.unfetch();
 
   /**
    * Get {State}s and/or {Method}s defined by a Peer.
@@ -191,7 +206,7 @@ export class Peer {
    * @param {object} expression A Fetch expression to retrieve a snapshot of the currently matching data.
    * @returns {external:Promise}
    */
-  get = (expression) => this.jsonrpc.service("get", expression);
+  get = (expression: JsonParams) => this.jsonrpc.service("get", expression);
 
   /**
    * Adds a state or method to the Daemon.
@@ -210,7 +225,7 @@ export class Peer {
    * @param {State|Method} content The content to be removed.
    * @returns {external:Promise} Gets resolved as soon as the content has been removed from the Daemon.
    */
-  remove = (stateOrMethod) => stateOrMethod.remove();
+  remove = (stateOrMethod: Method | State) => stateOrMethod.remove();
 
   /**
    * Call a {Method} defined by another Peer.
@@ -221,13 +236,17 @@ export class Peer {
    * @param {number} [options.timeout] A timeout for invoking the {Method} after which a timeout error rejects the promise.
    * @returns {external:Promise}
    */
-  call = (path, callparams, options): Promise<Object | null> => {
+  call = (
+    path: string,
+    callparams: any,
+    options: { timeout?: any; skipResult?: any }
+  ): Promise<Object | null> => {
     options = options || {};
     const params = {
       path: path,
       args: callparams || [],
       timeout: options.timeout, // optional
-    };
+    } as JsonParams;
     const jsonrpc = this.jsonrpc;
     if (this.isConnected())
       return jsonrpc.service("call", params, undefined, options.skipResult);
@@ -244,7 +263,7 @@ export class Peer {
    * Authenticate
    * @private
    */
-  authenticate = (user, password) =>
+  authenticate = (user: string, password: string | undefined) =>
     this.jsonrpc.service("authenticate", {
       user: user,
       password: password,
@@ -254,7 +273,7 @@ export class Peer {
    *
    * @private
    */
-  configure = (params) => {
+  configure = (params: JsonParams) => {
     return this.jsonrpc.service("config", params);
   };
 
@@ -267,14 +286,18 @@ export class Peer {
    * @param {number} [options.timeout]
    *
    */
-  set = (path, value, options) => {
+  set = (
+    path: string,
+    value: any,
+    options: { timeout?: number; valueAsResult?: any; skipResult?: boolean }
+  ) => {
     options = options || {};
     const params = {
       path: path,
       value: value,
       timeout: options.timeout, // optional
       valueAsResult: options.valueAsResult, // optional
-    };
+    } as JsonParams;
     return this.jsonrpc.service("set", params, undefined, options.skipResult);
   };
 }

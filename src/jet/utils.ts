@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { InvalidArgument } from "./errors";
 
-export const invalidParams = (data) => {
+export const invalidParams = (data: any) => {
   return {
     message: "Invalid params",
     code: -32602,
@@ -9,7 +9,7 @@ export const invalidParams = (data) => {
   };
 };
 
-export const parseError = (data) => {
+export const parseError = (data: any) => {
   return {
     message: "Parse error",
     code: -32700,
@@ -17,7 +17,7 @@ export const parseError = (data) => {
   };
 };
 
-export const methodNotFound = (data) => {
+export const methodNotFound = (data: any) => {
   return {
     message: "Method not found",
     code: -32601,
@@ -25,7 +25,7 @@ export const methodNotFound = (data) => {
   };
 };
 
-export const invalidRequest = (data) => {
+export const invalidRequest = (data: any) => {
   return {
     message: "Invalid Request",
     code: -32600,
@@ -33,18 +33,18 @@ export const invalidRequest = (data) => {
   };
 };
 
-export const isDefined = (x) => {
+export const isDefined = (x: any) => {
   if (typeof x === "undefined" || x === null) {
     return false;
   }
   return true;
 };
 
-export const checked = (tab, key, typename) => {
+export const checked = <F>(tab: any, key: string, type: string = ""): F => {
   const p = tab[key];
   if (isDefined(p)) {
-    if (typename) {
-      if (typeof p === typename) {
+    if (type) {
+      if (typeof p === type) {
         // eslint-disable-line
         return p;
       } else {
@@ -64,7 +64,7 @@ export const checked = (tab, key, typename) => {
   }
 };
 
-export const optional = (tab, key, typename) => {
+export const optional = (tab: any, key: string, typename: string) => {
   const p = tab[key];
   if (isDefined(p)) {
     if (typename) {
@@ -81,15 +81,15 @@ export const optional = (tab, key, typename) => {
   }
 };
 
-export const accessField = (fieldStr) => {
-  if (fieldStr.substr(0, 1) !== "[") {
+export const accessField = (fieldStr: string) => {
+  if (fieldStr.substring(0, 1) !== "[") {
     fieldStr = "." + fieldStr;
   }
   const funStr = "return t" + fieldStr;
   return new Function("t", funStr); // eslint-disable-line no-new-func
 };
 
-export const errorObject = (err) => {
+export const errorObject = (err: any) => {
   let data;
   if (
     typeof err === "object" &&
@@ -103,14 +103,13 @@ export const errorObject = (err) => {
         invalidArgument: err,
       });
     } else {
+      data = {} as any;
       if (typeof err === "object") {
-        data = {};
         data.message = err.message;
         data.stack = err.stack;
         data.lineNumber = err.lineNumber;
         data.fileName = err.fileName;
       } else {
-        data = {};
         data.message = err;
         data.stack = "no stack available";
       }
@@ -123,8 +122,8 @@ export const errorObject = (err) => {
   }
 };
 
-export const eachKeyValue = (obj) => {
-  return (f) => {
+export const eachKeyValue = (obj: any) => {
+  return (f: (arg0: string, arg1: any) => void) => {
     for (const key in obj) {
       if (Object.hasOwnProperty.call(obj, key)) {
         f(key, obj[key]);

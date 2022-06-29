@@ -1,15 +1,14 @@
-
-// @ts-nocheck
+// import { Notification } from "./fetcher";
 import { isDefined } from "./utils";
 
-const contains = (what) => {
-  return (path) => {
+const contains = (what: string) => {
+  return (path: string) => {
     return path.indexOf(what) !== -1;
   };
 };
 
-const containsAllOf = (whatArray) => {
-  return (path) => {
+const containsAllOf = (whatArray: string | string[]) => {
+  return (path: string | string[]) => {
     let i;
     for (i = 0; i < whatArray.length; i = i + 1) {
       if (path.indexOf(whatArray[i]) === -1) {
@@ -20,8 +19,8 @@ const containsAllOf = (whatArray) => {
   };
 };
 
-const containsOneOf = (whatArray) => {
-  return (path) => {
+const containsOneOf = (whatArray: string | string[]) => {
+  return (path: string | string[]) => {
     let i;
     for (i = 0; i < whatArray.length; i = i + 1) {
       if (path.indexOf(whatArray[i]) !== -1) {
@@ -32,26 +31,26 @@ const containsOneOf = (whatArray) => {
   };
 };
 
-const startsWith = (what) => {
-  return (path) => {
-    return path.substr(0, what.length) === what;
+const startsWith = (what: string) => {
+  return (path: string) => {
+    return path.substring(0, what.length) === what;
   };
 };
 
-const endsWith = (what) => {
-  return (path) => {
+const endsWith = (what: string) => {
+  return (path: string) => {
     return path.lastIndexOf(what) === path.length - what.length;
   };
 };
 
-const equals = (what) => {
-  return (path) => {
+const equals = (what: any) => {
+  return (path: any) => {
     return path === what;
   };
 };
 
-const equalsOneOf = (whatArray) => {
-  return (path) => {
+const equalsOneOf = (whatArray: string | string[]) => {
+  return (path: string) => {
     let i;
     for (i = 0; i < whatArray.length; i = i + 1) {
       if (path === whatArray[i]) {
@@ -62,8 +61,8 @@ const equalsOneOf = (whatArray) => {
   };
 };
 
-const negate = (gen) => {
-  return (...args) => {
+const negate = (gen: any) => {
+  return (...args: any) => {
     const f = gen.apply(undefined, args);
     return () => {
       return !f.apply(undefined, args);
@@ -71,7 +70,7 @@ const negate = (gen) => {
   };
 };
 
-const generators = {
+const generators: Record<any, any> = {
   equals: equals,
   equalsNot: negate(equals),
   contains: contains,
@@ -101,13 +100,12 @@ const predicateOrder = [
   "equalsNotOneOf",
 ];
 
-export const create = (options) => {
+export const create = (options: any) => {
   if (!isDefined(options.path)) {
     return;
   }
   const po = options.path;
   const ci = po.caseInsensitive;
-  let pred;
   const predicates: any[] = [];
 
   predicateOrder.forEach((name) => {
@@ -126,7 +124,7 @@ export const create = (options) => {
     }
   });
 
-  const applyPredicates = (path) => {
+  const applyPredicates = (path: string) => {
     for (let i = 0; i < predicates.length; ++i) {
       if (!predicates[i](path)) {
         return false;
@@ -135,23 +133,10 @@ export const create = (options) => {
     return true;
   };
 
-  let pathMatcher;
-
-  if (ci) {
-    if (predicates.length === 1) {
-      pred = predicates[0];
-      pathMatcher = (_, lowerPath) => pred(lowerPath);
-    } else {
-      pathMatcher = (_, lowerPath) => applyPredicates(lowerPath);
-    }
-  } else {
-    if (predicates.length === 1) {
-      pred = predicates[0];
-      pathMatcher = (path) => pred(path);
-    } else {
-      pathMatcher = (path) => applyPredicates(path);
-    }
-  }
+  const pathMatcher =
+    predicates.length === 1
+      ? (path: any, _lowerPath: any) => predicates[0](path)
+      : (path: any, _lowerPath: any) => applyPredicates(path);
 
   return pathMatcher; // eslint-disable-line consistent-return
 };

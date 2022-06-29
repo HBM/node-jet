@@ -1,8 +1,8 @@
 "use strict";
 
-import { checked, errorObject, invalidParams, isDefined } from "./utils";
-import { hasAccess } from "./daemon/access";
-import MessageSocket from "./message-socket";
+import { checked, errorObject, invalidParams, isDefined } from "../utils";
+import { hasAccess, Message } from "./access";
+import MessageSocket from "../message-socket";
 import { WebSocket, WebSocketServer } from "ws";
 import { v4 as uuidv4 } from "uuid";
 import * as net from "net";
@@ -13,41 +13,54 @@ import {
   fetchCore,
   removeCore,
   unfetchCore,
-} from "./fetch-common";
-import { Router } from "./daemon/router";
-import { Peers } from "./daemon/peers";
-import { jetElements } from "./element";
-import { JsonRPC } from "./daemon/jsonrpc";
-import { create } from "./fetcher";
+} from "../fetch-common";
+import { Router } from "./router";
+import { MessageFunction, Peers, PeerType } from "./peers";
+import { jetElements } from "../element";
+import { JsonRPC } from "./jsonrpc";
+import { create, Notification } from "../fetcher";
 import EventEmitter from "events";
-import { noop } from "../browser";
+import { noop } from "../../browser";
 
 const version = "2.2.0";
-const protocolVersion = "1.1.0";
-const fetchSimpleId = "fetch_all";
-interface InfoObject {
+
+interface Features {
+  batches: any;
+  authentication: boolean;
+  fetch: string;
+}
+export interface InfoOptions {
+  protocolVersion?: string;
+  version?: string;
+  name?: string;
+  features?: Features;
+}
+export interface LisenOptions {
+  tcpPort: number;
+  wsPort: number;
+  server?: any;
+  wsGetAuthentication?: any;
+  wsPingInterval?: any;
+}
+const defaultListenOptions = {
+  tcpPort: 11122,
+  wsPort: 11123,
+};
+
+class InfoObject implements InfoOptions {
   name: string;
   version: string;
   protocolVersion: string;
-  features: {
-    batches: boolean,
-    authentication: boolean,
-    fetch: string,
-  };
-}
-class InfoObject implements InfoObject{
-  name: string;
-  version = version;
-  protocolVersion= protocolVersion;
-  features = {
-    batches: false,
-    authentication: false,
-    fetch: "",
-  };
-
-  constructor(options: InfoObject) {
+  features: Features;
+  constructor(options: InfoOptions) {
     this.name = options.name || "node-jet";
-    this.features.fetch = options.features?.fetch || "full";
+    this.version = version;
+    this.protocolVersion = "1.1.0";
+    this.features = {
+      batches: true,
+      authentication: true,
+      fetch: options.features?.fetch || "full",
+    };
   }
 }
 
@@ -91,31 +104,39 @@ class InfoObject implements InfoObject{
  * @returns {Daemon} The newly created Daemon instance.
  *
  */
-interface DaemonOptions extends EventEmitter{
-  log: any
-  captureRejections?: boolean | undefined;  //From event emitter options
-  users: any
+interface User {
+  password?: string;
+  auth?: any;
 }
+interface ParamObject {
+  value: object;
+}
+interface DaemonOptions {
+  log?: any;
+  users?: Record<string, User>;
+}
+
+const defaultOptions: DaemonOptions = {
+  log: console.log,
+  users: {},
+};
+
 export class Daemon extends EventEmitter.EventEmitter {
   wsServer!: WebSocketServer;
-  tcpServer!: any;
-  users: any;
+  tcpServer!: net.Server;
+  users: Record<string, User>;
   router: Router;
   elements: jetElements;
   infoObject: InfoObject;
-  peers: any;
-  constructor(options: DaemonOptions & InfoObject) {
-    super(options);
-    options = options || {};
-    const log = options.log || noop;
-
-    this.users = options.users || {};
-    delete options.users;
-    options.users = false;
+  peers: Peers;
+  fetchSimpleId = "fetch_all";
+  constructor(options: DaemonOptions & InfoOptions = defaultOptions) {
+    super();
+    const { log = noop, users = {} } = options;
+    this.users = users;
     this.router = new Router(log);
     this.elements = new jetElements(null);
     this.infoObject = new InfoObject(options);
-
     const services = {
       add: this.safe(this.add),
       remove: this.safe(this.remove),
@@ -128,7 +149,7 @@ export class Daemon extends EventEmitter.EventEmitter {
       unfetch: undefined as any,
       get: this.safe(this.get),
       authenticate: this.safe(this.authenticate),
-      echo: this.safe((_: any, message: { params: any; }) => {
+      echo: this.safe((_: any, message: { params: any }) => {
         return message.params;
       }),
     };
@@ -147,8 +168,8 @@ export class Daemon extends EventEmitter.EventEmitter {
   // dispatches the 'change' jet call.
   // updates the internal cache (element table)
   // and publishes a change event.
-  change = (peer: any, message: any) => {
-    const params = checked(message, "params", "object");
+  change = (peer: PeerType, message: Message) => {
+    const params = checked<ParamObject>(message, "params", "ParamObject");
     changeCore(peer, this.elements, params);
   };
 
@@ -156,13 +177,15 @@ export class Daemon extends EventEmitter.EventEmitter {
 
   // dispatches the 'fetch' (simple variant) jet call.
   // sets up simple fetching for this peer (fetch all (with access), unsorted).
-  fetchSimple = (peer: any, message: any) => {
+  fetchSimple = (peer: PeerType, message: Message) => {
+
     if (peer.fetchingSimple === true) {
       throw invalidParams("already fetching");
     }
     const queueNotification = (nparams: any) => {
       peer.sendMessage({
-        method: fetchSimpleId,
+        id: "",
+        method: this.fetchSimpleId,
         params: nparams,
       });
     };
@@ -172,39 +195,39 @@ export class Daemon extends EventEmitter.EventEmitter {
     if (isDefined(message.id)) {
       peer.sendMessage({
         id: message.id,
-        result: fetchSimpleId,
+        result: this.fetchSimpleId,
       });
     }
-    peer.addFetcher(fetchSimpleId, fetcher);
-    this.elements.addFetcher(peer.id + fetchSimpleId, fetcher, peer);
+    peer.addFetcher(this.fetchSimpleId, fetcher);
+    this.elements.addFetcher(peer.id + this.fetchSimpleId, fetcher, peer);
   };
 
   // dispatchers the 'unfetch' (simple variant) jet call.
   // removes all ressources associated with the fetcher.
-  unfetchSimple = (peer: any, _: any) => {
+  unfetchSimple = (peer: PeerType, _: Message) => {
     if (!peer.fetchingSimple) {
       throw invalidParams("not fetching");
     }
-    const fetchId = fetchSimpleId;
+    const fetchId = this.fetchSimpleId;
     const fetchPeerId = peer.id + fetchId;
 
     peer.removeFetcher(fetchId);
     this.elements.removeFetcher(fetchPeerId);
   };
 
-  get = (peer: any, message: any) => {
-    const params = checked(message, "params", "object");
+  get = (peer: PeerType, message: Message) => {
+    const params = checked<any>(message, "params", "object");
     params.id = uuidv4();
     let queueNotification;
     let result;
 
     if (params.sort) {
-      queueNotification = (nparams: { changes: any; }) => {
+      queueNotification = (nparams: Notification) => {
         result = nparams.changes;
       };
     } else {
       result = [];
-      queueNotification = (nparams: any) => {
+      queueNotification = (nparams: Notification) => {
         result.push(nparams);
       };
     }
@@ -221,12 +244,18 @@ export class Daemon extends EventEmitter.EventEmitter {
   // all elements are inputed as "fake" add events. The
   // fetcher is only asociated with the element if
   // it "shows interest".
-  fetch = (peer: any, message: any) => {
-    const params = checked(message, "params", "object");
-    const fetchId = checked(params, "id", null);
+  fetch = (
+    peer: {
+      sendMessage: MessageFunction;
+    },
+    message: Message
+  ) => {
+    const params = checked<object>(message, "params", "object");
+    const fetchId = checked<string>(params, "id", "string");
 
-    const queueNotification = (nparams: any) => {
+    const queueNotification = (nparams: object) => {
       peer.sendMessage({
+        id: fetchId,
         method: fetchId,
         params: nparams,
       });
@@ -245,7 +274,7 @@ export class Daemon extends EventEmitter.EventEmitter {
 
   // dispatchers the 'unfetch' jet call.
   // removes all ressources associated with the fetcher.
-  unfetch = (peer: any, message: any) => {
+  unfetch = (peer: PeerType, message: Message) => {
     const params = message.params;
     unfetchCore(peer, this.elements, params);
   };
@@ -255,11 +284,11 @@ export class Daemon extends EventEmitter.EventEmitter {
   // creates an entry in the "route" table if it is a request and sets up a timer
   // which will respond a response timeout error to the requestor if
   // no corresponding response is received.
-  route = (peer: any, message: any) => {
+  route = (peer: PeerType, message: Message) => {
     const params = message.params;
-    const path = checked(params, "path", "string");
+    const path = checked<string>(params, "path", "string");
     const element = this.elements.get(path);
-    if (!hasAccess(message.method, peer, element)) {
+    if (message.method && !hasAccess(message.method, peer, element)) {
       throw invalidParams({
         noAccess: path,
       });
@@ -268,11 +297,8 @@ export class Daemon extends EventEmitter.EventEmitter {
         fetchOnly: path,
       });
     }
-    //TODO Typing
-    const req = {
-      id: undefined,
-      method: undefined as any,
-      params: undefined as any,
+    const req: Message = {
+      id: "" ,
     };
     if (isDefined(message.id)) {
       req.id = this.router.request(message, peer, element);
@@ -290,8 +316,8 @@ export class Daemon extends EventEmitter.EventEmitter {
     element.peer.sendMessage(req);
   };
 
-  add = (peer: any, message: any) => {
-    const params = checked(message, "params", "object");
+  add = (peer: PeerType, message: Message) => {
+    const params = checked<object>(message, "params", "object");
 
     addCore(
       peer,
@@ -301,12 +327,12 @@ export class Daemon extends EventEmitter.EventEmitter {
     );
   };
 
-  remove = (peer: any, message: any) => {
-    const params = checked(message, "params", "object");
+  remove = (peer: PeerType, message: Message) => {
+    const params = checked<object>(message, "params", "object");
     removeCore(peer, this.elements, params);
   };
 
-  config = (peer: any, message: any) => {
+  config = (peer: PeerType, message: Message) => {
     const params = message.params;
     const name = params.name;
     delete params.name;
@@ -324,10 +350,13 @@ export class Daemon extends EventEmitter.EventEmitter {
     return this.infoObject;
   };
 
-  authenticate = (peer: any, message: any) => {
-    const params = checked(message, "params", "object");
-    const user = checked(params, "user", "string");
-    const password = checked(params, "password", "string");
+  authenticate = (
+    peer: { hasFetchers: () => any; auth: any },
+    message: Message
+  ) => {
+    const params = checked<object>(message, "params", "object");
+    const user = checked<string>(params, "user", "string");
+    const password = checked<string>(params, "password", "string");
 
     if (peer.hasFetchers()) {
       throw invalidParams({
@@ -351,8 +380,8 @@ export class Daemon extends EventEmitter.EventEmitter {
     return peer.auth;
   };
 
-  safe = (f: (peer:any,message:any)=> any) => 
-    (peer:any, message: any) => {
+  safe = (f: any) => {
+    return (peer: PeerType, message: Message) => {
       try {
         const result = f(peer, message) || true;
         if (isDefined(message.id)) {
@@ -370,10 +399,10 @@ export class Daemon extends EventEmitter.EventEmitter {
         }
       }
     };
+  }
 
-
-  safeForward = (f: (peer:any,message:any)=> any) => 
-    (peer: any, message: any) => {
+  safeForward = (f: any) => {
+    return (peer: PeerType, message: Message) => {
       try {
         f(peer, message);
       } catch (err) {
@@ -385,6 +414,7 @@ export class Daemon extends EventEmitter.EventEmitter {
         }
       }
     };
+  }
 
   /**
    * Connection event.
@@ -446,12 +476,8 @@ export class Daemon extends EventEmitter.EventEmitter {
    * @fires Daemon#disconnect
    *
    */
-  listen = (listenOptions: { tcpPort: any; wsPort: any; server?: any; wsGetAuthentication?: any; wsPingInterval?: any; }) => {
-    const defaultListenOptions = {
-      tcpPort: 11122,
-      wsPort: 11123,
-    };
-    listenOptions = listenOptions || defaultListenOptions;
+
+  listen = (listenOptions: LisenOptions = defaultListenOptions) => {
     if (listenOptions.tcpPort) {
       this.tcpServer = net.createServer((peerSocket) => {
         const sock = new MessageSocket(peerSocket);
@@ -468,7 +494,7 @@ export class Daemon extends EventEmitter.EventEmitter {
         port: listenOptions.wsPort,
         server: listenOptions.server,
         verifyClient: listenOptions.wsGetAuthentication
-          ? (info: any) => {
+          ? (info: { req: any }) => {
               const auth = listenOptions.wsGetAuthentication(info);
               if (typeof auth === "object") {
                 info.req._jetAuth = auth;
@@ -485,26 +511,29 @@ export class Daemon extends EventEmitter.EventEmitter {
           }
         },
       });
-      this.wsServer.on("connection", (ws, req: any) => {
-        const peer = this.peers.add(ws);
-        peer.auth = req._jetAuth;
-        const pingMs = listenOptions.wsPingInterval || 5000;
-        let pingInterval: NodeJS.Timer;
-        if (pingMs) {
-          pingInterval = setInterval(() => {
-            if (ws.readyState === WebSocket.OPEN) {
-              ws.ping();
-            }
-          }, pingMs);
+      this.wsServer.on(
+        "connection",
+        (ws: { readyState: any; ping: () => void }, req: any) => {
+          const peer = this.peers.add(ws as any);
+          peer.auth = req._jetAuth;
+          const pingMs = listenOptions.wsPingInterval || 5000;
+          let pingInterval: NodeJS.Timeout;
+          if (pingMs) {
+            pingInterval = setInterval(() => {
+              if (ws.readyState === WebSocket.OPEN) {
+                ws.ping();
+              }
+            }, pingMs);
+          }
+          peer.on("close", () => {
+            clearInterval(pingInterval);
+          });
+          peer.on("disconnect", () => {
+            this.emit("disconnect", peer);
+          });
+          this.emit("connection", peer);
         }
-        peer.on("close", () => {
-          clearInterval(pingInterval);
-        });
-        peer.on("disconnect", () => {
-          this.emit("disconnect", peer);
-        });
-        this.emit("connection", peer);
-      });
+      );
     }
   };
 
