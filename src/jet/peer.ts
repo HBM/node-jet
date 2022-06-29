@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use strict";
 
 import { Method, State } from "../browser";

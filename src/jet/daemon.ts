@@ -23,22 +23,30 @@ import EventEmitter from "events";
 import { noop } from "../browser";
 
 const version = "2.2.0";
-
-class InfoObject {
+const protocolVersion = "1.1.0";
+const fetchSimpleId = "fetch_all";
+interface InfoObject {
   name: string;
   version: string;
   protocolVersion: string;
-  features = {
-    batches: undefined as any,
-    authentication: false,
-    fetch: undefined,
+  features: {
+    batches: boolean,
+    authentication: boolean,
+    fetch: string,
   };
-  constructor(options) {
+}
+class InfoObject implements InfoObject{
+  name: string;
+  version = version;
+  protocolVersion= protocolVersion;
+  features = {
+    batches: false,
+    authentication: false,
+    fetch: "",
+  };
+
+  constructor(options: InfoObject) {
     this.name = options.name || "node-jet";
-    this.version = version;
-    this.protocolVersion = "1.1.0";
-    this.features.batches = true;
-    this.features.authentication = true;
     this.features.fetch = options.features?.fetch || "full";
   }
 }
@@ -83,15 +91,20 @@ class InfoObject {
  * @returns {Daemon} The newly created Daemon instance.
  *
  */
+interface DaemonOptions extends EventEmitter{
+  log: any
+  captureRejections?: boolean | undefined;  //From event emitter options
+  users: any
+}
 export class Daemon extends EventEmitter.EventEmitter {
-  wsServer: WebSocketServer;
-  tcpServer: WebSocketServer;
-  users: Object;
+  wsServer!: WebSocketServer;
+  tcpServer!: any;
+  users: any;
   router: Router;
   elements: jetElements;
   infoObject: InfoObject;
-  peers: Peers;
-  constructor(options) {
+  peers: any;
+  constructor(options: DaemonOptions & InfoObject) {
     super(options);
     options = options || {};
     const log = options.log || noop;
@@ -115,7 +128,7 @@ export class Daemon extends EventEmitter.EventEmitter {
       unfetch: undefined as any,
       get: this.safe(this.get),
       authenticate: this.safe(this.authenticate),
-      echo: this.safe((_, message) => {
+      echo: this.safe((_: any, message: { params: any; }) => {
         return message.params;
       }),
     };
@@ -134,22 +147,22 @@ export class Daemon extends EventEmitter.EventEmitter {
   // dispatches the 'change' jet call.
   // updates the internal cache (element table)
   // and publishes a change event.
-  change = (peer, message) => {
+  change = (peer: any, message: any) => {
     const params = checked(message, "params", "object");
     changeCore(peer, this.elements, params);
   };
 
-  fetchSimpleId = "fetch_all";
+ 
 
   // dispatches the 'fetch' (simple variant) jet call.
   // sets up simple fetching for this peer (fetch all (with access), unsorted).
-  fetchSimple = (peer, message) => {
+  fetchSimple = (peer: any, message: any) => {
     if (peer.fetchingSimple === true) {
       throw invalidParams("already fetching");
     }
-    const queueNotification = (nparams) => {
+    const queueNotification = (nparams: any) => {
       peer.sendMessage({
-        method: this.fetchSimpleId,
+        method: fetchSimpleId,
         params: nparams,
       });
     };
@@ -159,39 +172,39 @@ export class Daemon extends EventEmitter.EventEmitter {
     if (isDefined(message.id)) {
       peer.sendMessage({
         id: message.id,
-        result: this.fetchSimpleId,
+        result: fetchSimpleId,
       });
     }
-    peer.addFetcher(this.fetchSimpleId, fetcher);
-    this.elements.addFetcher(peer.id + this.fetchSimpleId, fetcher, peer);
+    peer.addFetcher(fetchSimpleId, fetcher);
+    this.elements.addFetcher(peer.id + fetchSimpleId, fetcher, peer);
   };
 
   // dispatchers the 'unfetch' (simple variant) jet call.
   // removes all ressources associated with the fetcher.
-  unfetchSimple = (peer, _) => {
+  unfetchSimple = (peer: any, _: any) => {
     if (!peer.fetchingSimple) {
       throw invalidParams("not fetching");
     }
-    const fetchId = this.fetchSimpleId;
+    const fetchId = fetchSimpleId;
     const fetchPeerId = peer.id + fetchId;
 
     peer.removeFetcher(fetchId);
     this.elements.removeFetcher(fetchPeerId);
   };
 
-  get = (peer, message) => {
+  get = (peer: any, message: any) => {
     const params = checked(message, "params", "object");
     params.id = uuidv4();
     let queueNotification;
     let result;
 
     if (params.sort) {
-      queueNotification = (nparams) => {
+      queueNotification = (nparams: { changes: any; }) => {
         result = nparams.changes;
       };
     } else {
       result = [];
-      queueNotification = (nparams) => {
+      queueNotification = (nparams: any) => {
         result.push(nparams);
       };
     }
@@ -208,11 +221,11 @@ export class Daemon extends EventEmitter.EventEmitter {
   // all elements are inputed as "fake" add events. The
   // fetcher is only asociated with the element if
   // it "shows interest".
-  fetch = (peer, message) => {
+  fetch = (peer: any, message: any) => {
     const params = checked(message, "params", "object");
     const fetchId = checked(params, "id", null);
 
-    const queueNotification = (nparams) => {
+    const queueNotification = (nparams: any) => {
       peer.sendMessage({
         method: fetchId,
         params: nparams,
@@ -232,7 +245,7 @@ export class Daemon extends EventEmitter.EventEmitter {
 
   // dispatchers the 'unfetch' jet call.
   // removes all ressources associated with the fetcher.
-  unfetch = (peer, message) => {
+  unfetch = (peer: any, message: any) => {
     const params = message.params;
     unfetchCore(peer, this.elements, params);
   };
@@ -242,7 +255,7 @@ export class Daemon extends EventEmitter.EventEmitter {
   // creates an entry in the "route" table if it is a request and sets up a timer
   // which will respond a response timeout error to the requestor if
   // no corresponding response is received.
-  route = (peer, message) => {
+  route = (peer: any, message: any) => {
     const params = message.params;
     const path = checked(params, "path", "string");
     const element = this.elements.get(path);
@@ -261,7 +274,6 @@ export class Daemon extends EventEmitter.EventEmitter {
       method: undefined as any,
       params: undefined as any,
     };
-    console.log("Routing path to peer");
     if (isDefined(message.id)) {
       req.id = this.router.request(message, peer, element);
     }
@@ -275,11 +287,10 @@ export class Daemon extends EventEmitter.EventEmitter {
     } else {
       req.params = params.args;
     }
-    console.log("sending message to peer", peer, req);
     element.peer.sendMessage(req);
   };
 
-  add = (peer, message) => {
+  add = (peer: any, message: any) => {
     const params = checked(message, "params", "object");
 
     addCore(
@@ -290,12 +301,12 @@ export class Daemon extends EventEmitter.EventEmitter {
     );
   };
 
-  remove = (peer, message) => {
+  remove = (peer: any, message: any) => {
     const params = checked(message, "params", "object");
     removeCore(peer, this.elements, params);
   };
 
-  config = (peer, message) => {
+  config = (peer: any, message: any) => {
     const params = message.params;
     const name = params.name;
     delete params.name;
@@ -313,7 +324,7 @@ export class Daemon extends EventEmitter.EventEmitter {
     return this.infoObject;
   };
 
-  authenticate = (peer, message) => {
+  authenticate = (peer: any, message: any) => {
     const params = checked(message, "params", "object");
     const user = checked(params, "user", "string");
     const password = checked(params, "password", "string");
@@ -340,8 +351,8 @@ export class Daemon extends EventEmitter.EventEmitter {
     return peer.auth;
   };
 
-  safe = (f) => {
-    return (peer, message) => {
+  safe = (f: (peer:any,message:any)=> any) => 
+    (peer:any, message: any) => {
       try {
         const result = f(peer, message) || true;
         if (isDefined(message.id)) {
@@ -359,10 +370,10 @@ export class Daemon extends EventEmitter.EventEmitter {
         }
       }
     };
-  };
 
-  safeForward = (f) => {
-    return (peer, message) => {
+
+  safeForward = (f: (peer:any,message:any)=> any) => 
+    (peer: any, message: any) => {
       try {
         f(peer, message);
       } catch (err) {
@@ -374,7 +385,6 @@ export class Daemon extends EventEmitter.EventEmitter {
         }
       }
     };
-  };
 
   /**
    * Connection event.
@@ -436,7 +446,7 @@ export class Daemon extends EventEmitter.EventEmitter {
    * @fires Daemon#disconnect
    *
    */
-  listen = (listenOptions) => {
+  listen = (listenOptions: { tcpPort: any; wsPort: any; server?: any; wsGetAuthentication?: any; wsPingInterval?: any; }) => {
     const defaultListenOptions = {
       tcpPort: 11122,
       wsPort: 11123,
@@ -458,7 +468,7 @@ export class Daemon extends EventEmitter.EventEmitter {
         port: listenOptions.wsPort,
         server: listenOptions.server,
         verifyClient: listenOptions.wsGetAuthentication
-          ? (info) => {
+          ? (info: any) => {
               const auth = listenOptions.wsGetAuthentication(info);
               if (typeof auth === "object") {
                 info.req._jetAuth = auth;
@@ -466,7 +476,7 @@ export class Daemon extends EventEmitter.EventEmitter {
               }
               return false;
             }
-          : null,
+          : undefined,
         handleProtocols: (protocols: Set<string>) => {
           if (protocols.has("jet")) {
             return "jet";
@@ -475,11 +485,11 @@ export class Daemon extends EventEmitter.EventEmitter {
           }
         },
       });
-      this.wsServer.on("connection", (ws, req) => {
+      this.wsServer.on("connection", (ws, req: any) => {
         const peer = this.peers.add(ws);
         peer.auth = req._jetAuth;
         const pingMs = listenOptions.wsPingInterval || 5000;
-        let pingInterval;
+        let pingInterval: NodeJS.Timer;
         if (pingMs) {
           pingInterval = setInterval(() => {
             if (ws.readyState === WebSocket.OPEN) {

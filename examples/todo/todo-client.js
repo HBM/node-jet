@@ -3,7 +3,7 @@
  */
 
 // var jet = require('node-jet')
-var jet = require("../../lib/jet")
+var jet = require("node-jet")
 const protocol = window.location.protocol === 'http:' ? 'ws://' : 'wss://'
 var peer = new jet.Peer({
   url: `${protocol}${window.location.host}:8080`

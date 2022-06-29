@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { isDefined } from "../utils";
 
 export const intersects = (arrayA, arrayB) => {

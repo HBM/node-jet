@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { InvalidArgument } from "./errors";
 
 export const invalidParams = (data) => {

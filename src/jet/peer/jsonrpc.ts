@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use strict";
 
 import { ConnectionClosed, createTypedError } from "../errors";

@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use strict";
 
 import { hasAccess, isFetchOnly } from "./daemon/access";

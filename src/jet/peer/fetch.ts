@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { jetElements } from "../element";
 import {
   addCore,

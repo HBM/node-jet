@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use strict";
 
 import { create as createPathMatcher } from "./path_matcher";

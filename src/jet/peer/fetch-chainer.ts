@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { FakeFetcher, Fetcher } from "./fetch";
 
 const defaultSort = () => ({

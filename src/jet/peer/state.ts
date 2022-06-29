@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use strict";
 
 import { isDefined, errorObject } from "../utils";
@@ -182,7 +183,7 @@ export class State {
         if (isDefined(message.id)) {
           that.jsonrpc.queue({
             id: message.id,
-            error: errorObject(err),
+            er// @ts-nocheckror: errorObject(err),
           });
         }
       }

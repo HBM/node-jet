@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use strict";
 
 const INVALID_PARAMS_CODE = -32602;
