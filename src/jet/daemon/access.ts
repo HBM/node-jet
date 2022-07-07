@@ -1,5 +1,6 @@
 import { jetElement } from "../element";
 import { isDefined } from "../utils";
+import { PeerType } from "./peers";
 
 export const intersects = (arrayA: any, arrayB: any) => {
   for (let i = 0; i < arrayA.length; ++i) {
@@ -28,13 +29,7 @@ export interface Message {
 }
 export const hasAccess = (
   accessName: string,
-  peer: {
-    fetchingSimple?: boolean;
-    sendMessage?: any;
-    addFetcher?: any;
-    id?: string;
-    auth?: any;
-  },
+  peer: PeerType,
   element: jetElement
 ) => {
   if (!isDefined(element.access)) {
@@ -47,21 +42,16 @@ export const hasAccess = (
 };
 
 export const isFetchOnly = (
-  peer: {
-    fetchingSimple: boolean;
-    sendMessage: any;
-    addFetcher: any;
-    id: string;
-  },
-  element: any
+  peer: PeerType,
+  element: jetElement
 ) => {
   if (element.fetchOnly) {
     return true;
   } else {
     if (isDefined(element.value)) {
-      return !hasAccess("set", peer, element as any);
+      return !hasAccess("set", peer, element);
     } else {
-      return !hasAccess("call", peer, element as any);
+      return !hasAccess("call", peer, element);
     }
   }
 };

@@ -7,18 +7,21 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node todo-server.js",
-    "build": "rollup todo-client.js -o public/bundle.js -f cjs"
+    "build": "browserify todo-client.js > public/bundle.js"
   },
   "author": "Gerhard Preuss",
   "license": "MIT",
   "dependencies": {
     "@types/ws": "^8.5.3",
+    "browserify": "^17.0.0",
     "finalhandler": "^1.2.0",
     "node-jet": "github:lipp/node-jet",
     "serve-static": "^1.9.2",
     "ws": "^8.8.0"
   },
   "devDependencies": {
+    "@rollup/plugin-commonjs": "^22.0.1",
+    "@rollup/plugin-typescript": "^8.3.3",
     "rollup": "^2.75.7"
   }
 }

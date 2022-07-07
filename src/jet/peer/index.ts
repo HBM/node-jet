@@ -109,28 +109,23 @@ export class Peer {
     }
     return this.jsonrpc
       .connect()
-      .then(() => {
-        return this.info()
-          .then((daemonInfo) => {
-            this.daemonInfo = daemonInfo;
-            if (this.config.user) {
-              this.authenticate(this.config.user, this.config.password)
-                .then((access) => {
-                  this.access = access;
-                  this.connected = true;
-                  return Promise.resolve();
-                })
-                .catch((err) => {
-                  return Promise.reject(err);
-                });
-            } else {
+      .then(() => this.info())
+      .then((daemonInfo) => {
+        this.daemonInfo = daemonInfo;
+        if (this.config.user) {
+          this.authenticate(this.config.user, this.config.password)
+            .then((access) => {
+              this.access = access;
               this.connected = true;
               return Promise.resolve();
-            }
-          })
-          .catch(() => {
-            //do nothing
-          });
+            })
+            .catch((err) => {
+              return Promise.reject(err);
+            });
+        } else {
+          this.connected = true;
+          return Promise.resolve();
+        }
       })
       .catch((err) => {
         return Promise.reject(err);
@@ -239,9 +234,8 @@ export class Peer {
   call = (
     path: string,
     callparams: any,
-    options: { timeout?: any; skipResult?: any }
+    options: { timeout?: any; skipResult?: any } = {}
   ): Promise<Object | null> => {
-    options = options || {};
     const params = {
       path: path,
       args: callparams || [],
@@ -289,9 +283,8 @@ export class Peer {
   set = (
     path: string,
     value: any,
-    options: { timeout?: number; valueAsResult?: any; skipResult?: boolean }
+    options: { timeout?: number; valueAsResult?: any; skipResult?: boolean } ={}
   ) => {
-    options = options || {};
     const params = {
       path: path,
       value: value,

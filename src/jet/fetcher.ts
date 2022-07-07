@@ -8,7 +8,7 @@ import { create as createValueMatcher } from "./value_matcher";
 export interface Notification {
   fetchOnly?: boolean;
   path: string;
-  lowerPath?: any;
+  lowerPath?: string;
   changes?: any;
   event: any;
   value: any;
@@ -22,7 +22,7 @@ export type FetcherFunction = (
 ) => boolean;
 export const create = (
   options: any,
-  notify: (_: any) => void
+  notify: (_: Notification) => void
 ): FetcherFunction => {
   const pathMatcher = createPathMatcher(options);
   const valueMatcher = createValueMatcher(options);
@@ -92,7 +92,7 @@ export const create = (
       _lowerPath: any,
       event: any,
       value: any,
-      fetchOnly: any
+      fetchOnly: boolean
     ) => matchValue(path, event, value, fetchOnly);
   } else if (isDefined(pathMatcher) && isDefined(valueMatcher)) {
     return (

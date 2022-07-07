@@ -25,7 +25,7 @@ export class State {
   _path: string;
   _value: any;
   _access: null;
-  _dispatcher: any;
+  _dispatcher: Function;
   _isAddedPromise: any;
   _isAddedPromiseResolve!: (value: unknown) => void;
   _isAddedPromiseReject!: (arg0: string) => void;
@@ -135,6 +135,7 @@ export class State {
    *
    */
   on = (event: string, cb: (value: any) => void) => {
+    // console.log("Creating state dispatcher",event, cb)
     if (event === "set") {
       if (cb.length === 1) {
         this._dispatcher = this.createSyncDispatcher(cb);
@@ -147,11 +148,10 @@ export class State {
     }
   };
 
-  createSyncDispatcher = (cb: any) => {
-    const dispatcher = (message: Message) => {
+  createSyncDispatcher = (cb: (value: any) => void) => (message: Message) => {
       const value = message.params.value;
       try {
-        const result = cb.call(this, value) || {};
+        const result = cb(value) || {};
         if (isDefined(result.value)) {
           this._value = result.value;
         } else {
@@ -189,14 +189,9 @@ export class State {
         }
       }
     };
-    return dispatcher;
-  };
 
-  createAsyncDispatcher = (cb: any) => {
-    const dispatch = (message: {
-      params: { value: any; valueAsResult: any };
-      id: string;
-    }) => {
+  createAsyncDispatcher = (cb: any) => 
+    (message: Message) => {
       const value = message.params.value;
       const mid = message.id;
       const reply = (resp: { value?: any; error?: any; dontNotify?: any }) => {
@@ -246,10 +241,9 @@ export class State {
         }
       }
     };
-    return dispatch;
-  };
 
   add = () => {
+
     const addDispatcher = (success: any) => {
       if (success) {
         this.jsonrpc.addRequestDispatcher(this._path, this._dispatcher);
@@ -292,6 +286,7 @@ export class State {
   };
 
   value = (newValue: any= undefined, notAsNotification: boolean= false) => {
+    
     if (isDefined(newValue)) {
       this._value = newValue;
       return this._isAddedPromise.then(() => {

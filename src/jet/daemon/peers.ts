@@ -8,6 +8,7 @@ import { JsonRPC } from "./jsonrpc";
 import { jetElement, jetElements } from "../element";
 import MessageSocket from "../message-socket";
 import { FetcherFunction } from "../fetcher";
+import { boolean } from "yargs";
 
 const genPeerId = (sock: any): string => {
   if (sock instanceof net.Socket) {
@@ -29,7 +30,7 @@ export class PeerType extends EventEmitter.EventEmitter {
   eachFetcher: any = (_: string) => {};
   fetchingSimple: boolean = false;
   removeFetcher = (_: string) => {};
-  hasFetchers = () => {};
+  hasFetchers = () => false;
   sendMessage: MessageFunction = (_msg: Message) => {};
   addFetcher = (_id: string, _fetcher: FetcherFunction) => {};
   auth: any;

@@ -2,6 +2,7 @@
 /**
  * Helpers
  */
+import { Message } from "../daemon/access";
 import { errorObject, isDefined } from "../utils";
 import JsonRPC from "./jsonrpc";
 /**
@@ -10,7 +11,7 @@ import JsonRPC from "./jsonrpc";
 export class Method {
   _path: string;
   _access: null;
-  _dispatcher!: { (message: any): void; (message: any): void };
+  _dispatcher!: (message: Message) => void;
   jsonrpc!: JsonRPC;
   constructor(path: string, access = null) {
     this._path = path;
@@ -18,6 +19,7 @@ export class Method {
   }
   on = (event: string, cb: any) => {
     if (event === "call") {
+      // console.log("Creating method dispatcher",this._path, cb)
       if (cb.length <= 1) {
         this._dispatcher = this.createSyncDispatcher(cb);
       } else {
@@ -28,8 +30,7 @@ export class Method {
       throw new Error("event not available");
     }
   };
-  createSyncDispatcher = (cb: any) => {
-    const dispatch = (message: { params: any; id: string }) => {
+  createSyncDispatcher = (cb: any) => (message: Message) => {
       const params = message.params;
       let result;
       let err;
@@ -53,10 +54,7 @@ export class Method {
         }
       }
     };
-    return dispatch;
-  };
-  createAsyncDispatcher = (cb: any) => {
-    const dispatch = (message: { id: string; params: any }) => {
+  createAsyncDispatcher = (cb: any) =>(message: Message) => {
       const mid = message.id;
       const reply = (resp: { result?: any; error?: any }) => {
         resp = resp || {};
@@ -93,8 +91,6 @@ export class Method {
         }
       }
     };
-    return dispatch;
-  };
   path = () => {
     return this._path;
   };

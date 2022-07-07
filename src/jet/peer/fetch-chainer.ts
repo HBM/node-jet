@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { FakeFetcher, Fetcher } from "./fetch";
+import { FakeFetcher, Fetcher as FetcherFunction } from "./fetch";
 import JsonRPC from "./jsonrpc";
 
 const defaultSort = () => ({
@@ -8,7 +8,7 @@ const defaultSort = () => ({
 export type dataCallback = (data: any) => void;
 export interface FetchRule {
   id?: string;
-  path?: any;
+  path?: string;
   valueField?: Record<any, any>;
   value?: Record<any, any>;
   sort?: {
@@ -22,11 +22,11 @@ export interface FetchRule {
   };
 }
 
-export class FetchChainer {
-  rule!: FetchRule;
+class FetchChainer {
+  rule: FetchRule={};
   _stopped = false;
   _dataDispatcher!: dataCallback;
-  _fetcher!: FakeFetcher | Fetcher;
+  _fetcher!: FakeFetcher | FetcherFunction;
   variant!: string;
   jsonrpc!: JsonRPC;
   on = (event: string, cb: dataCallback) => {
@@ -50,7 +50,7 @@ export class FetchChainer {
           asNotification
         );
       } else {
-        this._fetcher = new Fetcher(
+        this._fetcher = new FetcherFunction(
           this.jsonrpc,
           this.rule,
           this._dataDispatcher,
@@ -151,5 +151,6 @@ export class FetchChainer {
     return this;
   };
 }
+export const Fetcher = FetchChainer
 
 export default FetchChainer;

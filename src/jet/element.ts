@@ -3,21 +3,22 @@
 
 import { hasAccess, isFetchOnly } from "./daemon/access";
 import { PeerType } from "./daemon/peers";
+import { FetcherFunction } from "./fetcher";
 import Peer from "./peer";
 import { invalidParams, eachKeyValue } from "./utils";
 
 export class jetElement {
   fetchers: any;
-  fetcherIsReadOnly: any;
+  fetcherIsReadOnly: boolean;
   eachFetcher: Function;
-  peer: any;
+  peer: PeerType;
   access: any;
   path: string;
-  lowerPath: any;
-  fetchOnly: any;
+  lowerPath: string;
+  fetchOnly: boolean;
   value: any;
   logError: any;
-  timeout: any;
+  timeout: number;
 
   constructor(
     eachPeerFetcherWithAccess: any,
@@ -42,14 +43,8 @@ export class jetElement {
     eachPeerFetcherWithAccess(
       this,
       (
-        peerFetchId: string | number,
-        fetcher: (
-          arg0: any,
-          arg1: any,
-          arg2: string,
-          arg3: any,
-          arg4: any
-        ) => any,
+        peerFetchId: string,
+        fetcher: FetcherFunction,
         hasSetAccess: boolean
       ) => {
         try {
@@ -79,8 +74,8 @@ export class jetElement {
     const logError = this.logError;
     this.eachFetcher(
       (
-        id: string | number,
-        fetcher: (arg0: any, arg1: any, arg2: any, arg3: any, arg4: any) => void
+        id: string,
+        fetcher: FetcherFunction
       ) => {
         try {
           fetcher(path, lowerPath, event, value, isReadOnly[id]);
@@ -97,18 +92,18 @@ export class jetElement {
   remove = () => {
     this._publish("remove");
   };
-  addFetcher = (id: string | number, fetcher: any, isReadOnly: any) => {
+  addFetcher = (id: string, fetcher: any, isReadOnly: boolean) => {
     this.fetchers[id] = fetcher;
     this.fetcherIsReadOnly[id] = isReadOnly;
   };
-  removeFetcher = (id: string | number) => {
+  removeFetcher = (id: string) => {
     delete this.fetchers[id];
     delete this.fetcherIsReadOnly[id];
   };
 }
 
 export class jetElements {
-  instances: Record<any, jetElement>;
+  instances: Record<string, jetElement>;
   log: Function;
   each: Function;
 
@@ -125,7 +120,7 @@ export class jetElements {
   add = (
     peers: PeerType,
     owningPeer: Peer,
-    params: { path: string; value?: any; fetchOnly?: any; access?: any }
+    params: { path: string; value?: any; fetchOnly?: boolean; access?: any }
   ) => {
     const path = params.path;
     if (this.instances[path]) {
@@ -151,7 +146,7 @@ export class jetElements {
       return el;
     }
   };
-  change = (path: string, value: any, peer: any) => {
+  change = (path: string, value: any, peer: PeerType) => {
     const el = this.get(path);
     if (el.peer !== peer) {
       throw invalidParams({
@@ -161,10 +156,10 @@ export class jetElements {
       el.change(value);
     }
   };
-  removePeer = (peer: any) => {
-    const toDelete: any[] = [];
+  removePeer = (peer: PeerType) => {
+    const toDelete: string[] = [];
     this.each(
-      (path: any, element: { peer: any; remove: (arg0: any) => void }) => {
+      (path: string, element: jetElement) => {
         if (element.peer === peer) {
           element.remove(path);
           toDelete.push(path);
@@ -176,7 +171,7 @@ export class jetElements {
       delete instances[path];
     });
   };
-  remove = (path: string, peer: any) => {
+  remove = (path: string, peer: PeerType) => {
     const el = this.get(path);
     if (el.peer !== peer) {
       throw invalidParams({
@@ -188,30 +183,16 @@ export class jetElements {
   };
   addFetcher = (
     id: string,
-    fetcher: (
-      path: string,
-      lowerPath: string,
-      event: any,
-      value: any,
-      fetchOnly: boolean
-    ) => boolean,
-    peer: {
-      fetchingSimple: boolean;
-      sendMessage: any;
-      addFetcher: any;
-      id: string;
-    }
+    fetcher: FetcherFunction,
+    peer: PeerType
   ) => {
     const logError = this.logError;
     this.each(
       (
         path: string,
-        element: {
-          value: any;
-          addFetcher: (arg0: any, arg1: any, arg2: boolean) => void;
-        }
+        element: jetElement
       ) => {
-        if (hasAccess("fetch", peer, element as any)) {
+        if (hasAccess("fetch", peer, element)) {
           let mayHaveInterest;
           try {
             const isReadOnly = isFetchOnly(peer, element);

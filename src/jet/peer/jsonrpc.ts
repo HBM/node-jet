@@ -1,11 +1,11 @@
 // @ts-nocheck
 "use strict";
-import {WebSocket} from "ws"
+
 import { Message } from "../daemon/access";
 import { ConnectionClosed, createTypedError } from "../errors";
 import { JsonParams, PeerConfig } from "../peer";
 import { errorObject, isDefined as isDef } from "../utils";
-
+import { WebSocketImpl } from "../environment";
 import { MessageSocket } from "../message-socket";
 /**
  * Helper shorthands.
@@ -52,11 +52,11 @@ export const addHook = (
  */
 export class JsonRPC {
   _isOpen = false;
-  sock: WebSocket | any;
+  sock: typeof WebSocketImpl;
   config: PeerConfig;
   messages: Array<Message>;
   willFlush: Boolean;
-  requestDispatchers: any;
+  requestDispatchers: Function;
   responseDispatchers: any;
   fakeContext: any;
   id!: string;
@@ -66,7 +66,7 @@ export class JsonRPC {
     this.willFlush = false;
     this.requestDispatchers = [];
     this.responseDispatchers = [];
-    this.id = "";
+    this.id = "1";
   }
   _onOpen = () => {
     this._isOpen = true;
@@ -92,14 +92,12 @@ export class JsonRPC {
       (typeof window !== "undefined" &&
         `ws://${window.location.host}:${config.port || 2315}`);
     return new Promise((resolve, reject) => {
-      console.log("Connecting over:", url || `${config.ip}:${config.port}`)
       this.sock = url
-        ? new WebSocket(url, "jet")
+        ? new WebSocketImpl(url, "jet")
         : new MessageSocket(config.port || 11122, config.ip);
       this.sock.addEventListener("error", () => {}); // swallow errors, closed event is emitted too
       this.sock.addEventListener("message", this._dispatchMessage);
       this.sock.addEventListener("open", () => {
-        console.log("Opened connection")
         this._onOpen();
         return resolve();
       });
@@ -246,7 +244,7 @@ export class JsonRPC {
   /**
    * AddRequestDispatcher.
    */
-  addRequestDispatcher = (id: string, dispatch: any) => {
+  addRequestDispatcher = (id: string, dispatch: Function) => {
     this.requestDispatchers[id] = dispatch;
   };
 
@@ -271,7 +269,7 @@ export class JsonRPC {
     method: string,
     params: JsonParams,
     complete: resultCallback = undefined,
-    asNotification = true
+    asNotification = false
   ): Promise<Object | null> => {
     return new Promise((resolve, reject) => {
       if (!this._isOpen) {
@@ -284,7 +282,7 @@ export class JsonRPC {
         // is expected, aka Notification.
         if (!asNotification) {
           rpcId = this.id;
-          this.id = this.id + 1;
+          this.id = (parseInt(this.id)+ 1).toString();
           const callbacks = {
             success: resolve,
             error: reject,

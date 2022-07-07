@@ -52,9 +52,9 @@ export type eachFetcherFunction = (
   ) => void
 ) => void;
 
-export class FakePeer {
+export class FakePeer  {
   fetchers: Record<string, FetcherFunction>;
-  id: String;
+  id: string;
   eachFetcher: eachFetcherFunction;
   constructor() {
     this.fetchers = {};
@@ -133,7 +133,7 @@ export class FakeFetcher implements iFetcher {
 
     fetchParams.id = id;
 
-    let fetchDispatcher: (arg0: Message) => void;
+    let fetchDispatcher: (message: Message) => void;
     this.fetchSimpleDispatcher = () => {};
     this.wrappedFetchDispatcher = (nparams: any) => {
       fetchDispatcher =
@@ -224,7 +224,7 @@ export class Fetcher implements iFetcher {
   removeFetchDispatcher: resultCallback | undefined = undefined;
   id: string;
   jsonrpc: JsonRPC;
-  asNotification = true;
+  asNotification = false;
   params: FetchRule;
   constructor(
     jsonrpc: JsonRPC,

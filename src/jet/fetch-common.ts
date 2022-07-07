@@ -5,6 +5,9 @@ import { create } from "./sorter";
 import { create as createFetcher, Notification } from "./fetcher";
 import { checked, isDefined } from "./utils";
 import { jetElements } from "./element";
+import { PeerType } from "./daemon/peers";
+import Peer from "./peer";
+import { eachFetcherFunction } from "./peer/fetch";
 
 // dispatches the 'fetch' jet call.
 // creates a fetch operation and optionally a sorter.
@@ -12,11 +15,7 @@ import { jetElements } from "./element";
 // fetcher is only asociated with the element if
 // it "shows interest".
 export const fetchCore = (
-  peer: {
-    sendMessage?: any;
-    addFetcher?: any;
-    id?: any;
-  },
+  peer: PeerType,
   elements: jetElements,
   params: any,
   notify: (_: Notification) => void,
@@ -41,7 +40,7 @@ export const fetchCore = (
   }
 
   peer.addFetcher(fetchId, fetcher);
-  elements.addFetcher(peer.id + fetchId, fetcher, peer as any);
+  elements.addFetcher(peer.id + fetchId, fetcher, peer);
   initializing = false;
 
   if (isDefined(sorter) && sorter.flush) {
@@ -55,7 +54,7 @@ export const fetchCore = (
 // dispatchers the 'unfetch' jet call.
 // removes all ressources associated with the fetcher.
 export const unfetchCore = (
-  peer: { id: string; removeFetcher: (arg0: any) => void },
+  peer: PeerType,
   elements: jetElements,
   params: any
 ) => {
@@ -68,7 +67,7 @@ export const unfetchCore = (
 
 export const addCore = (
   peer: any,
-  eachPeerFetcher: (element: any, f: any) => void,
+  eachPeerFetcher: eachFetcherFunction,
   elements: jetElements,
   params: any
 ) => {

@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 
-var jet = require("node-jet")
+var jet = require("../../lib/jet")
+
+// var jet = require("node-jet")
 var finalhandler = require('finalhandler')
 var http = require('http')
 var serveStatic = require('serve-static')
@@ -39,6 +41,7 @@ var Todo = function (title) {
 }
 
 Todo.prototype.merge = function (other) {
+  console.log("merging",other)
   if (other.completed !== undefined) {
     this.completed = other.completed
   }
@@ -66,6 +69,7 @@ addTodo.on('call', function (args) {
   // create a new todo state and store ref.
   var todoState = new jet.State('todo/#' + todo.id, todo)
   todoState.on('set', function (requestedTodo) {
+    console.log("Received set", requestedTodo)
     todo.merge(requestedTodo)
     return {
       value: todo
@@ -78,6 +82,7 @@ addTodo.on('call', function (args) {
 // Provide a "todo/remove" method to delete a certain todo
 var removeTodo = new jet.Method('todo/remove')
 removeTodo.on('call', function (ids) {
+  console.log("Received remove")
   ids.forEach(function (id) {
     if (todoStates[id]) {
       todoStates[id].remove()
@@ -88,7 +93,8 @@ removeTodo.on('call', function (ids) {
 
 // Provide a "todo/remove" method to delete a certain todo
 var clearCompletedTodos = new jet.Method('todo/clearCompleted')
-clearCompletedTodos.on('call', function () {
+clearCompletedTodos.on('call', function (test) {
+  console.log("Received clear completed", test)
   Object.keys(todoStates).forEach(function (id) {
     if (todoStates[id].value().completed) {
       todoStates[id].remove()
@@ -100,6 +106,7 @@ clearCompletedTodos.on('call', function () {
 // Provide a "todo/remove" method to delete a certain todo
 var setCompleted = new jet.Method('todo/setCompleted')
 setCompleted.on('call', function (args) {
+  console.log("Received set completed", test)
   Object.keys(todoStates).forEach(function (id) {
     var todo = todoStates[id]
     var current = todo.value()
@@ -120,6 +127,6 @@ peer.connect()
   console.log('todo-server ready')
   console.log('listening on port', port)
 })
-.catch(()=>console.log("Failed"))
+.catch(()=>console.log("Failed to connect"))
 .finally(()=>"Ended promise")
 

@@ -19,7 +19,8 @@ export class JsonRPC {
     this.router = router;
   }
   dispatchMessage = (peer: PeerType, message: Message) => {
-    let service;
+    let service = this.services[message.method];
+    
     if (message.method) {
       service = this.services[message.method];
       if (service) {
@@ -34,7 +35,10 @@ export class JsonRPC {
       typeof message.result !== "undefined" ||
       typeof message.error !== "undefined"
     ) {
-      this.router.response(peer, message);
+      try{
+        this.router.response(peer, message);
+      }catch(ex){console.log("failed to send")}
+      
     } else if (isDefined(message.id)) {
       const error = invalidRequest(message);
       peer.sendMessage({
