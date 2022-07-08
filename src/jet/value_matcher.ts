@@ -1,15 +1,16 @@
 // @ts-nocheck
+import { ValueType } from "./element";
 import { accessField, eachKeyValue, invalidParams, isDefined } from "./utils";
 
-const generators: Record<string, (other: any) => (x: any) => boolean> = {
-  lessThan: (other: number) => (x: number) => x < other,
-  greaterThan: (other: number) => (x: number) => x > other,
-  equals: (other: any) => (x: any) => x === other,
-  equalsNot: (other: any) => (x: any) => x !== other,
-  isType: (type: string) => (x: any) => typeof x === type,
+const generators: Record<string, (other: ValueType) => (x: ValueType) => boolean> = {
+  lessThan: (other: ValueType) => (x: ValueType) => x < other,
+  greaterThan: (other: ValueType) => (x: ValueType) => x > other,
+  equals: (other: ValueType) => (x: ValueType) => x === other,
+  equalsNot: (other: ValueType) => (x: ValueType) => x !== other,
+  isType: (type: string) => (x: ValueType) => typeof x === type,
 };
 
-const generatePredicate = (op: string, val: any) => {
+const generatePredicate = (op: string, val: ValueType) => {
   const gen = generators[op];
   if (!gen) {
     throw invalidParams("unknown generator " + op);
@@ -18,7 +19,7 @@ const generatePredicate = (op: string, val: any) => {
   }
 };
 
-const createValuePredicates = (valueOptions: Record<any, any>) => {
+const createValuePredicates = (valueOptions: any) => {
   const predicates: any[] = [];
   eachKeyValue(valueOptions)((op, val) => {
     predicates.push(generatePredicate(op, val));
@@ -26,7 +27,7 @@ const createValuePredicates = (valueOptions: Record<any, any>) => {
   return predicates;
 };
 
-const createValueFieldPredicates = (valueFieldOptions: Record<any, any>) => {
+const createValueFieldPredicates = (valueFieldOptions: any) => {
   const predicates: any[] = [];
   eachKeyValue(valueFieldOptions)((fieldStr, rule) => {
     const fieldPredicates: any[] = [];
@@ -34,7 +35,7 @@ const createValueFieldPredicates = (valueFieldOptions: Record<any, any>) => {
     eachKeyValue(rule)((op, val) => {
       fieldPredicates.push(generatePredicate(op, val));
     });
-    const fieldPredicate = (value: any) => {
+    const fieldPredicate = (value: ValueType) => {
       if (typeof value !== "object") {
         return false;
       }
@@ -83,7 +84,7 @@ export const create = (options: any) => {
     predicates = createValueFieldPredicates(options.valueField);
   }
 
-  return (value: any) => {
+  return (value: ValueType) => {
     // eslint-disable-line consistent-return
     try {
       for (let i = 0; i < predicates.length; ++i) {

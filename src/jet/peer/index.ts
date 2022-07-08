@@ -3,7 +3,8 @@
 
 import { Method, State } from "../../browser";
 import { InfoOptions } from "../daemon";
-import { iFetcher } from "./fetch";
+import { AccessType, ParamType, ValueType } from "../element";
+import { Fetcher, iFetcher } from "./fetch";
 import JsonRPC from "./jsonrpc";
 
 const fallbackDaemonInfo: InfoOptions = {
@@ -18,12 +19,12 @@ const fallbackDaemonInfo: InfoOptions = {
 };
 export interface JsonParams {
   path?: string;
-  args?: any;
+  args?: object;
   timeout?: number;
   user?: string;
   password?: string;
-  value?: any;
-  valueAsResult?: any;
+  value?: ValueType;
+  valueAsResult?: boolean;
   id?: string;
 }
 
@@ -65,9 +66,9 @@ export interface PeerConfig {
 export class Peer {
   config: PeerConfig;
   jsonrpc: JsonRPC;
-  daemonInfo: Record<any, any> | null;
+  daemonInfo?: InfoOptions ;
   connected = false;
-  access: any;
+  access: AccessType;
   constructor(config: PeerConfig) {
     this.config = config || {};
     this.jsonrpc = new JsonRPC(config);
@@ -176,7 +177,7 @@ export class Peer {
    * @returns {external:Promise} Gets resolved as soon as the Daemon has registered the fetch expression.
    */
   fetch = (
-    fetcher: { jsonrpc: JsonRPC; variant: any; fetch: (arg0: boolean) => any },
+    fetcher: Fetcher,
     asNotification = false
   ) => {
     if (this.connected) {
@@ -233,8 +234,8 @@ export class Peer {
    */
   call = (
     path: string,
-    callparams: any,
-    options: { timeout?: any; skipResult?: any } = {}
+    callparams: ParamType,
+    options: { timeout?: number; skipResult?: boolean } = {}
   ): Promise<Object | null> => {
     const params = {
       path: path,
@@ -251,7 +252,7 @@ export class Peer {
    * Info
    * @private
    */
-  info = () => this.jsonrpc.service("info", {});
+  info = () => this.jsonrpc.service("info", {}) as InfoOptions;
 
   /**
    * Authenticate
@@ -282,8 +283,8 @@ export class Peer {
    */
   set = (
     path: string,
-    value: any,
-    options: { timeout?: number; valueAsResult?: any; skipResult?: boolean } ={}
+    value: ValueType,
+    options: { timeout?: number; valueAsResult?: boolean; skipResult?: boolean } ={}
   ) => {
     const params = {
       path: path,

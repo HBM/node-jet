@@ -12,15 +12,15 @@ import { PeerType } from "./peers";
 import { Router } from "./router";
 
 export class JsonRPC {
-  services: Record<any, any>;
+  services: Record<string, Function>;
   router: Router;
-  constructor(services: Record<any, any>, router: Router) {
+  constructor(services: Record<string, Function>, router: Router) {
     this.services = services;
     this.router = router;
   }
   dispatchMessage = (peer: PeerType, message: Message) => {
     let service = this.services[message.method];
-    
+
     if (message.method) {
       service = this.services[message.method];
       if (service) {
@@ -35,10 +35,7 @@ export class JsonRPC {
       typeof message.result !== "undefined" ||
       typeof message.error !== "undefined"
     ) {
-      try{
-        this.router.response(peer, message);
-      }catch(ex){console.log("failed to send")}
-      
+      this.router.response(peer, message);
     } else if (isDefined(message.id)) {
       const error = invalidRequest(message);
       peer.sendMessage({

@@ -1,6 +1,7 @@
 // @ts-nocheck
 "use strict";
 
+import { ValueType } from "./element";
 import { create as createPathMatcher } from "./path_matcher";
 import { isDefined } from "./utils";
 import { create as createValueMatcher } from "./value_matcher";
@@ -10,14 +11,15 @@ export interface Notification {
   path: string;
   lowerPath?: string;
   changes?: any;
-  event: any;
-  value: any;
+  event: EventType;
+  value: ValueType;
 }
+export type EventType = "remove" | "change" | "add" | "data" | "call" | "set";
 export type FetcherFunction = (
   path: string,
   _lowerPath: string,
-  event: any,
-  value: any,
+  event: EventType,
+  value: ValueType,
   fetchOnly: boolean
 ) => boolean;
 export const create = (
@@ -26,12 +28,12 @@ export const create = (
 ): FetcherFunction => {
   const pathMatcher = createPathMatcher(options);
   const valueMatcher = createValueMatcher(options);
-  const added = {} as any;
+  const added: Record<string, boolean> = {};
 
   const matchValue = (
     path: string,
-    event: any,
-    value: any,
+    event: EventType,
+    value: ValueType,
     fetchOnly: boolean
   ) => {
     const isAdded = added[path];
@@ -66,10 +68,10 @@ export const create = (
 
   if (isDefined(pathMatcher) && !isDefined(valueMatcher)) {
     return (
-      path: any,
-      lowerPath: any,
-      event: any,
-      value: any,
+      path: string,
+      lowerPath: string,
+      event: EventType,
+      value: ValueType,
       fetchOnly: boolean
     ) => {
       if (!pathMatcher || !pathMatcher(path, lowerPath)) {
@@ -89,18 +91,18 @@ export const create = (
   } else if (!isDefined(pathMatcher) && isDefined(valueMatcher)) {
     return (
       path: string,
-      _lowerPath: any,
-      event: any,
-      value: any,
+      _lowerPath: string,
+      event: EventType,
+      value: ValueType,
       fetchOnly: boolean
     ) => matchValue(path, event, value, fetchOnly);
   } else if (isDefined(pathMatcher) && isDefined(valueMatcher)) {
     return (
       path: string,
-      lowerPath: any,
-      event: any,
-      value: any,
-      fetchOnly: any
+      lowerPath: string,
+      event: EventType,
+      value: ValueType,
+      fetchOnly: boolean
     ) =>
       !pathMatcher || !pathMatcher(path, lowerPath)
         ? false
@@ -108,9 +110,9 @@ export const create = (
   } else {
     return (
       path: string,
-      _lowerPath: any,
-      event: any,
-      value: any,
+      _lowerPath: string,
+      event: EventType,
+      value: ValueType,
       fetchOnly: boolean
     ) => {
       const notification = {} as Notification;

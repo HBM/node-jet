@@ -1,4 +1,4 @@
-import { jetElement } from "../element";
+import { jetElement, ParamType } from "../element";
 import { isDefined } from "../utils";
 import { PeerType } from "./peers";
 
@@ -22,7 +22,7 @@ export const grantAccess = (accessName: string, access: any, auth: any) => {
 
 export interface Message {
   method?: string;
-  params?: any;
+  params?: ParamType;
   id: string;
   result?: any;
   error?: any;

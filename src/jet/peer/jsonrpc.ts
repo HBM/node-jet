@@ -7,6 +7,7 @@ import { JsonParams, PeerConfig } from "../peer";
 import { errorObject, isDefined as isDef } from "../utils";
 import { WebSocketImpl } from "../environment";
 import { MessageSocket } from "../message-socket";
+import { ValueType } from "../element";
 /**
  * Helper shorthands.
  */
@@ -27,13 +28,11 @@ export type resultCallback =
 export const addHook = (
   callbacks: {
     [x: string]: any;
-    success?: (
-      value: Record<any, any> | PromiseLike<Object | null> | null
-    ) => void;
-    error?: (reason?: any) => void;
+    success?: (value: ValueType) => void;
+    error?: (reason?: string) => void;
   },
   callbackName: string,
-  hook: any
+  hook: Function
 ) => {
   if (callbacks[callbackName]) {
     const orig = callbacks[callbackName];
@@ -143,8 +142,8 @@ export class JsonRPC {
     }
 
     this.willFlush = true;
-    if ((this.config as any).onReceive) {
-      (this.config as any).onReceive(message, decoded);
+    if (this.config.onReceive) {
+      this.config.onReceive(message, decoded);
     }
     if (Array.isArray(decoded)) {
       decoded.forEach((singleMessage) => {
@@ -282,7 +281,7 @@ export class JsonRPC {
         // is expected, aka Notification.
         if (!asNotification) {
           rpcId = this.id;
-          this.id = (parseInt(this.id)+ 1).toString();
+          this.id = (parseInt(this.id) + 1).toString();
           const callbacks = {
             success: resolve,
             error: reject,

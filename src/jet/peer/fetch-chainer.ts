@@ -1,4 +1,6 @@
 // @ts-nocheck
+import { ParamType, ValueType } from "../element";
+import { EventType } from "../fetcher";
 import { FakeFetcher, Fetcher as FetcherFunction } from "./fetch";
 import JsonRPC from "./jsonrpc";
 
@@ -9,27 +11,27 @@ export type dataCallback = (data: any) => void;
 export interface FetchRule {
   id?: string;
   path?: string;
-  valueField?: Record<any, any>;
-  value?: Record<any, any>;
+  valueField?: any;
+  value?: ValueType;
   sort?: {
-    asArray?: Boolean;
-    descending?: Boolean;
-    byPath?: Boolean;
-    byValueField?: Record<any, any>;
-    byValue?: Boolean;
+    asArray?: boolean;
+    descending?: boolean;
+    byPath?: boolean;
+    byValueField?: boolean;
+    byValue?: boolean;
     from?: number;
     to?: number;
   };
 }
 
 class FetchChainer {
-  rule: FetchRule={};
+  rule: FetchRule = {};
   _stopped = false;
   _dataDispatcher!: dataCallback;
   _fetcher!: FakeFetcher | FetcherFunction;
   variant!: string;
   jsonrpc!: JsonRPC;
-  on = (event: string, cb: dataCallback) => {
+  on = (event: EventType, cb: dataCallback) => {
     if (event === "data") {
       this._dataDispatcher = cb;
       return this;
@@ -97,7 +99,7 @@ class FetchChainer {
     return this;
   };
   //TODO value = (arg1,arg2,...rest)
-  value = (...args: any[]) => {
+  value = (...args: ValueType[]) => {
     if (args.length === 2) {
       const match = args[0];
       const comp = args[1];
@@ -135,7 +137,7 @@ class FetchChainer {
     sort.byValueField[key] = type;
     return this;
   };
-  sortByValue = (...args: any[]) => {
+  sortByValue = (...args: ValueType[]) => {
     const sort = this._sortObject();
     if (args.length === 1) {
       sort.byValue = args[0];
@@ -151,6 +153,6 @@ class FetchChainer {
     return this;
   };
 }
-export const Fetcher = FetchChainer
+export const Fetcher = FetchChainer;
 
 export default FetchChainer;

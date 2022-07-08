@@ -1,6 +1,12 @@
 "use strict";
 
-import { checked, errorObject, invalidParams, isDefined } from "../utils";
+import {
+  checked,
+  errorObject,
+  invalidParams,
+  isDefined,
+  optional,
+} from "../utils";
 import { hasAccess, Message } from "./access";
 import MessageSocket from "../message-socket";
 import { WebSocketServer } from "ws";
@@ -16,7 +22,7 @@ import {
 } from "../fetch-common";
 import { Router } from "./router";
 import { Peers, PeerType } from "./peers";
-import { jetElements } from "../element";
+import { jetElements, ParamType } from "../element";
 import { JsonRPC } from "./jsonrpc";
 import { create, Notification } from "../fetcher";
 import EventEmitter from "events";
@@ -26,7 +32,7 @@ import { WebSocketImpl } from "../environment";
 const version = "2.2.0";
 
 interface Features {
-  batches: any;
+  batches: boolean;
   authentication: boolean;
   fetch: string;
 }
@@ -112,7 +118,7 @@ interface User {
 // interface ParamObject {
 //   value: object;
 // }
-export type LogFunction = (...data: any[])=>void
+export type LogFunction = (...data: any[]) => void;
 interface DaemonOptions {
   log?: LogFunction;
   users?: Record<string, User>;
@@ -137,9 +143,9 @@ export class Daemon extends EventEmitter.EventEmitter {
     const { log = noop, users = {} } = options;
     this.users = users;
     this.router = new Router(log);
-    this.elements = new jetElements(null);
+    this.elements = new jetElements();
     this.infoObject = new InfoObject(options);
-    const isFetchingFull = this.infoObject.features.fetch === "full"
+    const isFetchingFull = this.infoObject.features.fetch === "full";
     const services = {
       add: this.safe(this.add),
       remove: this.safe(this.remove),
@@ -148,16 +154,15 @@ export class Daemon extends EventEmitter.EventEmitter {
       change: this.safe(this.change),
       config: this.safe(this.config),
       info: this.safe(this.info),
-      fetch: isFetchingFull? 
-      this.safeForward(this.fetch):
-      this.safeForward(this.fetchSimple),
-      unfetch: isFetchingFull?
-      this.safe(this.unfetch):
-      this.safe(this.unfetchSimple) ,
+      fetch: isFetchingFull
+        ? this.safeForward(this.fetch)
+        : this.safeForward(this.fetchSimple),
+      unfetch: isFetchingFull
+        ? this.safe(this.unfetch)
+        : this.safe(this.unfetchSimple),
       get: this.safe(this.get),
       authenticate: this.safe(this.authenticate),
-      echo: this.safe((_: any, message: Message) => message.params
-      ),
+      echo: this.safe((_: PeerType, message: Message) => message.params),
     };
     const jsonrpc = new JsonRPC(services, this.router);
     this.peers = new Peers(jsonrpc, this.elements);
@@ -167,12 +172,9 @@ export class Daemon extends EventEmitter.EventEmitter {
   // updates the internal cache (element table)
   // and publishes a change event.
   change = (peer: PeerType, message: Message) => {
-      const params = checked<object>(message, "params", "object");
-      changeCore(peer, this.elements, params);
-    
+    const params = checked<object>(message, "params", "object");
+    changeCore(peer, this.elements, params as ParamType);
   };
-
- 
 
   // dispatches the 'fetch' (simple variant) jet call.
   // sets up simple fetching for this peer (fetch all (with access), unsorted).
@@ -180,7 +182,7 @@ export class Daemon extends EventEmitter.EventEmitter {
     if (peer.fetchingSimple === true) {
       throw invalidParams("already fetching");
     }
-    const queueNotification = (nparams: any) => {
+    const queueNotification = (nparams: ParamType) => {
       peer.sendMessage({
         id: "",
         method: this.fetchSimpleId,
@@ -242,21 +244,16 @@ export class Daemon extends EventEmitter.EventEmitter {
   // all elements are inputed as "fake" add events. The
   // fetcher is only asociated with the element if
   // it "shows interest".
-  fetch = (
-    peer: PeerType,
-    message: Message
-  ) => {
-    
+  fetch = (peer: PeerType, message: Message) => {
     const params = checked<object>(message, "params", "object");
     const fetchId = checked<string>(params, "id", "string");
     const queueNotification = (nparams: object) => {
       peer.sendMessage({
         id: fetchId,
         method: fetchId,
-        params: nparams,
+        params: nparams as ParamType,
       });
     };
-
     const queueSuccess = () => {
       if (isDefined(message.id)) {
         peer.sendMessage({
@@ -265,14 +262,19 @@ export class Daemon extends EventEmitter.EventEmitter {
         });
       }
     };
-    fetchCore(peer, this.elements, params, queueNotification, queueSuccess);
+    fetchCore(
+      peer,
+      this.elements,
+      params as ParamType,
+      queueNotification,
+      queueSuccess
+    );
   };
 
   // dispatchers the 'unfetch' jet call.
   // removes all ressources associated with the fetcher.
   unfetch = (peer: PeerType, message: Message) => {
-    const params = message.params;
-    unfetchCore(peer, this.elements, params);
+    unfetchCore(peer, this.elements, message.params!);
   };
 
   // route / forwards a peer request or notification ("call","set") to the peer
@@ -281,7 +283,7 @@ export class Daemon extends EventEmitter.EventEmitter {
   // which will respond a response timeout error to the requestor if
   // no corresponding response is received.
   route = (peer: PeerType, message: Message) => {
-    const params = message.params;
+    const params = message.params!;
     const path = checked<string>(params, "path", "string");
     const element = this.elements.get(path);
     if (message.method && !hasAccess(message.method, peer, element)) {
@@ -294,7 +296,7 @@ export class Daemon extends EventEmitter.EventEmitter {
       });
     }
     const req: Message = {
-      id: "" ,
+      id: "",
     };
     if (isDefined(message.id)) {
       req.id = this.router.request(message, peer, element);
@@ -319,24 +321,17 @@ export class Daemon extends EventEmitter.EventEmitter {
       peer,
       this.peers.eachPeerFetcherWithAccess(),
       this.elements,
-      params
+      params as ParamType
     );
   };
 
   remove = (peer: PeerType, message: Message) => {
     const params = checked<object>(message, "params", "object");
-    removeCore(peer, this.elements, params);
+    removeCore(peer, this.elements, params as ParamType);
   };
 
   config = (peer: PeerType, message: Message) => {
-    const params = message.params;
-    const name = params.name;
-    delete params.name;
-
-    if (Object.keys(params).length > 0) {
-      throw invalidParams("unsupported config field");
-    }
-
+    const name = optional(message.params!, "name", "string");
     if (name) {
       peer.name = name;
     }
@@ -346,10 +341,7 @@ export class Daemon extends EventEmitter.EventEmitter {
     return this.infoObject;
   };
 
-  authenticate = (
-    peer: PeerType,
-    message: Message
-  ) => {
+  authenticate = (peer: PeerType, message: Message) => {
     const params = checked<object>(message, "params", "object");
     const user = checked<string>(params, "user", "string");
     const password = checked<string>(params, "password", "string");
@@ -376,7 +368,7 @@ export class Daemon extends EventEmitter.EventEmitter {
     return peer.auth;
   };
 
-  safe = (f: (peer: PeerType, message: Message)=> any) => {
+  safe = (f: (peer: PeerType, message: Message) => any) => {
     return (peer: PeerType, message: Message) => {
       try {
         const result = f(peer, message) || true;
@@ -395,9 +387,9 @@ export class Daemon extends EventEmitter.EventEmitter {
         }
       }
     };
-  }
+  };
 
-  safeForward = (f: (peer: PeerType, message: Message)=> void) => {
+  safeForward = (f: (peer: PeerType, message: Message) => void) => {
     return (peer: PeerType, message: Message) => {
       try {
         f(peer, message);
@@ -410,7 +402,7 @@ export class Daemon extends EventEmitter.EventEmitter {
         }
       }
     };
-  }
+  };
 
   /**
    * Connection event.

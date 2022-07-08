@@ -9,8 +9,9 @@ import { jetElement, jetElements } from "../element";
 import MessageSocket from "../message-socket";
 import { FetcherFunction } from "../fetcher";
 import { boolean } from "yargs";
+import { Fetcher } from "../peer/fetch";
 
-const genPeerId = (sock: any): string => {
+const genPeerId = (sock: net.Socket | WebSocket): string => {
   if (sock instanceof net.Socket) {
     return sock.remoteAddress + ":" + sock.remotePort;
   } else {
@@ -60,11 +61,11 @@ export class Peers {
 
   eachPeerFetcherWithAccessIterator = (
     element: jetElement,
-    f: (arg0: string, arg1: any, arg2: boolean) => void
+    f: any
   ) => {
     this.eachInstance((peerId, peer) => {
       if (hasAccess("fetch", peer, element)) {
-        peer.eachFetcher((fetchId: string, fetcher: any) => {
+        peer.eachFetcher((fetchId: string, fetcher: Fetcher) => {
           f(peerId + fetchId, fetcher, !isFetchOnly(peer, element));
         });
       }
@@ -109,7 +110,7 @@ export class Peers {
       this.remove(peer);
     });
 
-    sock.once("error", (err: any) => {
+    sock.once("error", (err: string) => {
       console.log("sock err", err);
       console.log("removing peer");
       this.remove(peer);

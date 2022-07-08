@@ -1,10 +1,10 @@
 // @ts-nocheck
 "use strict";
 
-import { create } from "./sorter";
+import { create, SorterType } from "./sorter";
 import { create as createFetcher, Notification } from "./fetcher";
 import { checked, isDefined } from "./utils";
-import { jetElements } from "./element";
+import { jetElements, ParamType } from "./element";
 import { PeerType } from "./daemon/peers";
 import Peer from "./peer";
 import { eachFetcherFunction } from "./peer/fetch";
@@ -17,19 +17,19 @@ import { eachFetcherFunction } from "./peer/fetch";
 export const fetchCore = (
   peer: PeerType,
   elements: jetElements,
-  params: any,
+  params: ParamType,
   notify: (_: Notification) => void,
   success: (() => void) | null
 ) => {
   const fetchId = checked<string>(params, "id");
 
   let fetcher;
-  let sorter: any;
+  let sorter: SorterType;
   let initializing = true;
 
   if (isDefined(params.sort)) {
     sorter = create(params, notify);
-    fetcher = createFetcher(params, (nparams: any) => {
+    fetcher = createFetcher(params, (nparams: ParamType) => {
       sorter.sorter(nparams, initializing);
     });
   } else {
@@ -56,7 +56,7 @@ export const fetchCore = (
 export const unfetchCore = (
   peer: PeerType,
   elements: jetElements,
-  params: any
+  params: ParamType
 ) => {
   const fetchId = checked<string>(params, "id", "string");
   const fetchPeerId = peer.id + fetchId;
@@ -66,20 +66,28 @@ export const unfetchCore = (
 };
 
 export const addCore = (
-  peer: any,
+  peer: PeerType,
   eachPeerFetcher: eachFetcherFunction,
   elements: jetElements,
-  params: any
+  params: ParamType
 ) => {
-  elements.add(eachPeerFetcher as any, peer, params);
+  elements.add(eachPeerFetcher, peer, params);
 };
 
-export const removeCore = (peer: any, elements: jetElements, params: any) => {
+export const removeCore = (
+  peer: PeerType,
+  elements: jetElements,
+  params: ParamType
+) => {
   const path = checked<string>(params, "path", "string");
   elements.remove(path, peer);
 };
 
-export const changeCore = (peer: any, elements: jetElements, params: any) => {
+export const changeCore = (
+  peer: PeerType,
+  elements: jetElements,
+  params: ParamType
+) => {
   const path = checked<string>(params, "path", "string");
   elements.change(path, params.value, peer);
 };
