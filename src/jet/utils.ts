@@ -1,7 +1,6 @@
-// @ts-nocheck
 import { InvalidArgument } from "./errors";
 
-export const invalidParams = (data: any) => {
+export const invalidParams = (data: object | string) => {
   return {
     message: "Invalid params",
     code: -32602,
@@ -9,7 +8,7 @@ export const invalidParams = (data: any) => {
   };
 };
 
-export const parseError = (data: any) => {
+export const parseError = (data: object | string) => {
   return {
     message: "Parse error",
     code: -32700,
@@ -17,7 +16,7 @@ export const parseError = (data: any) => {
   };
 };
 
-export const methodNotFound = (data: any) => {
+export const methodNotFound = (data: object | string) => {
   return {
     message: "Method not found",
     code: -32601,
@@ -25,7 +24,7 @@ export const methodNotFound = (data: any) => {
   };
 };
 
-export const invalidRequest = (data: any) => {
+export const invalidRequest = (data: object | string) => {
   return {
     message: "Invalid Request",
     code: -32600,
@@ -64,11 +63,15 @@ export const checked = <F>(tab: any, key: string, type: string = ""): F => {
   }
 };
 
-export const optional = (tab: any, key: string, typename: string) => {
+export const optional = <F>(
+  tab: any,
+  key: string,
+  type: string = ""
+): F | undefined => {
   const p = tab[key];
   if (isDefined(p)) {
-    if (typename) {
-      if (typeof p === typename) {
+    if (type) {
+      if (typeof p === type) {
         // eslint-disable-line
         return p;
       }
@@ -79,6 +82,7 @@ export const optional = (tab: any, key: string, typename: string) => {
       });
     }
   }
+  return undefined;
 };
 
 export const accessField = (fieldStr: string) => {

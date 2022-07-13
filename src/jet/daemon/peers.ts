@@ -1,29 +1,12 @@
-// @ts-nocheck
 import { eachKeyValue } from "../utils";
-import { v4 as uuidv4 } from "uuid";
 import { hasAccess, isFetchOnly, Message } from "./access";
 import EventEmitter from "events";
-import * as net from "net";
-import { JsonRPC } from "./jsonrpc";
 import { jetElement, jetElements } from "../element";
 import MessageSocket from "../message-socket";
 import { FetcherFunction } from "../fetcher";
-import { boolean } from "yargs";
 import { Fetcher } from "../peer/fetch";
+import { BasicPeer } from "../peer";
 
-const genPeerId = (sock: net.Socket | WebSocket): string => {
-  if (sock instanceof net.Socket) {
-    return sock.remoteAddress + ":" + sock.remotePort;
-  } else {
-    // this is a websocket
-    try {
-      sock = sock._sender._socket;
-      return `${sock.remoteAddress}:${sock.remotePort}`;
-    } catch (e) {
-      return uuidv4();
-    }
-  }
-};
 export type MessageFunction = (_msg: Message) => void;
 export class PeerType extends EventEmitter.EventEmitter {
   id = "";
@@ -38,31 +21,26 @@ export class PeerType extends EventEmitter.EventEmitter {
   name: string = "";
 }
 export class Peers {
-  instances: any = [];
-  jsonrpc: JsonRPC;
+  instances: Record<string, BasicPeer> = {};
   elements: jetElements;
-  constructor(jsonrpc: JsonRPC, elements: jetElements) {
+  constructor(elements: jetElements) {
     this.elements = elements;
-    this.jsonrpc = jsonrpc;
   }
 
-  remove = (peer: PeerType) => {
-    if (peer && this.instances[peer.id]) {
+  remove = (peer: BasicPeer) => {
+    if (peer && this.instances[peer._id]) {
       peer.eachFetcher((fetchId: string) => {
-        this.elements.removeFetcher(peer.id + fetchId);
+        this.elements.removeFetcher(peer._id + fetchId);
       });
       peer.fetchers = {};
       this.elements.removePeer(peer);
-      delete this.instances[peer.id];
+      delete this.instances[peer._id];
     }
   };
 
   eachInstance = eachKeyValue(this.instances);
 
-  eachPeerFetcherWithAccessIterator = (
-    element: jetElement,
-    f: any
-  ) => {
+  eachPeerFetcherWithAccessIterator = (element: jetElement, f: any) => {
     this.eachInstance((peerId, peer) => {
       if (hasAccess("fetch", peer, element)) {
         peer.eachFetcher((fetchId: string, fetcher: Fetcher) => {
@@ -77,34 +55,14 @@ export class Peers {
   };
 
   add = (sock: MessageSocket) => {
-    const peer = new PeerType();
-    const peerId = genPeerId(sock);
-
-    peer.sendMessage = (message) => {
-      sock.send(JSON.stringify(message));
-    };
-
+    const peer = new BasicPeer(sock);
     sock.on("message", (message: string) => {
       try {
-        this.jsonrpc.dispatch(peer, message);
+        peer.emit("message", message);
       } catch (e) {
         this.remove(peer);
       }
     });
-
-    peer.id = peerId;
-    peer.fetchers = {};
-    peer.eachFetcher = eachKeyValue(peer.fetchers);
-    peer.addFetcher = (id, fetcher) => {
-      peer.fetchers[id] = fetcher;
-    };
-    peer.removeFetcher = (id) => {
-      delete peer.fetchers[id];
-    };
-    peer.hasFetchers = () => {
-      return Object.keys(peer.fetchers).length !== 0;
-    };
-    this.instances[peerId] = peer;
     sock.once("close", () => {
       peer.emit("disconnect");
       this.remove(peer);
@@ -115,6 +73,8 @@ export class Peers {
       console.log("removing peer");
       this.remove(peer);
     });
+    this.instances[peer._id] = peer;
+
     return peer;
   };
 }

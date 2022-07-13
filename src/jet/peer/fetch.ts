@@ -10,7 +10,7 @@ import {
 import { FetcherFunction, Notification } from "../fetcher";
 import { eachKeyValue, isDefined } from "../utils";
 import { FetchRule } from "./fetch-chainer";
-import JsonRPC, { resultCallback } from "./jsonrpc";
+import JsonRPC, { resultCallback } from "../jsonrpc";
 
 let globalFetchId = 1;
 

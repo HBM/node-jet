@@ -1,16 +1,18 @@
-// @ts-nocheck
 import { ValueType } from "./element";
 import { accessField, eachKeyValue, invalidParams, isDefined } from "./utils";
 
-const generators: Record<string, (other: ValueType) => (x: ValueType) => boolean> = {
-  lessThan: (other: ValueType) => (x: ValueType) => x < other,
-  greaterThan: (other: ValueType) => (x: ValueType) => x > other,
-  equals: (other: ValueType) => (x: ValueType) => x === other,
-  equalsNot: (other: ValueType) => (x: ValueType) => x !== other,
-  isType: (type: string) => (x: ValueType) => typeof x === type,
+type compareFunction = (x: ValueType) => boolean;
+type generatorFunction = (other: string | ValueType) => compareFunction;
+
+const generators: Record<string, generatorFunction> = {
+  equals: (other) => (x) => x === other,
+  lessThan: (other) => (x) => x < other,
+  equalsNot: (other) => (x) => x !== other,
+  greaterThan: (other) => (x) => x > other,
+  isType: (other) => (x) => typeof x === other,
 };
 
-const generatePredicate = (op: string, val: ValueType) => {
+const generatePredicate = (op: string, val: ValueType): compareFunction => {
   const gen = generators[op];
   if (!gen) {
     throw invalidParams("unknown generator " + op);
@@ -20,7 +22,7 @@ const generatePredicate = (op: string, val: ValueType) => {
 };
 
 const createValuePredicates = (valueOptions: any) => {
-  const predicates: any[] = [];
+  const predicates: compareFunction[] = [];
   eachKeyValue(valueOptions)((op, val) => {
     predicates.push(generatePredicate(op, val));
   });

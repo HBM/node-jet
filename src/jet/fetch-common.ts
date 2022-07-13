@@ -1,4 +1,3 @@
-// @ts-nocheck
 "use strict";
 
 import { create, SorterType } from "./sorter";
@@ -6,8 +5,6 @@ import { create as createFetcher, Notification } from "./fetcher";
 import { checked, isDefined } from "./utils";
 import { jetElements, ParamType } from "./element";
 import { PeerType } from "./daemon/peers";
-import Peer from "./peer";
-import { eachFetcherFunction } from "./peer/fetch";
 
 // dispatches the 'fetch' jet call.
 // creates a fetch operation and optionally a sorter.
@@ -32,6 +29,12 @@ export const fetchCore = (
     fetcher = createFetcher(params, (nparams: ParamType) => {
       sorter.sorter(nparams, initializing);
     });
+    if (isDefined(sorter) && sorter.flush) {
+      if (success) {
+        success();
+      }
+      sorter.flush();
+    }
   } else {
     fetcher = createFetcher(params, notify);
     if (success) {
@@ -42,13 +45,6 @@ export const fetchCore = (
   peer.addFetcher(fetchId, fetcher);
   elements.addFetcher(peer.id + fetchId, fetcher, peer);
   initializing = false;
-
-  if (isDefined(sorter) && sorter.flush) {
-    if (success) {
-      success();
-    }
-    sorter.flush();
-  }
 };
 
 // dispatchers the 'unfetch' jet call.
@@ -66,8 +62,8 @@ export const unfetchCore = (
 };
 
 export const addCore = (
-  peer: PeerType,
-  eachPeerFetcher: eachFetcherFunction,
+  peer: any,
+  eachPeerFetcher: any,
   elements: jetElements,
   params: ParamType
 ) => {

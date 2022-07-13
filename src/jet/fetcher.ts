@@ -1,4 +1,3 @@
-// @ts-nocheck
 "use strict";
 
 import { ValueType } from "./element";

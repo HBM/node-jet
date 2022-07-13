@@ -1,12 +1,11 @@
-// @ts-nocheck
 "use strict";
 
 import assert from "assert";
 import { jetElement } from "../element";
 import { responseTimeout } from "../errors";
+import { BasicPeer } from "../peer";
 import { optional } from "../utils";
 import { Message } from "./access";
-import { PeerType } from "./peers";
 
 export class Router {
   log: Function;
@@ -25,12 +24,14 @@ export class Router {
     // same message.id.
     this.rcount = 0;
   }
-  request = (message: Message, peer: PeerType, element: jetElement) => {
+  request = (message: Message, peer: BasicPeer, element: jetElement) => {
     const timeout =
-      optional(message.params, "timeout", "number") || element.timeout || 5;
+      optional<number>(message.params, "timeout", "number") ||
+      element.timeout ||
+      5;
     /* jslint bitwise: true */
     this.rcount = (this.rcount + 1) % 2 ^ 31;
-    const id = message.id.toString() + peer.id + this.rcount;
+    const id = message.id.toString() + peer._id + this.rcount;
     assert.equal(this.routes[id], null); // eslint-disable-line
     this.routes[id] = {
       receiver: peer,
@@ -49,8 +50,7 @@ export class Router {
   // routes an incoming response to the requestor (peer)
   // which made the request.
   // stops timeout timer eventually.
-  response = (_: PeerType,message: Message
-  ) => {
+  response = (_: BasicPeer, message: Message) => {
     const route = this.routes[message.id];
     if (route) {
       clearTimeout(route.timer);

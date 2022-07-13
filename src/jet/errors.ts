@@ -1,11 +1,10 @@
-// @ts-nocheck
 "use strict";
 
 const INVALID_PARAMS_CODE = -32602;
 const INTERNAL_ERROR_CODE = -32603;
 const RESPONSE_TIMEOUT_CODE = -32001;
 
-export type ErrorData = object | string
+export type ErrorData = object | string;
 export const invalidParams = (data: ErrorData) => {
   return {
     message: "Invalid params",
@@ -61,14 +60,17 @@ export const responseTimeout = (data: ErrorData) => {
  */
 export class BaseError extends Error {
   url = "";
-  stack = undefined as object;
-  constructor(name: string, message: string | object, stack = undefined) {
+  constructor(
+    name: string,
+    message: string | undefined,
+    strStack = "no remote stack"
+  ) {
     super(message);
     this.name = "jet." + name;
     const errorUrlBase =
       "https://github.com/lipp/node-jet/blob/master/doc/peer.markdown";
     this.url = errorUrlBase + "#jet" + name.toLowerCase();
-    this.stack = () => stack || "no remote stack";
+    this.stack = strStack;
   }
 }
 
@@ -115,8 +117,8 @@ export class DaemonError extends BaseError {
  */
 
 export class PeerError extends BaseError {
-  constructor(msg: string) {
-    super("PeerError", err);
+  constructor(_msg: string) {
+    super("PeerError", _msg);
   }
 }
 
@@ -255,7 +257,7 @@ export class FetchOnly extends BaseError {
   }
 }
 
-export const createTypedError = (jsonrpcError: { code: number; data: object }) => {
+export const createTypedError = (jsonrpcError: { code: number; data: any }) => {
   const code = jsonrpcError.code;
   const data = jsonrpcError.data;
   const dataType = typeof data;

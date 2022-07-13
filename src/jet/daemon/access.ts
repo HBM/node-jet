@@ -21,12 +21,30 @@ export const grantAccess = (accessName: string, access: any, auth: any) => {
 };
 
 export interface Message {
-  method?: string;
   params?: ParamType;
   id: string;
-  result?: any;
-  error?: any;
 }
+export interface ErrorMessage extends Message {
+  error: any;
+}
+export interface ServiceMessage extends Message {
+  method: string;
+}
+export interface ResultMessage extends Message {
+  result: any;
+}
+export const isErrorMessage = (message: Message): message is ErrorMessage => {
+  return "error" in message;
+};
+export const isServiceMessage = (
+  message: Message
+): message is ServiceMessage => {
+  return "method" in message;
+};
+export const isResultMessage = (message: Message): message is ResultMessage => {
+  return "result" in message;
+};
+
 export const hasAccess = (
   accessName: string,
   peer: PeerType,
@@ -41,10 +59,7 @@ export const hasAccess = (
   }
 };
 
-export const isFetchOnly = (
-  peer: PeerType,
-  element: jetElement
-) => {
+export const isFetchOnly = (peer: PeerType, element: jetElement) => {
   if (element.fetchOnly) {
     return true;
   } else {

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import EventEmitter from "events";
 import net from "net";
 

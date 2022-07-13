@@ -1,4 +1,3 @@
-// @ts-nocheck
 import assert from "assert";
 import { FetchChainer } from "../browser";
 import { PeerType } from "../jet/daemon/peers";
@@ -23,11 +22,7 @@ export const changesTo = (
   });
   peer.fetch(fetcher);
 };
-export const getsRemoved = (
-  peer: PeerType,
-  path: string,
-  done: () => void
-) => {
+export const getsRemoved = (peer: PeerType, path: string, done: () => void) => {
   const fetcher = new FetchChainer().path("equals", path).on("data", (data) => {
     if (data.event !== "remove") {
       return;
@@ -68,11 +63,7 @@ export const isState = (
   });
   peer.fetch(fetcher);
 };
-export const isMethod = (
-  peer: PeerType,
-  path: string,
-  done: () => void
-) => {
+export const isMethod = (peer: PeerType, path: string, done: () => void) => {
   const fetcher = new FetchChainer().path("equals", path).on("data", (data) => {
     assert.equal(data.event, "add");
     assert.equal(data.path, path);

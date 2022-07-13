@@ -1,5 +1,3 @@
-
-// @ts-nocheck
 import { Notification } from "./fetcher";
 import { accessField, isDefined } from "./utils";
 
@@ -47,9 +45,9 @@ const createSort = (options: {
 };
 
 export type SorterType = {
-  sorter: Function,
-  flush: Function,
-}
+  sorter: Function;
+  flush: Function;
+};
 export const create = (options: any, notify: Function) => {
   const matches: any[] = [];
   const sorted: any = {};

@@ -1,7 +1,6 @@
-// @ts-nocheck
 "use strict";
 
-import { hasAccess, isFetchOnly } from "./daemon/access";
+import { hasAccess, isFetchOnly, Message } from "./daemon/access";
 import { MessageFunction, PeerType } from "./daemon/peers";
 import { FetcherFunction } from "./fetcher";
 import Peer from "./peer";
@@ -131,18 +130,18 @@ export class jetElements {
   log: Function;
   each: Function;
 
-  constructor(log: (_: string) => void = undefined) {
+  constructor(log: (_: string) => void = console.log) {
     this.instances = {};
-    this.log = log || console.log;
+    this.log = log;
     this.logError = this.logError.bind(this);
     this.each = eachKeyValue(this.instances);
   }
-  logError = (err: { stack: any }) => {
+  logError = (err: Message) => {
     this.log("fetcher failed:", err);
     this.log("Trace:", err.stack);
   };
   add = (peers: PeerType, owningPeer: Peer, params: ParamType) => {
-    const path = params.path;
+    const path = params.path!;
     if (this.instances[path]) {
       throw invalidParams({
         pathAlreadyExists: path,

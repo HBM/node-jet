@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { ParamType, ValueType } from "../element";
 import { EventType } from "../fetcher";
 import { FakeFetcher, Fetcher as FetcherFunction } from "./fetch";
@@ -10,7 +9,7 @@ const defaultSort = () => ({
 export type dataCallback = (data: any) => void;
 export interface FetchRule {
   id?: string;
-  path?: string;
+  path?: string | object;
   valueField?: any;
   value?: ValueType;
   sort?: {
@@ -39,7 +38,7 @@ class FetchChainer {
       throw new Error("invalid event");
     }
   };
-  fetch = (asNotification: boolean) => {
+  fetch = () => {
     if (this._stopped) {
       return Promise.resolve();
     }
