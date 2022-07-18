@@ -22,12 +22,15 @@ var httpServer = http.createServer(function (req, res) {
 httpServer.listen(port)
 
 // Create Jet Daemon
-var daemon = new jet.Daemon()
+var daemon = new jet.Daemon({log:{logCallbacks:[console.log],logname:"Daemon",loglevel:jet.LogLevel.debug}})
 
 daemon.listen({
-  server: httpServer, // embed jet websocket upgrade handler
-  tcpPort: internalPort // nodejitsu prevents internal websocket connections
+  server: httpServer,
+  tcpPort: internalPort
 })
+console.log('todo-server ready')
+console.log('listening on port', port)
+
 // Declare Todo Class
 var todoId = 0
 
@@ -53,13 +56,17 @@ Todo.prototype.merge = function (other) {
 
 // Create Jet Peer
 var peer = new jet.Peer({
-  port: internalPort
+  port: internalPort,log:{logCallbacks:[console.log],logname:"Peer 1",loglevel:jet.LogLevel.debug}
+})
+const peer2 = new jet.Peer({
+  port: internalPort,log:{logCallbacks:[console.log],logname:"Peer 2",loglevel:jet.LogLevel.debug}
+
 })
 
 var todoStates = {}
 
 // Provide a "todo/add" method to create new todos
-var value = new jet.State('todo/value')
+var value = new jet.State('todo/value',0)
 var addTodo = new jet.Method('todo/add')
 addTodo.on('call', function (args) {
   console.log("Called add",args)
@@ -116,17 +123,36 @@ setCompleted.on('call', function (args) {
     }
   })
 })
+var todos = new jet.Fetcher()
+  .path('startsWith', 'todo/#')
+  .sortByKey('id', 'number')
+  .range(1, 30)
+  .on('data', function (todos) {
+    console.log("data",todos)
+    // renderTodos(todos)
+  })
 
+console.log("Adding 1st peer")
 peer.connect()
-.then(()=>{
+.then(()=>peer.batch(()=>{
   peer.add(value)
   peer.add(addTodo)
-  peer.add(removeTodo),
-  peer.add(setCompleted),
+  peer.add(removeTodo)
+  peer.add(setCompleted)
   peer.add(clearCompletedTodos)
-  console.log('todo-server ready')
-  console.log('listening on port', port)
-})
-.catch(()=>console.log("Failed to connect"))
-.finally(()=>"Ended promise")
+ 
+}))
+.then(()=>peer2.connect())
+.then(()=>peer2.call('todo/add',["first"]))
+.then(()=>peer2.call('todo/add',["second"]))
+.then(()=>peer2.fetch(todos))
+.then(()=>peer2.set('todo/value',2))
+.then(()=>peer2.call('todo/add',["third"]))
+.then(()=>peer2.call('todo/add',["four"]))
+.then(()=>peer2.set('todo/#2', {completed: true}))
+.catch((ex)=>console.log(ex))
+
+
+
+
 

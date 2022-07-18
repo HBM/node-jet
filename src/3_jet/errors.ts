@@ -1,11 +1,12 @@
 "use strict";
 
+import { ErrorData } from "./messages";
+
 const INVALID_PARAMS_CODE = -32602;
 const INTERNAL_ERROR_CODE = -32603;
 const RESPONSE_TIMEOUT_CODE = -32001;
 
-export type ErrorData = object | string;
-export const invalidParams = (data: ErrorData) => {
+export const invalidParams = (data: ErrorData | string) => {
   return {
     message: "Invalid params",
     code: INVALID_PARAMS_CODE,
@@ -13,7 +14,7 @@ export const invalidParams = (data: ErrorData) => {
   };
 };
 
-export const methodNotFound = (data: ErrorData) => {
+export const methodNotFound = (data: ErrorData | string) => {
   return {
     message: "Method not found",
     code: -32601,
@@ -21,7 +22,7 @@ export const methodNotFound = (data: ErrorData) => {
   };
 };
 
-export const invalidRequest = (data: ErrorData) => {
+export const invalidRequest = (data: ErrorData | string) => {
   return {
     message: "Invalid Request",
     code: -32600,
@@ -257,33 +258,34 @@ export class FetchOnly extends BaseError {
   }
 }
 
-export const createTypedError = (jsonrpcError: { code: number; data: any }) => {
+export const createTypedError = (jsonrpcError: {
+  code: number;
+  data: ErrorData | string;
+}) => {
   const code = jsonrpcError.code;
-  const data = jsonrpcError.data;
-  const dataType = typeof data;
   if (code === INVALID_PARAMS_CODE) {
-    if (dataType === "object") {
-      if (data.pathNotExists) {
-        return new NotFound();
-      } else if (data.pathAlreadyExists) {
-        return new Occupied();
-      } else if (data.fetchOnly) {
-        return new FetchOnly();
-      } else if (data.invalidUser) {
-        return new InvalidUser();
-      } else if (data.invalidPassword) {
-        return new InvalidPassword();
-      } else if (data.invalidArgument) {
-        return new InvalidArgument(
-          data.invalidArgument && data.invalidArgument.message
-        );
-      } else if (data.noAccess) {
-        return new Unauthorized();
-      }
+    const data = jsonrpcError.data as ErrorData;
+    if (data.pathNotExists) {
+      return new NotFound();
+    } else if (data.pathAlreadyExists) {
+      return new Occupied();
+    } else if (data.fetchOnly) {
+      return new FetchOnly();
+    } else if (data.invalidUser) {
+      return new InvalidUser();
+    } else if (data.invalidPassword) {
+      return new InvalidPassword();
+    } else if (data.invalidArgument) {
+      return new InvalidArgument(
+        data.invalidArgument && data.invalidArgument.message
+      );
+    } else if (data.noAccess) {
+      return new Unauthorized();
     }
   } else if (code === RESPONSE_TIMEOUT_CODE) {
     return new PeerTimeout();
   } else if (code === INTERNAL_ERROR_CODE) {
+    const data = jsonrpcError.data as string;
     return new PeerError(data);
   }
 };

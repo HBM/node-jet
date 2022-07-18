@@ -1,5 +1,4 @@
-import { Notification } from "./fetcher";
-import { accessField, isDefined } from "./utils";
+import { accessField, isDefined } from "../utils";
 
 const createSort = (options: {
   sort: { byValue: any; byValueField: {}; byPath: any; descending: any };
@@ -61,7 +60,7 @@ export const create = (options: any, notify: Function) => {
   const isInRange = (i: number) =>
     typeof i === "number" && i >= from && i <= to;
 
-  const sorter = (notification: Notification, initializing: any) => {
+  const sorter = (notification: any, initializing: any) => {
     const event = notification.event;
     const path = notification.path;
     const value = notification.value;

@@ -1,5 +1,6 @@
 // import { Notification } from "./fetcher";
-import { isDefined } from "./utils";
+import { FetchOptions } from "../messages";
+import { isDefined } from "../utils";
 
 const contains = (what: string) => {
   return (path: string) => {
@@ -49,16 +50,14 @@ const equals = (what: any) => {
   };
 };
 
-const equalsOneOf = (whatArray: string | string[]) => {
-  return (path: string) => {
-    let i;
-    for (i = 0; i < whatArray.length; i = i + 1) {
-      if (path === whatArray[i]) {
-        return true;
-      }
+const equalsOneOf = (whatArray: string | string[]) => (path: string) => {
+  let i;
+  for (i = 0; i < whatArray.length; i = i + 1) {
+    if (path === whatArray[i]) {
+      return true;
     }
-    return false;
-  };
+  }
+  return false;
 };
 
 const negate = (gen: any) => {
@@ -100,20 +99,18 @@ const predicateOrder = [
   "equalsNotOneOf",
 ];
 
-export const create = (options: any) => {
+export const createPathMatcher = (options: FetchOptions) => {
   if (!isDefined(options.path)) {
-    return;
+    return () => true;
   }
   const po = options.path;
-  const ci = po.caseInsensitive;
-  const predicates: any[] = [];
-
+  const predicates: ((path: string) => boolean)[] = [];
   predicateOrder.forEach((name) => {
     let gen;
     let option = po[name];
     if (isDefined(option)) {
       gen = generators[name];
-      if (ci) {
+      if (po.caseInsensitive) {
         if (Array.isArray(option)) {
           option = option.map((op) => op.toLowerCase());
         } else {
@@ -133,10 +130,7 @@ export const create = (options: any) => {
     return true;
   };
 
-  const pathMatcher =
-    predicates.length === 1
-      ? (path: any, _lowerPath: any) => predicates[0](path)
-      : (path: any, _lowerPath: any) => applyPredicates(path);
-
-  return pathMatcher; // eslint-disable-line consistent-return
+  return predicates.length === 1
+    ? (path: string) => predicates[0](path)
+    : (path: string) => applyPredicates(path);
 };

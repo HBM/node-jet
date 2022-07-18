@@ -1,5 +1,5 @@
-import { ValueType } from "./element";
-import { accessField, eachKeyValue, invalidParams, isDefined } from "./utils";
+import { ValueType } from "../types";
+import { accessField, eachKeyValue, invalidParams, isDefined } from "../utils";
 
 type compareFunction = (x: ValueType) => boolean;
 type generatorFunction = (other: string | ValueType) => compareFunction;

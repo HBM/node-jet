@@ -17,6 +17,10 @@ export class Method extends EventEmitter.EventEmitter {
   path = () => {
     return this._path;
   };
+
+  call = (args: any) => {
+    this.emit("call", args);
+  };
 }
 
 export default Method;

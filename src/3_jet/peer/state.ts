@@ -1,6 +1,6 @@
 "use strict";
 
-import { AccessType, ValueType } from "../element";
+import { AccessType, ValueType } from "../types";
 import EventEmitter from "events";
 
 /**
