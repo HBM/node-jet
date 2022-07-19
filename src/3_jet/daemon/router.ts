@@ -28,6 +28,16 @@ export class Subscription {
     return true;
   };
 }
+export class FetchRule {
+  matches: (path: string) => boolean;
+  owner: JsonRPC;
+  id: string;
+  constructor(msg: FetchRequest, peer: JsonRPC) {
+    this.matches = createPathMatcher(msg.params);
+    this.owner = peer;
+    this.id = msg.id;
+  }
+}
 export class Route {
   owner: JsonRPC;
   subscriptions: Subscription[] = [];
@@ -52,13 +62,14 @@ export class Route {
 
 export class Router extends EventEmitter.EventEmitter {
   routes: Record<string, Route> = {};
-  fetcher: Record<string, Route> = {};
+  fetcher: FetchRule[] = [];
   constructor(daemon: Daemon) {
     super();
     daemon.addListener("add", this.handleAdd);
-    daemon.addListener("fetch", this.handleFetch);
-    daemon.addListener("update", this.handleChange);
     daemon.addListener("remove", this.handleRemove);
+    daemon.addListener("fetch", this.handleFetch);
+    daemon.addListener("unfetch", this.handleUnfetch);
+    daemon.addListener("update", this.handleChange);
   }
 
   hasRoute = (route: string) => route in this.routes;
@@ -82,21 +93,19 @@ export class Router extends EventEmitter.EventEmitter {
   };
   handleAdd = (msg: AddRequest, owner: JsonRPC) => {
     this.routes[msg.params.path] = new Route(owner);
-    this.emit("Added", msg);
+    this.fetcher.forEach((fetchRule) => {
+      if (fetchRule.matches(msg.params.path)) {
+        const sub = new Subscription(fetchRule.owner, fetchRule.id);
+        this.routes[msg.params.path].addSubscription(sub);
+        fetchRule.owner.send(fetchRule.id, msg.params);
+      }
+    });
   };
   handleChange = (msg: UpdateRequest) => {
     this.routes[msg.params.path].publish(msg);
   };
   handleFetch = (msg: FetchRequest, peer: JsonRPC) => {
     const matcher = createPathMatcher(msg.params);
-    this.addListener("Added", (addMsg: AddRequest) => {
-      const route = addMsg.params.path;
-      if (matcher(route)) {
-        const sub = new Subscription(peer, msg.id);
-        this.routes[route].addSubscription(sub);
-        peer.send(msg.id, addMsg.params);
-      }
-    });
     Object.keys(this.routes).forEach((route: string) => {
       if (matcher(route)) {
         const sub = new Subscription(peer, msg.id);
@@ -108,15 +117,12 @@ export class Router extends EventEmitter.EventEmitter {
           });
       }
     });
+    this.fetcher.push(new FetchRule(msg, peer));
   };
   handleUnfetch = (_owner: Peer) => {
     console.log("Removing fetch");
   };
   handleRemove = (_route: string) => {
     console.log("Removing Route");
-  };
-
-  handleUpdate = () => {
-    console.log("Adding new Route");
   };
 }

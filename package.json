@@ -79,6 +79,7 @@
   },
   "browser": {
     "ws": false,
+    "fs":false,
     "node-jet": "./lib/browser.js"
   },
   "standard": {

@@ -1,6 +1,7 @@
 import EventEmitter from "events";
 import { FetchRequest } from "../messages";
 import { sortable } from "../types";
+import * as crypto from "crypto";
 
 interface ValueRule {
   key: string;
@@ -13,7 +14,7 @@ export class Fetcher extends EventEmitter.EventEmitter {
   constructor() {
     super();
     this.message = {
-      id: "crypto.randomUUID()",
+      id: crypto.randomUUID(),
       params: { path: {}, sort: {} },
     };
   }

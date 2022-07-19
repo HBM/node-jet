@@ -51,6 +51,7 @@ export class JsonRPC extends EventEmitter.EventEmitter {
   fakeContext: any;
   messageId = 1;
   _isOpen = false;
+  openRequests: Record<string, { resolve: Function; reject: Function }> = {};
   resolveDisconnect!: (value: void | PromiseLike<void>) => void;
   rejectDisconnect!: (reason?: any) => void;
   disconnectPromise!: Promise<void>;
@@ -64,6 +65,8 @@ export class JsonRPC extends EventEmitter.EventEmitter {
     this.logger = new Logger(this.config.log);
     this.createDisonnectPromise();
     this.createConnectPromise();
+    this.addListener("success", this.successCb);
+    this.addListener("error", this.errorCb);
     if (sock) {
       this.sock = sock;
       this._isOpen = true;
@@ -172,14 +175,14 @@ export class JsonRPC extends EventEmitter.EventEmitter {
   _dispatchResponse = (message: Message) => {
     const mid = message.id;
     if (isResultMessage(message)) {
-      this.emit("success", mid, message.result as any);
+      this.successCb(mid, message.result as any);
     }
     if (isErrorMessage(message)) {
       const err =
         typeof message.error === "string"
           ? message.error
           : createTypedError(message.error);
-      this.emit("error", mid, err);
+      this.errorCb(mid, err);
     }
   };
 
@@ -236,6 +239,19 @@ export class JsonRPC extends EventEmitter.EventEmitter {
       this.sock.send(encode({ id: id.toString(), error: params }));
     }
   };
+
+  successCb = (id: string, result: any) => {
+    if (id in this.openRequests) {
+      this.openRequests[id].resolve(result);
+      delete this.openRequests[id];
+    }
+  };
+  errorCb = (id: string, error: any) => {
+    if (id in this.openRequests) {
+      this.openRequests[id].reject(error);
+      delete this.openRequests[id];
+    }
+  };
   /**
    * Service.
    */
@@ -251,23 +267,7 @@ export class JsonRPC extends EventEmitter.EventEmitter {
         try {
           const rpcId = id ? id : this.messageId.toString();
           this.messageId++;
-          const success = (id: string, result: T) => {
-            if (id === rpcId) {
-              resolve(result);
-              this.removeListener("success", success);
-              this.removeListener("error", errorCb);
-            }
-          };
-          const errorCb = (id: string, error: any) => {
-            if (id === rpcId) {
-              reject(error);
-            }
-            this.removeListener("success", success);
-            this.removeListener("error", errorCb);
-          };
-          this.addListener("success", success);
-          this.addListener("error", errorCb);
-
+          this.openRequests[rpcId] = { resolve, reject };
           const message: MethodRequest = {
             id: rpcId.toString(),
             method: method,

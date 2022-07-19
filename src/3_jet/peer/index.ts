@@ -122,13 +122,20 @@ export class Peer extends EventEmitter.EventEmitter {
     });
   }
 
+  unfetch = (_fetcher: Fetcher) => {
+    //TODO
+  };
   fetch = (fetcher: Fetcher) => {
     this.jsonrpc.addListener("message", (method: string, m: any) => {
       if (fetcher.message.id === method) {
         fetcher.emit("data", m.params);
       }
     });
-    this.jsonrpc.send("fetch", fetcher.message.params, fetcher.message.id);
+    return this.jsonrpc.send(
+      "fetch",
+      fetcher.message.params,
+      fetcher.message.id
+    );
   };
 
   /**
