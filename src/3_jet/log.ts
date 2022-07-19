@@ -10,7 +10,7 @@ export enum LogLevel {
 
 type LogFunction = (...args: any[]) => void;
 export interface logger {
-  logname?: string;
+  logname: string;
   loglevel?: LogLevel;
   logfile?: string;
   logCallbacks?: LogFunction[];
@@ -21,8 +21,8 @@ export class Logger {
   logLevel: LogLevel;
   callBacks: LogFunction[] | undefined;
   stream: fs.WriteStream | undefined;
-  constructor(settings: logger = {}) {
-    this.logName = settings.logname || "none";
+  constructor(settings: logger={logname:"None"}) {
+    this.logName = settings.logname;
     this.logLevel = settings.loglevel || LogLevel["none"];
     this.callBacks = settings.logCallbacks;
     if (settings.logfile) {

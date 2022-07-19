@@ -145,10 +145,8 @@ export class Daemon extends EventEmitter.EventEmitter {
     this.emit("update", msg);
     return Promise.resolve({});
   };
-  fetch = (msg: FetchRequest, peer: JsonRPC) => {
-    this.emit("fetch", msg, peer);
-    return Promise.resolve({});
-  };
+  fetch = (msg: FetchRequest, peer: JsonRPC) => this.router.handleFetch(msg,peer)
+
   remove = (msg: RemoveRequest) => {
     if (!this.router.hasRoute(msg.params.path)) {
       return Promise.reject(invalidParams("Path not registered"));
@@ -277,7 +275,7 @@ export class Daemon extends EventEmitter.EventEmitter {
   listen = (
     listenOptions: TCPServerConfig & WebServerConfig = defaultListenOptions
   ) => {
-    this.jsonRPCServer = new JsonRPCServer(listenOptions);
+    this.jsonRPCServer = new JsonRPCServer(this.log,listenOptions);
     this.jsonRPCServer.addListener("connection", (newPeer: JsonRPC) => {
       this.log.info("Peer connected");
       newPeer.addListener("message", (method: EventType, msg: Message) => {
@@ -292,6 +290,8 @@ export class Daemon extends EventEmitter.EventEmitter {
       this.log.info("Peer disconnected");
       const routes = this.router.filterRoutesByPeer(listener);
       this.router.deleteRoutes(routes);
+      this.router.deleteFetcher(listener)
+   
     });
     this.jsonRPCServer.listen();
     this.log.info("Daemon started");

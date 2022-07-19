@@ -59,14 +59,14 @@ export class JsonRPC extends EventEmitter.EventEmitter {
   rejectConnect!: (reason?: any) => void;
   connectPromise!: Promise<void>;
   logger: Logger;
-  constructor(config?: JsonRpcConfig, sock?: Socket) {
+  constructor(logger:Logger,config?: JsonRpcConfig, sock?: Socket) {
     super();
     this.config = config || {};
-    this.logger = new Logger(this.config.log);
     this.createDisonnectPromise();
     this.createConnectPromise();
     this.addListener("success", this.successCb);
     this.addListener("error", this.errorCb);
+    this.logger=logger
     if (sock) {
       this.sock = sock;
       this._isOpen = true;
@@ -233,6 +233,7 @@ export class JsonRPC extends EventEmitter.EventEmitter {
   };
 
   respond = (id: string, params: object, success: boolean) => {
+    
     if (success) {
       this.sock.send(encode({ id: id.toString(), result: params }));
     } else {
@@ -262,30 +263,53 @@ export class JsonRPC extends EventEmitter.EventEmitter {
   ): Promise<T> => {
     return new Promise((resolve, reject) => {
       if (!this._isOpen) {
-        reject(new ConnectionClosed(""));
+        reject(new ConnectionClosed("Connection is closed"));
       } else {
-        try {
-          const rpcId = id ? id : this.messageId.toString();
-          this.messageId++;
-          this.openRequests[rpcId] = { resolve, reject };
-          const message: MethodRequest = {
-            id: rpcId.toString(),
-            method: method,
-            params: params,
-          };
-          if (this.willFlush) {
-            this.queue(message);
-          } else {
-            const encoded = encode(message);
-            this.logger.sock(`Sending message:${encoded}`);
-            this.sock.send(encoded);
-          }
-        } catch (ex) {
-          console.log("exception", ex);
+        const rpcId = id ? id : this.messageId.toString();
+        this.messageId++;
+        this.openRequests[rpcId] = { resolve, reject };
+        const message: MethodRequest = {
+          id: rpcId.toString(),
+          method: method,
+          params: params,
+        };
+        if (this.willFlush) {
+          this.queue(message);
+        } else {
+          const encoded = encode(message);
+          this.logger.sock(`Sending message:${encoded}`);
+          this.sock.send(encoded);
         }
       }
     });
   };
+  publish = <T extends object>(
+    fetchId: string,
+    params: JsonParams,
+  ): Promise<T> => {
+    return new Promise((resolve, reject) => {
+      if (!this._isOpen) {
+        reject(new ConnectionClosed("Connection is closed"));
+      } else {
+        const rpcId = this.messageId.toString();
+        this.messageId++;
+        const message: MethodRequest = {
+          id: rpcId.toString(),
+          method: fetchId,
+          params: params,
+        };
+        if (this.willFlush) {
+          this.queue(message);
+        } else {
+          const encoded = encode(message);
+          this.logger.sock(`Sending message:${encoded}`);
+          this.sock.send(encoded);
+        }
+        resolve({} as T) //Publish messages are not acknowledged
+      }
+    });
+  };
+
 
   /**
    * Batch.

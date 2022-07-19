@@ -67,6 +67,7 @@ var todoStates = {}
 
 // Provide a "todo/add" method to create new todos
 var value = new jet.State('todo/value',0)
+
 var addTodo = new jet.Method('todo/add')
 addTodo.on('call', function (args) {
   console.log("Called add",args)
@@ -132,24 +133,33 @@ var todos = new jet.Fetcher()
     // renderTodos(todos)
   })
 
+  var f2 = new jet.Fetcher()
+  .path('equals', 'todo/value')
+  .on('data', function (todos) {
+    console.log("data",todos)
+    // renderTodos(todos)
+  })
 console.log("Adding 1st peer")
 peer.connect()
 .then(()=>peer.batch(()=>{
   peer.add(value)
-  peer.add(addTodo)
-  peer.add(removeTodo)
-  peer.add(setCompleted)
-  peer.add(clearCompletedTodos)
+  // peer.add(addTodo)
+  // peer.add(removeTodo)
+  // peer.add(setCompleted)
+  // peer.add(clearCompletedTodos)
  
 }))
 .then(()=>peer2.connect())
-.then(()=>peer2.call('todo/add',["first"]))
-.then(()=>peer2.call('todo/add',["second"]))
-.then(()=>peer2.fetch(todos))
+// .then(()=>peer2.call('todo/add',["first"]))
+// .then(()=>peer2.call('todo/add',["second"]))
+// .then(()=>peer2.fetch(todos))
+.then(()=>peer2.fetch(f2))
+.then(()=>value.value(4))
+.then(()=>value.value(8))
 .then(()=>peer2.set('todo/value',2))
-.then(()=>peer2.call('todo/add',["third"]))
-.then(()=>peer2.call('todo/add',["four"]))
-.then(()=>peer2.set('todo/#2', {completed: true}))
+// .then(()=>peer2.call('todo/add',["third"]))
+// .then(()=>peer2.call('todo/add',["four"]))
+// .then(()=>peer2.set('todo/#2', {completed: true}))
 .catch((ex)=>console.log(ex))
 
 

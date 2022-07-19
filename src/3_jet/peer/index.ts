@@ -23,6 +23,7 @@ const fallbackDaemonInfo: InfoOptions = {
   },
 };
 export interface JsonParams {
+  method?: string
   path?: string | Record<string, string | string[]>;
   args?: object;
   timeout?: number;
@@ -82,60 +83,86 @@ export interface PeerConfig extends JsonRpcConfig {
  * @example
  * var peer = new jet.Peer({url: 'ws://jetbus.io:8080'})
  */
-export class Peer extends EventEmitter.EventEmitter {
-  _id: string = "";
-  name: string = "";
-  config: PeerConfig;
-  jsonrpc: JsonRPC;
-  daemonInfo: InfoOptions = fallbackDaemonInfo;
-  access?: AccessType;
-  routes: Record<string, Method | State> = {};
-  log: Logger;
+// export type PeerType = {
+//   unfetch: (fetcher: Fetcher)=> Promise<object|null>
+//   set: ( path: string,
+//     value: ValueType,
+//     options: {
+//       timeout?: number;
+//       valueAsResult?: boolean;
+//       skipResult?: boolean;
+//     })=> Promise<object|null>
+//   call: (path: string,callparams: CallRequest,options?: { timeout?: number })=> Promise<object|null>
+//   fetch: (fetcher: Fetcher)=> Promise<object|null>
+// }
+export class Peer extends EventEmitter.EventEmitter{
+  #fetchId = 1;
+  #config: PeerConfig;
+  #jsonrpc: JsonRPC;
+  #daemonInfo: InfoOptions = fallbackDaemonInfo;
+  #access?: AccessType;
+  #routes: Record<string, Method | State> = {};
+  #fetcher : Record<string,Fetcher>={}
+  #log: Logger;
   constructor(config?: PeerConfig, sock?: Socket) {
     super();
-    this.config = config || {};
-    this.log = new Logger(this.config.log);
-    this.jsonrpc = new JsonRPC(config, sock);
-    this.jsonrpc.addListener("message", (method: string, m: any) => {
-      this.log.debug(`${method} request`);
+    this.#config = config || {};
+    this.#log = new Logger(this.#config.log);
+    this.#jsonrpc = new JsonRPC(this.#log,config, sock);
+    this.#jsonrpc.addListener("message", (method: string, m: any) => {
+      this.#log.debug(`${method} request`);
       let state: State;
       switch (method) {
         case "get":
-          state = this.routes[m.params.path] as State;
-          this.jsonrpc.respond(
+          state = this.#routes[m.params.path] as State;
+          this.#jsonrpc.respond(
             m.id,
             { path: state._path, value: state._value },
             true
           );
           break;
         case "set":
-          state = this.routes[m.params.path] as State;
+          state = this.#routes[m.params.path] as State;
           state.value(m.params.value);
-          this.jsonrpc.respond(m.id, {}, true);
+          this.#jsonrpc.respond(m.id, {}, true);
           break;
         case "call":
-          const method = this.routes[m.params.path] as Method;
-          method.call(m.params.args);
-          this.jsonrpc.respond(m.id, {}, true);
+          const callMethod = this.#routes[m.params.path] as Method;
+          callMethod.call(m.params.args);
+          this.#jsonrpc.respond(m.id, {}, true);
           break;
+        default:
+          if (method in this.#fetcher) {
+            this.#fetcher[method].emit("data", m.params);
+          }
       }
     });
   }
 
   unfetch = (_fetcher: Fetcher) => {
     //TODO
+    return Promise.resolve({})
   };
   fetch = (fetcher: Fetcher) => {
-    this.jsonrpc.addListener("message", (method: string, m: any) => {
-      if (fetcher.message.id === method) {
-        fetcher.emit("data", m.params);
-      }
-    });
-    return this.jsonrpc.send(
-      "fetch",
-      fetcher.message.params,
-      fetcher.message.id
-    );
+    if(this.#daemonInfo.features?.fetch==="fetch_all"){
+      //TODO simple fetch
+    }else{
+      fetcher.message.id= `___f___${this.#fetchId}`
+      this.#fetchId++;
+      this.#fetcher[fetcher.message.id] = fetcher
+      return this.#jsonrpc.send<object[]>(
+        "fetch",
+        fetcher.message.params,
+        fetcher.message.id
+      ).then((res)=>{
+        res.forEach((data)=>{
+          fetcher.emit("data",data)
+        })
+        
+        Promise.resolve(res)
+      });
+    }
+    
   };
 
   /**
@@ -168,15 +195,16 @@ export class Peer extends EventEmitter.EventEmitter {
    * })
    */
   connect = () =>
-    this.jsonrpc
+    this.#jsonrpc
       .connect()
-      .then(() => this.info())
+      .then(() => this.#info())
       .then((daemonInfo) => {
-        this.daemonInfo = daemonInfo || fallbackDaemonInfo;
-        if (this.config.user) {
-          this.authenticate(this.config.user, this.config.password)
+        this.#daemonInfo = daemonInfo || fallbackDaemonInfo;
+        if (this.#config.user) {
+          this.#authenticate(this.#config.user, this.#config.password)
             .then((access) => {
-              this.access = access || {};
+              this.#access = access || {};
+              this.#log.debug(`Authenticated Peer: ${this.#access}`);
               return Promise.resolve();
             })
             .catch((err) => {
@@ -197,7 +225,7 @@ export class Peer extends EventEmitter.EventEmitter {
    * @returns {external:Promise}
    *
    */
-  close = () => this.jsonrpc.close();
+  close = () => this.#jsonrpc.close();
 
   /**
    * Batch operations wrapper. Issue multiple commands to the Daemon
@@ -206,7 +234,7 @@ export class Peer extends EventEmitter.EventEmitter {
    * @param {function} action A function performing multiple peer actions.
    *
    */
-  batch = (action: () => void) => this.jsonrpc.batch(action);
+  batch = (action: () => void) => this.#jsonrpc.batch(action);
 
   /**
    * Get {State}s and/or {Method}s defined by a Peer.
@@ -214,9 +242,9 @@ export class Peer extends EventEmitter.EventEmitter {
    * @param {object} expression A Fetch expression to retrieve a snapshot of the currently matching data.
    * @returns {external:Promise}
    */
-  get = (expression: JsonParams) => this.jsonrpc.send("get", expression);
+  get = (expression: JsonParams) => this.#jsonrpc.send("get", expression);
 
-  isState = (stateOrMethod: State | Method): stateOrMethod is State => {
+  #isState = (stateOrMethod: State | Method): stateOrMethod is State => {
     return "_value" in stateOrMethod;
   };
   /**
@@ -226,29 +254,30 @@ export class Peer extends EventEmitter.EventEmitter {
    * @returns {external:Promise} Gets resolved as soon as the content has been added to the Daemon.
    */
   add = (stateOrMethod: Method | State) => {
-    if (this.isState(stateOrMethod)) {
+    
+    if (this.#isState(stateOrMethod)) {
       const params = {
         path: stateOrMethod._path,
         value: stateOrMethod._value,
         access: stateOrMethod._access,
         fetchOnly: false,
       };
-      return this.jsonrpc.send("add", params).then(() => {
+      return this.#jsonrpc.send("add", params).then(() => {
         stateOrMethod.addListener("set", (newValue) => {
-          this.jsonrpc.send("change", {
+          this.#jsonrpc.send("change", {
             path: stateOrMethod._path,
             value: newValue,
           });
         });
-        this.routes[stateOrMethod._path] = stateOrMethod;
+        this.#routes[stateOrMethod._path] = stateOrMethod;
       });
     } else {
       const params = {
         path: stateOrMethod._path,
         access: stateOrMethod._access,
       };
-      return this.jsonrpc.send("add", params).then(() => {
-        this.routes[stateOrMethod._path] = stateOrMethod;
+      return this.#jsonrpc.send("add", params).then(() => {
+        this.#routes[stateOrMethod._path] = stateOrMethod;
       });
     }
   };
@@ -261,7 +290,7 @@ export class Peer extends EventEmitter.EventEmitter {
    * @returns {external:Promise} Gets resolved as soon as the content has been removed from the Daemon.
    */
   remove = (stateOrMethod: Method | State) => {
-    this.jsonrpc.send("remove", { path: stateOrMethod.path() });
+    this.#jsonrpc.send("remove", { path: stateOrMethod.path() });
   };
 
   /**
@@ -283,21 +312,21 @@ export class Peer extends EventEmitter.EventEmitter {
       args: callparams || [],
       timeout: options.timeout, // optional
     } as JsonParams;
-    return this.jsonrpc.send("call", params);
+    return this.#jsonrpc.send("call", params);
   };
 
   /**
    * Info
    * @private
    */
-  info = () => this.jsonrpc.send<InfoOptions>("info", {});
+  #info = () => this.#jsonrpc.send<InfoOptions>("info", {});
 
   /**
    * Authenticate
    * @private
    */
-  authenticate = (user: string, password: string | undefined) =>
-    this.jsonrpc.send<AccessType>("authenticate", {
+  #authenticate = (user: string, password: string | undefined) =>
+    this.#jsonrpc.send<AccessType>("authenticate", {
       user: user,
       password: password,
     });
@@ -306,7 +335,7 @@ export class Peer extends EventEmitter.EventEmitter {
    *
    * @private
    */
-  configure = (params: JsonParams) => this.jsonrpc.send("config", params);
+  configure = (params: JsonParams) => this.#jsonrpc.send("config", params);
 
   /**
    * Set a {State} to another value.
@@ -332,7 +361,7 @@ export class Peer extends EventEmitter.EventEmitter {
       timeout: options.timeout, // optional
       valueAsResult: options.valueAsResult, // optional
     } as JsonParams;
-    return this.jsonrpc.send("set", params);
+    return this.#jsonrpc.send("set", params);
   };
 }
 

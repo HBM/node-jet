@@ -5,6 +5,8 @@ import { ErrorData } from "./messages";
 const INVALID_PARAMS_CODE = -32602;
 const INTERNAL_ERROR_CODE = -32603;
 const RESPONSE_TIMEOUT_CODE = -32001;
+const INVALID_REQUEST = -32600;
+const METHOD_NOT_FOUND = -32601;
 
 export const invalidParams = (data: ErrorData | string) => {
   return {
@@ -17,7 +19,7 @@ export const invalidParams = (data: ErrorData | string) => {
 export const methodNotFound = (data: ErrorData | string) => {
   return {
     message: "Method not found",
-    code: -32601,
+    code: METHOD_NOT_FOUND,
     data: data,
   };
 };
@@ -25,7 +27,7 @@ export const methodNotFound = (data: ErrorData | string) => {
 export const invalidRequest = (data: ErrorData | string) => {
   return {
     message: "Invalid Request",
-    code: -32600,
+    code: INVALID_REQUEST,
     data: data,
   };
 };

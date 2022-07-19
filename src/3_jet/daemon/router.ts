@@ -49,14 +49,26 @@ export class Route {
   addSubscription = (subscription: Subscription) =>
     this.subscriptions.push(subscription);
 
-  unsubscribe = (subscription: Subscription) =>
+  unsubscribe = (subscription: Subscription) =>{
+    console.log("Unsubscribing")
     this.subscriptions.filter((sub) => sub !== subscription);
+  }
+  
 
+  
   publish = (message: UpdateRequest) => {
-    this.subscriptions.forEach((sub) => {
-      if (sub.hasIntrest(message.params.value))
-        sub.owner.send(sub.fetchId, message);
-    });
+      const invalidSubscriptions:Subscription[] = []
+
+      return Promise.all(this.subscriptions.map(async (sub) => {
+        if (sub.hasIntrest(message.params.value))
+          return await sub.owner.publish(sub.fetchId,{method:message.method,path:message.params.path,value:message.params.value}).catch(()=>{
+            invalidSubscriptions.push(sub)
+          })})).then((res)=>{
+            this.subscriptions= this.subscriptions.filter((sub)=>!invalidSubscriptions.includes(sub))
+            return Promise.resolve(res)
+          })
+     
+    
   };
 }
 
@@ -78,6 +90,11 @@ export class Router extends EventEmitter.EventEmitter {
       .filter(([_path, route]) => route.owner === peer)
       .map((el) => el[0]);
 
+  deleteFetcher = (peer: JsonRPC): void =>{
+    this.fetcher = this.fetcher
+    .filter((fetcher) => fetcher.owner === peer)
+  }
+ 
   deleteRoute = (route: string) => {
     delete this.routes[route];
   };
@@ -104,20 +121,16 @@ export class Router extends EventEmitter.EventEmitter {
   handleChange = (msg: UpdateRequest) => {
     this.routes[msg.params.path].publish(msg);
   };
-  handleFetch = (msg: FetchRequest, peer: JsonRPC) => {
+  handleFetch = (msg: FetchRequest, peer: JsonRPC): Promise<object> => {
     const matcher = createPathMatcher(msg.params);
-    Object.keys(this.routes).forEach((route: string) => {
-      if (matcher(route)) {
-        const sub = new Subscription(peer, msg.id);
-        this.routes[route].addSubscription(sub);
-        this.routes[route].owner
-          .send("get", { path: route })
-          .then((response) => {
-            peer.send(msg.id, response);
-          });
-      }
-    });
     this.fetcher.push(new FetchRule(msg, peer));
+    return Promise.all<object>(
+      Object.keys(this.routes).filter((route)=>matcher(route)).map( async (route: string) => {
+          const sub = new Subscription(peer, msg.id);
+          this.routes[route].addSubscription(sub);
+          return await this.routes[route].owner.send<object>("get", { path: route })
+      })
+    )
   };
   handleUnfetch = (_owner: Peer) => {
     console.log("Removing fetch");
