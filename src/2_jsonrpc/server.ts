@@ -47,4 +47,12 @@ export class JsonRPCServer extends EventEmitter.EventEmitter {
       this.wsServer.listen();
     }
   };
+  close = ()=>{
+    if(this.tcpServer){
+      this.tcpServer.close()
+    }
+    if(this.wsServer){
+      this.wsServer.close()
+    }
+  }
 }

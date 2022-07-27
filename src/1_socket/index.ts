@@ -1,3 +1,4 @@
+/* istanbul ignore file */
 import { WebSocket as ws } from "ws";
 import * as net from "net";
 import MessageSocket from "./message-socket";

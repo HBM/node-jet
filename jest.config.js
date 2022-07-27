@@ -2,7 +2,7 @@
 module.exports = {
   cacheDirectory: '<rootDir>/.cache/unit',
   collectCoverage: true,
-  collectCoverageFrom: ['<rootDir>/app/**/*'],
+  collectCoverageFrom: ['<rootDir>/src/**/*'],
   coverageDirectory: 'coverage',
   coverageReporters: ['html', 'text', 'text-summary', 'cobertura'],
   coverageThreshold: {

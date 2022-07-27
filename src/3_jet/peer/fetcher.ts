@@ -1,6 +1,6 @@
 import EventEmitter from "events";
 import { FetchRequest } from "../messages";
-import { sortable } from "../types";
+import { PathRule, sortable } from "../types";
 // import * as crypto from "crypto";
 
 interface ValueRule {
@@ -8,7 +8,7 @@ interface ValueRule {
   value: string;
 }
 export class Fetcher extends EventEmitter.EventEmitter {
-  message: FetchRequest = { id: "", params: { path: {}, sort: {} } };
+  message: FetchRequest = { id: "",method: "fetch", params: { path: {}, sort: {},id:"" } };
   valueRules: ValueRule[] = [];
   rule = {
     path: this.message.params.path,
@@ -18,14 +18,12 @@ export class Fetcher extends EventEmitter.EventEmitter {
     super();
     this.message = {
       id: "", //crypto.randomUUID(),
-      params: { path: {}, sort: {} },
+      method: "fetch",
+      params: { path: {}, sort: {},id:"" },
     };
   }
-  path = (key: string, value: string) => {
-    if (!this.message.params.path) {
-      this.message.params.path = {};
-    }
-    this.message.params.path[key] = value;
+  path = (key: PathRule, value: string) => {
+    this.message.params.path[key as string] = value;
     this.rule.path = this.message.params.path
     return this;
   };

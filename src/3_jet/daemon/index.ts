@@ -1,6 +1,5 @@
 "use strict";
 
-import { invalidParams } from "../utils";
 import { EventType } from "../types";
 import { Router } from "./router";
 import EventEmitter from "events";
@@ -14,18 +13,21 @@ import {
   castMessage,
   FetchRequest,
   GetRequest,
-  Message,
+  MethodRequest,
   RemoveRequest,
   SetRequest,
+  UnFetchRequest,
   UpdateRequest,
 } from "../messages";
+import { invalidParams } from "../errors";
 
 const version = "2.2.0";
 
 interface Features {
   batches: boolean;
   authentication: boolean;
-  fetch: string;
+  fetch: "full"|"simple";
+  asNotification: boolean;
 }
 export interface InfoOptions {
   protocolVersion?: string;
@@ -52,6 +54,7 @@ class InfoObject implements InfoOptions {
       batches: true,
       authentication: true,
       fetch: options.features?.fetch || "full",
+      asNotification: options.features?.asNotification || false
     };
   }
 }
@@ -118,9 +121,7 @@ export class Daemon extends EventEmitter.EventEmitter {
   infoObject: InfoObject;
   log: Logger;
   router: Router;
-  fetchSimpleId = "fetch_all";
   jsonRPCServer!: JsonRPCServer;
-  asNotification = false;
   constructor(options: DaemonOptions & InfoOptions = defaultOptions) {
     super();
     this.users = options.users || {};
@@ -128,34 +129,78 @@ export class Daemon extends EventEmitter.EventEmitter {
     this.log = new Logger(options.log);
     this.router = new Router(this);
   }
-
+  /*
+  Add as Notification: The message is acknowledged,then all the peers are informed about the new state
+  Add synchronous: First all Peers are informed about the new value then message is acknowledged
+  */
   add = (msg: AddRequest, peer: JsonRPC): Promise<object> => {
-    if (this.asNotification) {
+    if (this.router.hasRoute(msg.params.path)) {
+      return Promise.reject(invalidParams("Path already registered"));
+    }
+    if (this.infoObject.features.asNotification) {
       this.emit("add", msg, peer);
       return Promise.resolve({});
     } else {
-      if (this.router.hasRoute(msg.params.path)) {
-        return Promise.reject(invalidParams("Path already registered"));
-      }
-      this.router.handleAdd(msg, peer);
-      return Promise.resolve({});
+      return this.router.handleAdd(msg, peer);
     }
   };
+  /*
+  Change as Notification: The message is acknowledged,then all the peers are informed about the value change
+  change synchronous: First all Peers are informed about the new value then the message is acknowledged
+  */
   change = (msg: UpdateRequest) => {
-    this.emit("update", msg);
-    return Promise.resolve({});
+    if (this.infoObject.features.asNotification) {
+      this.emit("update", msg);
+      return Promise.resolve({});
+    }else{
+      return this.router.handleChange(msg)
+    }
   };
-  fetch = (msg: FetchRequest, peer: JsonRPC) => this.router.handleFetch(msg,peer)
+   /*
+  Fetch as Notification: The message is acknowledged,then the peer is informed of all the states matching the fetchrule
+  Fetch synchronous: First the peer is informed of all the states matching the fetchrule then the message is acknowledged
+  */
+  fetch = (msg: FetchRequest, peer: JsonRPC) => {
+    if (this.infoObject.features.asNotification) {
+      this.emit("fetch", msg,peer);
+      return Promise.resolve({});
+    }else{
+      return this.router.handleFetch(msg,peer)
+    }
+  }
+  /*
+  Unfetch synchronous: Unfetch fires and no more updates are send with the given fetch_id. Message is acknowledged
+  */
+  unfetch = (msg: UnFetchRequest) => {
+    // if (this.infoObject.features.asNotification) {
+    //   this.emit("unfetch", msg);
+    //   return Promise.resolve({});
+    // }else{
+      return this.router.handleUnfetch(msg)
+    // }
+  }
+  /*
+  Get synchronous: Only synchronous implementation-> all the values are added to an array array ist send as response
+  */
+  get = (msg: GetRequest) => this.router.handleGet(msg)
 
+  /*
+  remove synchronous: Only synchronous implementation-> state is removed then message is acknowledged
+  */  
   remove = (msg: RemoveRequest) => {
     if (!this.router.hasRoute(msg.params.path)) {
       return Promise.reject(invalidParams("Path not registered"));
     }
-    this.emit("remove", msg.params.path);
-    return Promise.resolve({});
+    return this.router.handleRemove(msg.params.path)
   };
-  forward = (msg: GetRequest) => this.router.forward(msg.params.path, msg);
+  /*
+  Call and Set requests: Call and set requests are always forwarded synchronous
+  */
+  forward = (msg: SetRequest|CallRequest) => this.router.forward(msg.params.path, msg);
 
+  /*
+  Info requests: Info requests are always synchronous
+  */
   info = () => Promise.resolve(this.infoObject);
 
   // authenticate = (peer: any, message: Message) => {
@@ -195,7 +240,7 @@ export class Daemon extends EventEmitter.EventEmitter {
 
   handleMessage = (
     method: EventType,
-    message: Message,
+    message: MethodRequest,
     peer: JsonRPC
   ): Promise<object> => {
     this.log.debug(`${method} request`);
@@ -204,27 +249,27 @@ export class Daemon extends EventEmitter.EventEmitter {
       case "configure":
         //TODO what can be configured??
         return Promise.resolve({});
-        break;
       case "info":
         return this.info();
-        break;
       case "add":
         return this.add(castMessage<AddRequest>(message), peer);
       case "remove":
         return this.remove(castMessage<RemoveRequest>(message));
       case "fetch":
         return this.fetch(castMessage<FetchRequest>(message), peer);
+      case "unfetch":
+        return this.unfetch(castMessage<UnFetchRequest>(message));
       case "change":
         return this.change(castMessage<UpdateRequest>(message));
       //Requests that need to be forwarded
       case "get":
-        return this.forward(castMessage<GetRequest>(message));
+        return this.get(castMessage<GetRequest>(message));
       case "set":
         return this.forward(castMessage<SetRequest>(message));
       case "call":
         return this.forward(castMessage<CallRequest>(message));
     }
-    return Promise.resolve({});
+    return Promise.reject("Unknown method");
   };
 
   /**
@@ -278,10 +323,10 @@ export class Daemon extends EventEmitter.EventEmitter {
     this.jsonRPCServer = new JsonRPCServer(this.log,listenOptions);
     this.jsonRPCServer.addListener("connection", (newPeer: JsonRPC) => {
       this.log.info("Peer connected");
-      newPeer.addListener("message", (method: EventType, msg: Message) => {
+      newPeer.addListener("message", (method: EventType, msg: MethodRequest) => {
         this.handleMessage(method, msg, newPeer)
           .then((response) => {
-            newPeer.respond(msg.id, response, true);
+            newPeer.respond(msg.id, response, true)
           })
           .catch((ex) => newPeer.respond(msg.id, ex, false));
       });
@@ -298,7 +343,7 @@ export class Daemon extends EventEmitter.EventEmitter {
   };
 
   close = () => {
-    //TODO
+    this.jsonRPCServer.close()
   };
 }
 

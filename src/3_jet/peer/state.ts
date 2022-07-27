@@ -2,6 +2,7 @@
 
 import { AccessType, ValueType } from "../types";
 import EventEmitter from "events";
+import { JsonParams } from ".";
 
 /**
  * Create a Jet State instance
@@ -21,21 +22,15 @@ import EventEmitter from "events";
 export class State<T = ValueType> extends EventEmitter.EventEmitter {
   _path: string;
   _value: T;
-  _access: AccessType;
-  constructor(path: string, initialValue: T, access: AccessType = {}) {
+  _access: AccessType | null;
+  _readonly: boolean;
+  constructor(path: string, initialValue: T, readonly: boolean=false, access: AccessType|null = null) {
     super();
     this._path = path;
     this._value = initialValue;
     this._access = access;
+    this._readonly = readonly
   }
-
-  /**
-   * Set callback which accepts any value passed in,
-   * automatically assigning it to the state and automatically
-   * posting a change event to the Jet Daemon.
-   *
-   */
-  acceptAny = (_: T) => {};
 
   /**
    * Get the state's unchangable path.
@@ -67,6 +62,16 @@ export class State<T = ValueType> extends EventEmitter.EventEmitter {
 
     return this._value;
   };
+
+  toJson = ()=> {
+    const params: JsonParams<T> ={
+      path: this._path,
+      value: this._value
+    }
+    if(this._access)params.access=this._access
+    return params
+   
+}
 }
 
 export default State;

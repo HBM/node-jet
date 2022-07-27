@@ -1,33 +1,13 @@
 "use strict";
-import EventEmitter from "events";
-import { Message } from "./messages";
-export type EventType =
-  | "configure"
-  | "info"
-  | "fetch"
-  | "remove"
-  | "change"
-  | "add"
-  | "data"
-  | "call"
-  | "get"
-  | "set";
+export const events =["configure","info","fetch","unfetch","remove","change","add","data","call","get", "set"] as const
+export type EventType = typeof events[number]
+
+export const pathRules =["equals","equalsNot","endsWith","startsWith","contains","containsNot","containsAllOf","containsOneOf","startsNotWith","endsNotWith","equalsOneOf","equalsNotOneOf",] as const
+export type PathRule = typeof pathRules[number]
 export type sortable = "boolean" | "number" | "string";
 export interface AccessType {
   id?: string;
 }
 export type ValueType = string | number | object | boolean;
 
-export type MessageFunction = (_msg: Message) => void;
-export class PeerType extends EventEmitter.EventEmitter {
-  id = "";
-  fetchers: Record<string, any> = {};
-  eachFetcher: any = (_: string) => {};
-  fetchingSimple: boolean = false;
-  removeFetcher = (_: string) => {};
-  hasFetchers = () => false;
-  sendMessage: MessageFunction = (_msg: Message) => {};
-  addFetcher = (_id: string, _fetcher: any) => {};
-  auth: any;
-  name: string = "";
-}
+export const fetchSimpleId = "fetch_all";

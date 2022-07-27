@@ -1,3 +1,4 @@
+/* istanbul ignore file */
 import EventEmitter from "events";
 import { WebSocketImpl, netImpl, Socket } from ".";
 import MessageSocket from "./message-socket";
@@ -30,6 +31,9 @@ export class TCPServer extends EventEmitter.EventEmitter {
     });
     this.tcpServer.listen(this.config.tcpPort);
   };
+  close = () =>{
+    this.tcpServer.close()
+  }
 }
 export interface WebServerConfig {
   url?: string;
@@ -98,4 +102,7 @@ export class WebsocketServer extends EventEmitter.EventEmitter {
       this.emit("connection", sock);
     });
   };
+  close = () =>{
+    this.wsServer.close()
+  }
 }

@@ -1,5 +1,6 @@
+import { invalidParams } from "../errors";
 import { ValueType } from "../types";
-import { accessField, eachKeyValue, invalidParams, isDefined } from "../utils";
+import { accessField, isDefined } from "../utils";
 
 type compareFunction = (x: ValueType) => boolean;
 type generatorFunction = (other: string | ValueType) => compareFunction;
@@ -21,20 +22,20 @@ const generatePredicate = (op: string, val: ValueType): compareFunction => {
   }
 };
 
-const createValuePredicates = (valueOptions: any) => {
+const createValuePredicates = (valueOptions: Record<string,ValueType>) => {
   const predicates: compareFunction[] = [];
-  eachKeyValue(valueOptions)((op, val) => {
+  Object.entries(valueOptions).forEach(([op, val]) => {
     predicates.push(generatePredicate(op, val));
   });
   return predicates;
 };
 
-const createValueFieldPredicates = (valueFieldOptions: any) => {
+const createValueFieldPredicates = (valueFieldOptions: Record<string,Record<string,ValueType>>) => {
   const predicates: any[] = [];
-  eachKeyValue(valueFieldOptions)((fieldStr, rule) => {
+  Object.entries(valueFieldOptions).forEach(([fieldStr, rule]) => {
     const fieldPredicates: any[] = [];
     const accessor = accessField(fieldStr);
-    eachKeyValue(rule)((op, val) => {
+    Object.entries(rule).forEach(([op, val]) => {
       fieldPredicates.push(generatePredicate(op, val));
     });
     const fieldPredicate = (value: ValueType) => {

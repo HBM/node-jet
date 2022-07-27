@@ -2,13 +2,15 @@
  * Helpers
  */
 import EventEmitter from "events";
+import { JsonParams } from ".";
+import { AccessType } from "../types";
 /**
  * Method
  */
 export class Method extends EventEmitter.EventEmitter {
   _path: string;
-  _access: null;
-  constructor(path: string, access = null) {
+  _access: AccessType | null;
+  constructor(path: string, access: AccessType|null = null) {
     super();
     this._path = path;
     this._access = access;
@@ -21,6 +23,14 @@ export class Method extends EventEmitter.EventEmitter {
   call = (args: any) => {
     this.emit("call", args);
   };
+
+  toJson = ()=> {
+    const params: JsonParams ={
+      path: this._path
+    }
+    if(this._access)params.access=this._access
+    return params
+  }
 }
 
 export default Method;

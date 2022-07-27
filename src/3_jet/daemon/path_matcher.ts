@@ -1,5 +1,6 @@
 // import { Notification } from "./fetcher";
 import { FetchOptions } from "../messages";
+import { pathRules } from "../types";
 import { isDefined } from "../utils";
 
 const contains = (what: string) => {
@@ -84,20 +85,7 @@ const generators: Record<any, any> = {
   equalsNotOneOf: negate(equalsOneOf),
 };
 
-const predicateOrder = [
-  "equals",
-  "equalsNot",
-  "endsWith",
-  "startsWith",
-  "contains",
-  "containsNot",
-  "containsAllOf",
-  "containsOneOf",
-  "startsNotWith",
-  "endsNotWith",
-  "equalsOneOf",
-  "equalsNotOneOf",
-];
+
 
 export const createPathMatcher = (options: FetchOptions) => {
   if (!isDefined(options.path)) {
@@ -105,7 +93,7 @@ export const createPathMatcher = (options: FetchOptions) => {
   }
   const po = options.path;
   const predicates: ((path: string) => boolean)[] = [];
-  predicateOrder.forEach((name) => {
+  pathRules.forEach((name) => {
     let gen;
     let option = po[name];
     if (isDefined(option)) {

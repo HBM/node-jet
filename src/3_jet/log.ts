@@ -43,6 +43,7 @@ export class Logger {
     const logmessage = this.stringbuilder(msg, level);
     if (this.stream) {
       this.stream.write(logmessage);
+      this.stream.write("\n");
     }
     if (this.callBacks) {
       this.callBacks.every((cb) => cb(logmessage));
@@ -63,4 +64,17 @@ export class Logger {
   error(msg: string) {
     this.log(msg, LogLevel.error);
   }
+  flush():Promise<void>{
+    return new Promise((resolve)=>{
+      if(this.stream){
+        const interval = setInterval(()=>{
+          if(!this.stream || !this.stream.pending){
+            clearInterval(interval)
+            resolve()
+          }
+        })
+      }
+    })
+  }
+
 }

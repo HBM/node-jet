@@ -1,12 +1,27 @@
 "use strict";
 
-import { ErrorData } from "./messages";
+export const INVALID_PARAMS_CODE = -32602;
+export const INTERNAL_ERROR_CODE = -32603;
+export const RESPONSE_TIMEOUT_CODE = -32001;
+export const INVALID_REQUEST = -32600;
+export const METHOD_NOT_FOUND = -32601;
 
-const INVALID_PARAMS_CODE = -32602;
-const INTERNAL_ERROR_CODE = -32603;
-const RESPONSE_TIMEOUT_CODE = -32001;
-const INVALID_REQUEST = -32600;
-const METHOD_NOT_FOUND = -32601;
+export interface ErrorData {
+  pathNotExists?: string;
+  pathAlreadyExists?: string;
+  fetchOnly?: string;
+  invalidUser?: string;
+  invalidPassword?: string;
+  invalidArgument?: { message: string };
+  noAccess?: string;
+}
+export interface ErrorObject{
+  code:number,
+  message:string,
+  stack?:any,
+  lineNumber?:number,
+  fileName?:string
+}
 
 export const invalidParams = (data: ErrorData | string) => {
   return {
@@ -16,29 +31,23 @@ export const invalidParams = (data: ErrorData | string) => {
   };
 };
 
-export const methodNotFound = (data: ErrorData | string) => {
-  return {
+export const methodNotFound = (data: ErrorData | string) => ({
     message: "Method not found",
     code: METHOD_NOT_FOUND,
     data: data,
-  };
-};
+  })
 
-export const invalidRequest = (data: ErrorData | string) => {
-  return {
+export const invalidRequest = (data: ErrorData | string) => ({
     message: "Invalid Request",
     code: INVALID_REQUEST,
     data: data,
-  };
-};
+  })
 
-export const responseTimeout = (data: ErrorData) => {
-  return {
+export const responseTimeout = (data: ErrorData) => ({
     message: "Response Timeout",
     code: RESPONSE_TIMEOUT_CODE,
     data: data,
-  };
-};
+  })
 
 /**
  * @module errors
@@ -180,6 +189,19 @@ export class ConnectionClosed extends BaseError {
 
 /**
  * Creates a new instance.
+ * @classdesc The connection to the specified endpoint could not be established or has been closed.
+ * @class
+ * @augments module:errors~BaseError
+ *
+ */
+ export class ConnectionInUse extends BaseError {
+  constructor(err: string) {
+    super("ConnectionInUse", err);
+  }
+}
+
+/**
+ * Creates a new instance.
  * @classdesc The State or Method specified by `path` has not been added to the Daemon. One
  * could `fetch` the respective State or Method to wait until it becomes available.
  * @class
@@ -203,7 +225,7 @@ export class NotFound extends BaseError {
  */
 
 export class InvalidArgument extends BaseError {
-  constructor(msg: string) {
+  constructor(msg: string|undefined) {
     super(
       "InvalidArgument",
       msg || "The provided argument(s) have been refused by the State/Method"

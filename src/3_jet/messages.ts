@@ -1,4 +1,5 @@
-import { AccessType, EventType, sortable, ValueType } from "./types";
+import { DaemonError, ErrorData, invalidParams } from "./errors";
+import { AccessType, events, EventType, sortable, ValueType } from "./types";
 
 export interface Message {
   id: string;
@@ -14,21 +15,44 @@ export interface Message {
 //     return field in msg;
 //   }
 // };
-export const castMessage = <T extends Message>(msg: Message): T => {
-  return msg as T;
+export const castMessage = <T extends MethodRequest>(msg: MethodRequest): T => {
+  
+  if(!("id" in msg))throw new DaemonError("No id")
+  
+  if(!("method" in msg)) throw new DaemonError("No method")
+  if(!(events.includes(msg.method as EventType)))  throw new DaemonError("Method unknown")
+  const method= msg.method as EventType
+  const params = msg.params
+  switch(method){
+    case "info":
+      return msg as T;
+    case "configure":
+      if(!params || !("name" in params))throw invalidParams("Only params.name supported")
+      return msg as T;
+    case "unfetch":
+      if(!params || !("id" in params))throw invalidParams("Fetch id required")
+      return msg as T;
+    default:
+      if(!params || !("path" in params))throw invalidParams("Path required")
+  }
+  switch(method){
+    
+    case "fetch":
+      if(!("id" in params))throw invalidParams("Fetch id required")
+      return msg as T
+    case "change":
+    case "set":
+      if(!("value" in params))throw invalidParams("Value required")
+      return msg as T
+    default:
+        return msg as T
+  }
+ 
 };
 export interface ResultMessage extends Message {
   result: ValueType;
 }
-export interface ErrorData {
-  pathNotExists?: string;
-  pathAlreadyExists?: string;
-  fetchOnly?: string;
-  invalidUser?: string;
-  invalidPassword?: string;
-  invalidArgument?: { message: string };
-  noAccess?: string;
-}
+
 export interface ErrorMessage extends Message {
   error: string | { code: number; data: ErrorData };
 }
@@ -50,7 +74,7 @@ export interface UpdateRequest extends MethodRequest {
     value: ValueType;
   };
 }
-export interface GetRequest extends PathRequest {}
+
 export interface AddRequest extends PathRequest {
   params: { path: string; value?: ValueType };
 }
@@ -60,6 +84,7 @@ export interface RemoveRequest extends PathRequest {}
 
 export interface FetchOptions {
   path: Record<string, string | string[]>;
+  id: string;
   sort: {
     asArray?: boolean;
     descending?: boolean;
@@ -70,8 +95,14 @@ export interface FetchOptions {
     to?: number;
   };
 }
-export interface FetchRequest extends Message {
+export interface GetRequest extends MethodRequest {
   params: FetchOptions;
+}
+export interface FetchRequest extends MethodRequest {
+  params: FetchOptions;
+}
+export interface UnFetchRequest extends MethodRequest {
+  params: {id: string};
 }
 
 export interface ParamType {

@@ -1,3 +1,4 @@
+/* istanbul ignore file */
 import EventEmitter from "events";
 import net from "net";
 

@@ -2,7 +2,6 @@
 
 import { ConnectionClosed, createTypedError } from "../3_jet/errors";
 import { JsonParams } from "../3_jet/peer";
-import { errorObject, isDefined as isDef } from "../3_jet/utils";
 import { Socket } from "../1_socket";
 import EventEmitter from "events";
 import {
@@ -64,8 +63,6 @@ export class JsonRPC extends EventEmitter.EventEmitter {
     this.config = config || {};
     this.createDisonnectPromise();
     this.createConnectPromise();
-    this.addListener("success", this.successCb);
-    this.addListener("error", this.errorCb);
     this.logger=logger
     if (sock) {
       this.sock = sock;
@@ -98,13 +95,12 @@ export class JsonRPC extends EventEmitter.EventEmitter {
       this._isOpen = false;
       this.resolveDisconnect();
       this.createConnectPromise();
-      // this.rejectConnect("Socket closed");
     });
   };
 
   connect = (): Promise<void> => {
     if (this._isOpen) {
-      return Promise.reject("Already open");
+      return Promise.resolve();
     }
     const config = this.config;
     this.sock = new Socket();
@@ -117,16 +113,16 @@ export class JsonRPC extends EventEmitter.EventEmitter {
    * Close.
    */
   close = (): Promise<void> => {
-    if (this._isOpen) {
-      this.flush();
-      this.sock.close();
-      return this.disconnectPromise;
+    if (!this._isOpen) {
+     return Promise.resolve()
     }
-    return Promise.reject("Not open");
+    this.flush();
+    this.sock.close();
+    return this.disconnectPromise;
   };
 
   _handleError = (err: any) => {
-    console.log("Error in connection", err);
+    this.logger.error(`Error in socket connection:${err}`);
   };
   /**
    * _dispatchMessage
@@ -134,23 +130,24 @@ export class JsonRPC extends EventEmitter.EventEmitter {
    * @api private
    */
   _handleMessage = (event: { data: any }) => {
+    
     const message = event.data;
     this.logger.sock(`Received message:${message}`);
     try {
       const decoded = decode(message);
-
+      
       if (Array.isArray(decoded)) {
         this.willFlush = true;
         decoded.forEach((singleMessage) => {
-          this._dispatchSingleMessage(singleMessage);
+            this._dispatchSingleMessage(singleMessage);
         });
         this.flush();
       } else {
         this.willFlush = false;
         this._dispatchSingleMessage(decoded);
       }
-    } catch (err) {
-      throw err;
+    } catch (err: any) {
+      this.logger.error(err.toString())
     }
   };
 
@@ -159,7 +156,7 @@ export class JsonRPC extends EventEmitter.EventEmitter {
    *
    * @api private
    */
-  _dispatchSingleMessage = (message: Message) => {
+  _dispatchSingleMessage = (message: MethodRequest| ResultMessage| ErrorMessage) => {
     if (isResultMessage(message) || isErrorMessage(message)) {
       this._dispatchResponse(message);
     } else {
@@ -182,6 +179,7 @@ export class JsonRPC extends EventEmitter.EventEmitter {
         typeof message.error === "string"
           ? message.error
           : createTypedError(message.error);
+      console.log(err,message.error)
       this.errorCb(mid, err);
     }
   };
@@ -192,18 +190,8 @@ export class JsonRPC extends EventEmitter.EventEmitter {
    *
    * @api private
    */
-  _dispatchRequest = (message: MethodRequest) => {
-    try {
-      this.emit("message", message.method, message);
-    } catch (err) {
-      if (isDef(message.id)) {
-        this.queue({
-          id: message.id,
-          error: errorObject(err),
-        });
-      }
-    }
-  };
+  _dispatchRequest = (message: MethodRequest) => this.emit("message", message.method, message);
+ 
 
   /**
    * Queue.
@@ -221,9 +209,6 @@ export class JsonRPC extends EventEmitter.EventEmitter {
         this.messages.length === 1 ? this.messages[0] : this.messages
       );
       if (encoded) {
-        if (this.config.onSend) {
-          // this.config.onSend(encoded, this.messages);
-        }
         this.logger.sock(`Sending message ${encoded}`);
         this.sock.send(encoded);
         this.messages = [];
@@ -233,12 +218,7 @@ export class JsonRPC extends EventEmitter.EventEmitter {
   };
 
   respond = (id: string, params: object, success: boolean) => {
-    
-    if (success) {
-      this.sock.send(encode({ id: id.toString(), result: params }));
-    } else {
-      this.sock.send(encode({ id: id.toString(), error: params }));
-    }
+    this.sock.send(encode({id:id,[success?"result":"error"]:params}));
   };
 
   successCb = (id: string, result: any) => {
@@ -258,14 +238,13 @@ export class JsonRPC extends EventEmitter.EventEmitter {
    */
   send = <T extends object>(
     method: string,
-    params: JsonParams,
-    id: string | undefined = undefined
+    params: JsonParams
   ): Promise<T> => {
     return new Promise((resolve, reject) => {
       if (!this._isOpen) {
         reject(new ConnectionClosed("Connection is closed"));
       } else {
-        const rpcId = id ? id : this.messageId.toString();
+        const rpcId = this.messageId.toString();
         this.messageId++;
         this.openRequests[rpcId] = { resolve, reject };
         const message: MethodRequest = {
