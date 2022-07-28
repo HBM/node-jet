@@ -1,7 +1,6 @@
 "use strict";
 
 import { EventType } from "../types";
-import { Router } from "./router";
 import EventEmitter from "events";
 import { JsonRPCServer } from "../../2_jsonrpc/server";
 import { TCPServerConfig, WebServerConfig } from "../../1_socket/server";
@@ -19,14 +18,17 @@ import {
   UnFetchRequest,
   UpdateRequest,
 } from "../messages";
-import { invalidParams } from "../errors";
+import { methodNotFound, NotFound, Occupied } from "../errors";
+import { createPathMatcher } from "./path_matcher";
+import { Subscriber } from "./subscriber";
+import { Route } from "./route";
 
 const version = "2.2.0";
 
 interface Features {
   batches: boolean;
   authentication: boolean;
-  fetch: "full"|"simple";
+  fetch: "full" | "simple";
   asNotification: boolean;
 }
 export interface InfoOptions {
@@ -54,7 +56,7 @@ class InfoObject implements InfoOptions {
       batches: true,
       authentication: true,
       fetch: options.features?.fetch || "full",
-      asNotification: options.features?.asNotification || false
+      asNotification: options.features?.asNotification || false,
     };
   }
 }
@@ -120,28 +122,31 @@ export class Daemon extends EventEmitter.EventEmitter {
   users: Record<string, User>;
   infoObject: InfoObject;
   log: Logger;
-  router: Router;
   jsonRPCServer!: JsonRPCServer;
+  routes: Record<string, Route> = {};
+  fetcher: Subscriber[] = [];
   constructor(options: DaemonOptions & InfoOptions = defaultOptions) {
     super();
     this.users = options.users || {};
     this.infoObject = new InfoObject(options);
     this.log = new Logger(options.log);
-    this.router = new Router(this);
   }
+  hasRoute = (route: string) => route in this.routes;
+  asNotification = () => this.infoObject.features.asNotification;
+  simpleFetch = () => this.infoObject.features.fetch === "simple";
   /*
   Add as Notification: The message is acknowledged,then all the peers are informed about the new state
   Add synchronous: First all Peers are informed about the new value then message is acknowledged
   */
-  add = (msg: AddRequest, peer: JsonRPC): Promise<object> => {
-    if (this.router.hasRoute(msg.params.path)) {
-      return Promise.reject(invalidParams("Path already registered"));
-    }
-    if (this.infoObject.features.asNotification) {
-      this.emit("add", msg, peer);
-      return Promise.resolve({});
-    } else {
-      return this.router.handleAdd(msg, peer);
+  add = (msg: AddRequest, peer: JsonRPC) => {
+    const path = msg.params.path;
+    this.routes[path] = new Route(peer, path, msg.params.value);
+    if (msg.params.value) {
+      this.fetcher.forEach((fetchRule) => {
+        if (this.simpleFetch() || fetchRule.matchesPath(path)) {
+          this.routes[path].addSubscriber(fetchRule);
+        }
+      });
     }
   };
   /*
@@ -149,59 +154,73 @@ export class Daemon extends EventEmitter.EventEmitter {
   change synchronous: First all Peers are informed about the new value then the message is acknowledged
   */
   change = (msg: UpdateRequest) => {
-    if (this.infoObject.features.asNotification) {
-      this.emit("update", msg);
-      return Promise.resolve({});
-    }else{
-      return this.router.handleChange(msg)
-    }
+    this.routes[msg.params.path].updateValue(msg.params.value);
   };
-   /*
+
+  /*
   Fetch as Notification: The message is acknowledged,then the peer is informed of all the states matching the fetchrule
   Fetch synchronous: First the peer is informed of all the states matching the fetchrule then the message is acknowledged
   */
   fetch = (msg: FetchRequest, peer: JsonRPC) => {
-    if (this.infoObject.features.asNotification) {
-      this.emit("fetch", msg,peer);
-      return Promise.resolve({});
-    }else{
-      return this.router.handleFetch(msg,peer)
+    if (this.simpleFetch() && this.fetcher.find((sub) => sub.owner === peer)) {
+      return Promise.reject("Only one fetcher per peer in simple fetch Mode");
     }
-  }
+
+    const sub = new Subscriber(msg, peer);
+    this.addListener("notify", () => {
+      sub.flush();
+    });
+    this.fetcher.push(sub);
+    Object.keys(this.routes)
+      .filter(
+        (route) =>
+          this.routes[route].value && //check if state
+          (this.simpleFetch() || sub.matchesPath(route)) //check if simpleFetch or pathrule matches
+      )
+      .forEach((route: string) => {
+        this.routes[route].addSubscriber(sub);
+      });
+  };
+
   /*
   Unfetch synchronous: Unfetch fires and no more updates are send with the given fetch_id. Message is acknowledged
   */
   unfetch = (msg: UnFetchRequest) => {
-    // if (this.infoObject.features.asNotification) {
-    //   this.emit("unfetch", msg);
-    //   return Promise.resolve({});
-    // }else{
-      return this.router.handleUnfetch(msg)
-    // }
-  }
+    this.fetcher = this.fetcher.filter((fetch) => fetch.id !== msg.params.id);
+    Object.values(this.routes).forEach((route) =>
+      route.removeSubscriber(msg.params.id)
+    );
+  };
+
   /*
   Get synchronous: Only synchronous implementation-> all the values are added to an array array ist send as response
   */
-  get = (msg: GetRequest) => this.router.handleGet(msg)
+  get = (msg: GetRequest) => {
+    const matcher = createPathMatcher(msg.params);
+    return Object.keys(this.routes)
+      .filter((route) => matcher(route))
+      .map((route: string) => {
+        return { path: route, value: this.routes[route].value };
+      });
+  };
 
   /*
   remove synchronous: Only synchronous implementation-> state is removed then message is acknowledged
-  */  
+  */
   remove = (msg: RemoveRequest) => {
-    if (!this.router.hasRoute(msg.params.path)) {
-      return Promise.reject(invalidParams("Path not registered"));
-    }
-    return this.router.handleRemove(msg.params.path)
+    const route = msg.params.path;
+    this.routes[route].publish("Remove");
   };
   /*
   Call and Set requests: Call and set requests are always forwarded synchronous
   */
-  forward = (msg: SetRequest|CallRequest) => this.router.forward(msg.params.path, msg);
+  forward = (msg: SetRequest | CallRequest) =>
+    this.routes[msg.params.path].owner.send(msg.method, msg.params);
 
   /*
   Info requests: Info requests are always synchronous
   */
-  info = () => Promise.resolve(this.infoObject);
+  info = () => this.infoObject;
 
   // authenticate = (peer: any, message: Message) => {
   //   const params = checked<object>(message, "params", "object");
@@ -237,39 +256,89 @@ export class Daemon extends EventEmitter.EventEmitter {
    * @type {Peer} The new connected Peer
    *
    */
+  respond = (peer: JsonRPC, msgId: string, res: any) =>
+    peer.respond(msgId, res, true);
 
-  handleMessage = (
-    method: EventType,
-    message: MethodRequest,
-    peer: JsonRPC
-  ): Promise<object> => {
+  respondAndNotify = (peer: JsonRPC, msgId: string, res: any) => {
+    if (this.asNotification()) {
+      peer.respond(msgId, res, true);
+      this.emit("notify");
+    } else {
+      this.emit("notify");
+      peer.respond(msgId, res, true);
+    }
+  };
+  handleMessage = (method: EventType, msg: MethodRequest, peer: JsonRPC) => {
     this.log.debug(`${method} request`);
     switch (method) {
-      //Daemon requests
+      case "remove":
+      case "set":
+      case "call":
+      case "change":
+        const req = castMessage<RemoveRequest>(msg);
+        if (!this.hasRoute(req.params.path)) {
+          peer.respond(msg.id, new NotFound(), false);
+          return;
+        }
+        break;
+    }
+    switch (method) {
       case "configure":
         //TODO what can be configured??
-        return Promise.resolve({});
+        peer.respond(msg.id, {}, true);
+        break;
       case "info":
-        return this.info();
+        peer.respond(msg.id, this.info(), true);
+        return;
       case "add":
-        return this.add(castMessage<AddRequest>(message), peer);
+        const addReq = castMessage<RemoveRequest>(msg);
+        if (this.hasRoute(addReq.params.path)) {
+          peer.respond(msg.id, new Occupied(), false);
+        } else {
+          this.add(castMessage<AddRequest>(msg), peer);
+          this.respondAndNotify(peer, msg.id, {});
+        }
+        break;
       case "remove":
-        return this.remove(castMessage<RemoveRequest>(message));
+        const rmvRequest = castMessage<RemoveRequest>(msg);
+        this.remove(rmvRequest);
+        this.respondAndNotify(peer, msg.id, {});
+        delete this.routes[rmvRequest.params.path];
+        break;
       case "fetch":
-        return this.fetch(castMessage<FetchRequest>(message), peer);
-      case "unfetch":
-        return this.unfetch(castMessage<UnFetchRequest>(message));
+        const req = castMessage<FetchRequest>(msg);
+        this.fetch(req, peer).then(() =>
+          this.respondAndNotify(peer, msg.id, {})
+        );
+
+        break;
       case "change":
-        return this.change(castMessage<UpdateRequest>(message));
+        this.change(castMessage<UpdateRequest>(msg));
+        this.respondAndNotify(peer, msg.id, {});
+        break;
+
+      case "unfetch":
+        this.unfetch(castMessage<UnFetchRequest>(msg));
+        this.respond(peer, msg.id, {});
+        break;
+
       //Requests that need to be forwarded
       case "get":
-        return this.get(castMessage<GetRequest>(message));
+        this.respond(peer, msg.id, this.get(castMessage<GetRequest>(msg)));
+        break;
       case "set":
-        return this.forward(castMessage<SetRequest>(message));
+        this.forward(castMessage<SetRequest>(msg))
+          .then((response) => peer.respond(msg.id, response, true))
+          .catch((ex) => peer.respond(msg.id, ex, false));
+        break;
       case "call":
-        return this.forward(castMessage<CallRequest>(message));
+        this.forward(castMessage<CallRequest>(msg))
+          .then((response) => peer.respond(msg.id, response, true))
+          .catch((ex) => peer.respond(msg.id, ex, false));
+        break;
+      default:
+        peer.respond(msg.id, methodNotFound(method), false);
     }
-    return Promise.reject("Unknown method");
   };
 
   /**
@@ -316,34 +385,38 @@ export class Daemon extends EventEmitter.EventEmitter {
    * @fires Daemon#disconnect
    *
    */
+  filterRoutesByPeer = (peer: JsonRPC): string[] =>
+    Object.entries(this.routes)
+      .filter(([_path, route]) => route.owner === peer)
+      .map((el) => el[0]);
 
   listen = (
     listenOptions: TCPServerConfig & WebServerConfig = defaultListenOptions
   ) => {
-    this.jsonRPCServer = new JsonRPCServer(this.log,listenOptions);
+    this.jsonRPCServer = new JsonRPCServer(this.log, listenOptions);
     this.jsonRPCServer.addListener("connection", (newPeer: JsonRPC) => {
       this.log.info("Peer connected");
-      newPeer.addListener("message", (method: EventType, msg: MethodRequest) => {
-        this.handleMessage(method, msg, newPeer)
-          .then((response) => {
-            newPeer.respond(msg.id, response, true)
-          })
-          .catch((ex) => newPeer.respond(msg.id, ex, false));
-      });
+      newPeer.addListener(
+        "message",
+        (method: EventType, msg: MethodRequest) => {
+          this.handleMessage(method, msg, newPeer);
+        }
+      );
     });
-    this.jsonRPCServer.addListener("disconnect", (listener: JsonRPC) => {
+    this.jsonRPCServer.addListener("disconnect", (peer: JsonRPC) => {
       this.log.info("Peer disconnected");
-      const routes = this.router.filterRoutesByPeer(listener);
-      this.router.deleteRoutes(routes);
-      this.router.deleteFetcher(listener)
-   
+      this.filterRoutesByPeer(peer).forEach((route) => {
+        this.routes[route].publish("Remove");
+        delete this.routes[route];
+      });
+      this.fetcher = this.fetcher.filter((fetcher) => fetcher.owner === peer);
     });
     this.jsonRPCServer.listen();
     this.log.info("Daemon started");
   };
 
   close = () => {
-    this.jsonRPCServer.close()
+    this.jsonRPCServer.close();
   };
 }
 

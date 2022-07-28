@@ -1,6 +1,7 @@
 import EventEmitter from "events";
+import { Subscriber } from "../daemon/subscriber";
 import { FetchRequest } from "../messages";
-import { PathRule, sortable } from "../types";
+import { PathRule, sortable, ValueType } from "../types";
 // import * as crypto from "crypto";
 
 interface ValueRule {
@@ -8,24 +9,32 @@ interface ValueRule {
   value: string;
 }
 export class Fetcher extends EventEmitter.EventEmitter {
-  message: FetchRequest = { id: "",method: "fetch", params: { path: {}, sort: {},id:"" } };
+  message: FetchRequest = {
+    id: "",
+    method: "fetch",
+    params: { path: {}, sort: {}, id: "" },
+  };
   valueRules: ValueRule[] = [];
   rule = {
     path: this.message.params.path,
-    value: this.valueRules
-  }
+    value: this.valueRules,
+  };
   constructor() {
     super();
     this.message = {
       id: "", //crypto.randomUUID(),
       method: "fetch",
-      params: { path: {}, sort: {},id:"" },
+      params: { path: {}, sort: {}, id: "" },
     };
   }
   path = (key: PathRule, value: string) => {
     this.message.params.path[key as string] = value;
-    this.rule.path = this.message.params.path
+    this.rule.path = this.message.params.path;
     return this;
+  };
+  matches = (path: string, value: ValueType | undefined): boolean => {
+    const sub = new Subscriber(this.message);
+    return sub.matchesPath(path) && sub.matchesValue(value);
   };
 
   differential = () => {
@@ -62,7 +71,6 @@ export class Fetcher extends EventEmitter.EventEmitter {
     this.message.params.sort.to = _to;
     return this;
   };
-  
 }
 
 export default Fetcher;

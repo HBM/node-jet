@@ -24,12 +24,17 @@ export class State<T = ValueType> extends EventEmitter.EventEmitter {
   _value: T;
   _access: AccessType | null;
   _readonly: boolean;
-  constructor(path: string, initialValue: T, readonly: boolean=false, access: AccessType|null = null) {
+  constructor(
+    path: string,
+    initialValue: T,
+    readonly: boolean = false,
+    access: AccessType | null = null
+  ) {
     super();
     this._path = path;
     this._value = initialValue;
     this._access = access;
-    this._readonly = readonly
+    this._readonly = readonly;
   }
 
   /**
@@ -55,7 +60,7 @@ export class State<T = ValueType> extends EventEmitter.EventEmitter {
    */
 
   value = (newValue: T | undefined = undefined) => {
-    if (newValue) {
+    if (newValue && newValue !== this._value) {
       this._value = newValue;
       this.emit("set", newValue);
     }
@@ -63,15 +68,14 @@ export class State<T = ValueType> extends EventEmitter.EventEmitter {
     return this._value;
   };
 
-  toJson = ()=> {
-    const params: JsonParams<T> ={
+  toJson = () => {
+    const params: JsonParams<T> = {
       path: this._path,
-      value: this._value
-    }
-    if(this._access)params.access=this._access
-    return params
-   
-}
+      value: this._value,
+    };
+    if (this._access) params.access = this._access;
+    return params;
+  };
 }
 
 export default State;

@@ -22,7 +22,7 @@ const generatePredicate = (op: string, val: ValueType): compareFunction => {
   }
 };
 
-const createValuePredicates = (valueOptions: Record<string,ValueType>) => {
+const createValuePredicates = (valueOptions: Record<string, ValueType>) => {
   const predicates: compareFunction[] = [];
   Object.entries(valueOptions).forEach(([op, val]) => {
     predicates.push(generatePredicate(op, val));
@@ -30,7 +30,9 @@ const createValuePredicates = (valueOptions: Record<string,ValueType>) => {
   return predicates;
 };
 
-const createValueFieldPredicates = (valueFieldOptions: Record<string,Record<string,ValueType>>) => {
+const createValueFieldPredicates = (
+  valueFieldOptions: Record<string, Record<string, ValueType>>
+) => {
   const predicates: any[] = [];
   Object.entries(valueFieldOptions).forEach(([fieldStr, rule]) => {
     const fieldPredicates: any[] = [];
@@ -76,7 +78,7 @@ export const create = (options: any) => {
   }
 
   if (!isDefined(options.value) && !isDefined(options.valueField)) {
-    return;
+    return (value: ValueType | undefined) => !!value;
   }
 
   let predicates: string | any[];
@@ -87,7 +89,8 @@ export const create = (options: any) => {
     predicates = createValueFieldPredicates(options.valueField);
   }
 
-  return (value: ValueType) => {
+  return (value: ValueType | undefined) => {
+    if (!value) return false;
     // eslint-disable-line consistent-return
     try {
       for (let i = 0; i < predicates.length; ++i) {

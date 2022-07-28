@@ -1,5 +1,5 @@
 import { DaemonError, ErrorData, invalidParams } from "./errors";
-import { AccessType, events, EventType, sortable, ValueType } from "./types";
+import { AccessType, EventType, sortable, ValueType } from "./types";
 
 export interface Message {
   id: string;
@@ -16,38 +16,39 @@ export interface Message {
 //   }
 // };
 export const castMessage = <T extends MethodRequest>(msg: MethodRequest): T => {
-  
-  if(!("id" in msg))throw new DaemonError("No id")
-  
-  if(!("method" in msg)) throw new DaemonError("No method")
-  if(!(events.includes(msg.method as EventType)))  throw new DaemonError("Method unknown")
-  const method= msg.method as EventType
-  const params = msg.params
-  switch(method){
+  if (!("id" in msg)) throw new DaemonError("No id");
+
+  if (!("method" in msg)) throw new DaemonError("No method");
+  // console.log(msg);
+  // if (!events.includes(msg.method as EventType))
+  //   throw new DaemonError("Method unknown");
+  const method = msg.method as EventType;
+  const params = msg.params;
+  switch (method) {
     case "info":
       return msg as T;
     case "configure":
-      if(!params || !("name" in params))throw invalidParams("Only params.name supported")
+      if (!params || !("name" in params))
+        throw invalidParams("Only params.name supported");
       return msg as T;
     case "unfetch":
-      if(!params || !("id" in params))throw invalidParams("Fetch id required")
+      if (!params || !("id" in params))
+        throw invalidParams("Fetch id required");
       return msg as T;
     default:
-      if(!params || !("path" in params))throw invalidParams("Path required")
+      if (!params || !("path" in params)) throw invalidParams("Path required");
   }
-  switch(method){
-    
+  switch (method) {
     case "fetch":
-      if(!("id" in params))throw invalidParams("Fetch id required")
-      return msg as T
+      if (!("id" in params)) throw invalidParams("Fetch id required");
+      return msg as T;
     case "change":
     case "set":
-      if(!("value" in params))throw invalidParams("Value required")
-      return msg as T
+      if (!("value" in params)) throw invalidParams("Value required");
+      return msg as T;
     default:
-        return msg as T
+      return msg as T;
   }
- 
 };
 export interface ResultMessage extends Message {
   result: ValueType;
@@ -102,7 +103,7 @@ export interface FetchRequest extends MethodRequest {
   params: FetchOptions;
 }
 export interface UnFetchRequest extends MethodRequest {
-  params: {id: string};
+  params: { id: string };
 }
 
 export interface ParamType {

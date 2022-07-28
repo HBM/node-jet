@@ -1,7 +1,7 @@
 "use strict";
 
 import { ConnectionClosed, createTypedError } from "../3_jet/errors";
-import { JsonParams } from "../3_jet/peer";
+import { JsonParams, PublishParams } from "../3_jet/peer";
 import { Socket } from "../1_socket";
 import EventEmitter from "events";
 import {
@@ -58,12 +58,12 @@ export class JsonRPC extends EventEmitter.EventEmitter {
   rejectConnect!: (reason?: any) => void;
   connectPromise!: Promise<void>;
   logger: Logger;
-  constructor(logger:Logger,config?: JsonRpcConfig, sock?: Socket) {
+  constructor(logger: Logger, config?: JsonRpcConfig, sock?: Socket) {
     super();
     this.config = config || {};
     this.createDisonnectPromise();
     this.createConnectPromise();
-    this.logger=logger
+    this.logger = logger;
     if (sock) {
       this.sock = sock;
       this._isOpen = true;
@@ -114,7 +114,7 @@ export class JsonRPC extends EventEmitter.EventEmitter {
    */
   close = (): Promise<void> => {
     if (!this._isOpen) {
-     return Promise.resolve()
+      return Promise.resolve();
     }
     this.flush();
     this.sock.close();
@@ -130,16 +130,14 @@ export class JsonRPC extends EventEmitter.EventEmitter {
    * @api private
    */
   _handleMessage = (event: { data: any }) => {
-    
     const message = event.data;
     this.logger.sock(`Received message:${message}`);
     try {
       const decoded = decode(message);
-      
       if (Array.isArray(decoded)) {
         this.willFlush = true;
         decoded.forEach((singleMessage) => {
-            this._dispatchSingleMessage(singleMessage);
+          this._dispatchSingleMessage(singleMessage);
         });
         this.flush();
       } else {
@@ -147,7 +145,7 @@ export class JsonRPC extends EventEmitter.EventEmitter {
         this._dispatchSingleMessage(decoded);
       }
     } catch (err: any) {
-      this.logger.error(err.toString())
+      this.logger.error(err);
     }
   };
 
@@ -156,7 +154,9 @@ export class JsonRPC extends EventEmitter.EventEmitter {
    *
    * @api private
    */
-  _dispatchSingleMessage = (message: MethodRequest| ResultMessage| ErrorMessage) => {
+  _dispatchSingleMessage = (
+    message: MethodRequest | ResultMessage | ErrorMessage
+  ) => {
     if (isResultMessage(message) || isErrorMessage(message)) {
       this._dispatchResponse(message);
     } else {
@@ -179,7 +179,6 @@ export class JsonRPC extends EventEmitter.EventEmitter {
         typeof message.error === "string"
           ? message.error
           : createTypedError(message.error);
-      console.log(err,message.error)
       this.errorCb(mid, err);
     }
   };
@@ -190,8 +189,8 @@ export class JsonRPC extends EventEmitter.EventEmitter {
    *
    * @api private
    */
-  _dispatchRequest = (message: MethodRequest) => this.emit("message", message.method, message);
- 
+  _dispatchRequest = (message: MethodRequest) =>
+    this.emit("message", message.method, message);
 
   /**
    * Queue.
@@ -218,7 +217,7 @@ export class JsonRPC extends EventEmitter.EventEmitter {
   };
 
   respond = (id: string, params: object, success: boolean) => {
-    this.sock.send(encode({id:id,[success?"result":"error"]:params}));
+    this.sock.send(encode({ id: id, [success ? "result" : "error"]: params }));
   };
 
   successCb = (id: string, result: any) => {
@@ -236,10 +235,7 @@ export class JsonRPC extends EventEmitter.EventEmitter {
   /**
    * Service.
    */
-  send = <T extends object>(
-    method: string,
-    params: JsonParams
-  ): Promise<T> => {
+  send = <T extends object>(method: string, params: JsonParams): Promise<T> => {
     return new Promise((resolve, reject) => {
       if (!this._isOpen) {
         reject(new ConnectionClosed("Connection is closed"));
@@ -264,7 +260,7 @@ export class JsonRPC extends EventEmitter.EventEmitter {
   };
   publish = <T extends object>(
     fetchId: string,
-    params: JsonParams,
+    params: PublishParams
   ): Promise<T> => {
     return new Promise((resolve, reject) => {
       if (!this._isOpen) {
@@ -284,11 +280,10 @@ export class JsonRPC extends EventEmitter.EventEmitter {
           this.logger.sock(`Sending message:${encoded}`);
           this.sock.send(encoded);
         }
-        resolve({} as T) //Publish messages are not acknowledged
+        resolve({} as T); //Publish messages are not acknowledged
       }
     });
   };
-
 
   /**
    * Batch.
