@@ -222,6 +222,8 @@ export class Daemon extends EventEmitter.EventEmitter {
   */
   info = () => this.infoObject;
 
+  configure = () => {};
+
   // authenticate = (peer: any, message: Message) => {
   //   const params = checked<object>(message, "params", "object");
   //   const user = checked<string>(params, "user", "string");
@@ -256,90 +258,86 @@ export class Daemon extends EventEmitter.EventEmitter {
    * @type {Peer} The new connected Peer
    *
    */
-  respond = (peer: JsonRPC, msgId: string, res: any) =>
-    peer.respond(msgId, res, true);
+  // respond = (peer: JsonRPC, msgId: string, res: any) =>
+  //   peer.respond(msgId, res, true);
 
-  respondAndNotify = (peer: JsonRPC, msgId: string, res: any) => {
-    if (this.asNotification()) {
-      peer.respond(msgId, res, true);
-      this.emit("notify");
-    } else {
-      this.emit("notify");
-      peer.respond(msgId, res, true);
-    }
-  };
-  handleMessage = (method: EventType, msg: MethodRequest, peer: JsonRPC) => {
-    this.log.debug(`${method} request`);
-    switch (method) {
-      case "remove":
-      case "set":
-      case "call":
-      case "change":
-        const req = castMessage<RemoveRequest>(msg);
-        if (!this.hasRoute(req.params.path)) {
-          peer.respond(msg.id, new NotFound(), false);
-          return;
-        }
-        break;
-    }
-    switch (method) {
-      case "configure":
-        //TODO what can be configured??
-        peer.respond(msg.id, {}, true);
-        break;
-      case "info":
-        peer.respond(msg.id, this.info(), true);
-        return;
-      case "add":
-        const addReq = castMessage<RemoveRequest>(msg);
-        if (this.hasRoute(addReq.params.path)) {
-          peer.respond(msg.id, new Occupied(), false);
-        } else {
-          this.add(castMessage<AddRequest>(msg), peer);
-          this.respondAndNotify(peer, msg.id, {});
-        }
-        break;
-      case "remove":
-        const rmvRequest = castMessage<RemoveRequest>(msg);
-        this.remove(rmvRequest);
-        this.respondAndNotify(peer, msg.id, {});
-        delete this.routes[rmvRequest.params.path];
-        break;
-      case "fetch":
-        const req = castMessage<FetchRequest>(msg);
-        this.fetch(req, peer).then(() =>
-          this.respondAndNotify(peer, msg.id, {})
-        );
-
-        break;
-      case "change":
-        this.change(castMessage<UpdateRequest>(msg));
-        this.respondAndNotify(peer, msg.id, {});
-        break;
-
-      case "unfetch":
-        this.unfetch(castMessage<UnFetchRequest>(msg));
-        this.respond(peer, msg.id, {});
-        break;
-
-      //Requests that need to be forwarded
-      case "get":
-        this.respond(peer, msg.id, this.get(castMessage<GetRequest>(msg)));
-        break;
-      case "set":
-        this.forward(castMessage<SetRequest>(msg))
-          .then((response) => peer.respond(msg.id, response, true))
-          .catch((ex) => peer.respond(msg.id, ex, false));
-        break;
-      case "call":
-        this.forward(castMessage<CallRequest>(msg))
-          .then((response) => peer.respond(msg.id, response, true))
-          .catch((ex) => peer.respond(msg.id, ex, false));
-        break;
-      default:
-        peer.respond(msg.id, methodNotFound(method), false);
-    }
-  };
+  // respondAndNotify = (peer: JsonRPC, msgId: string, res: any) => {
+  //   if (this.asNotification()) {
+  //     peer.respond(msgId, res, true);
+  //     this.emit("notify");
+  //   } else {
+  //     this.emit("notify");
+  //     peer.respond(msgId, res, true);
+  //   }
+  // };
+  // handleMessage = (method: EventType, msg: MethodRequest, peer: JsonRPC) => {
+  //   this.log.debug(`${method} request`);
+  //   switch (method) {
+  //     case "remove":
+  //     case "set":
+  //     case "call":
+  //     case "change":
+  //       const req = castMessage<RemoveRequest>(msg);
+  //       if (!this.hasRoute(req.params.path)) {
+  //         peer.respond(msg.id, new NotFound(), false);
+  //         return;
+  //       }
+  //       break;
+  //   }
+  //   switch (method) {
+  //     case "configure":
+  //       this.configure();
+  //       //TODO what can be configured??
+  //       peer.respond(msg.id, {}, true);
+  //       break;
+  //     case "info":
+  //       peer.respond(msg.id, this.info(), true);
+  //       return;
+  //     case "add":
+  //       const addReq = castMessage<RemoveRequest>(msg);
+  //       if (this.hasRoute(addReq.params.path)) {
+  //         peer.respond(msg.id, new Occupied(), false);
+  //       } else {
+  //         this.add(castMessage<AddRequest>(msg), peer);
+  //         this.respondAndNotify(peer, msg.id, {});
+  //       }
+  //       break;
+  //     case "remove":
+  //       const rmvRequest = castMessage<RemoveRequest>(msg);
+  //       this.remove(rmvRequest);
+  //       this.respondAndNotify(peer, msg.id, {});
+  //       delete this.routes[rmvRequest.params.path];
+  //       break;
+  //     case "fetch":
+  //       this.fetch(castMessage<FetchRequest>(msg), peer);
+  //       this.respondAndNotify(peer, msg.id, {});
+  //       break;
+  //     case "change":
+  //       this.change(castMessage<UpdateRequest>(msg));
+  //       this.respondAndNotify(peer, msg.id, {});
+  //       break;
+  //     case "unfetch":
+  //       this.unfetch(castMessage<UnFetchRequest>(msg));
+  //       this.respond(peer, msg.id, {});
+  //       break;
+  //     //Requests that need to be forwarded
+  //     case "get":
+  //       this.respond(peer, msg.id, this.get(castMessage<GetRequest>(msg)));
+  //       break;
+  //     case "set":
+  //       this.forward(castMessage<SetRequest>(msg))
+  //         .then((response) => peer.respond(msg.id, response, true))
+  //         .catch((ex) => peer.respond(msg.id, ex, false));
+  //       break;
+  //     case "call":
+  //       this.forward(castMessage<CallRequest>(msg))
+  //         .then((response) => peer.respond(msg.id, response, true))
+  //         .catch((ex) => peer.respond(msg.id, ex, false));
+  //       break;
+  //     default:
+  //       peer.respond(msg.id, methodNotFound(method), false);
+  //   }
+  // };
 
   /**
    * Starts listening on the specified ports (on all interfaces). options must be an object.
@@ -396,12 +394,29 @@ export class Daemon extends EventEmitter.EventEmitter {
     this.jsonRPCServer = new JsonRPCServer(this.log, listenOptions);
     this.jsonRPCServer.addListener("connection", (newPeer: JsonRPC) => {
       this.log.info("Peer connected");
-      newPeer.addListener(
-        "message",
-        (method: EventType, msg: MethodRequest) => {
-          this.handleMessage(method, msg, newPeer);
-        }
+
+      newPeer.addListener("info", () => this.info());
+      newPeer.addListener("configure", (params) =>
+        this.configure(params, newPeer)
       );
+
+      newPeer.addListener("add", (params) => this.add(params, newPeer));
+      newPeer.addListener("change", (params) => this.change(params));
+      newPeer.addListener("remove", (params) => this.remove(params));
+
+      newPeer.addListener("set", (params) => this.forward(params));
+      newPeer.addListener("call", (params) => this.forward(params));
+
+      newPeer.addListener("get", (params) => this.get(params));
+      newPeer.addListener("fetch", (params) => this.fetch(params, newPeer));
+      newPeer.addListener("unfetch", (params) => this.unfetch(params));
+
+      // newPeer.addListener(
+      //   "message",
+      //   (method: EventType, msg: MethodRequest) => {
+      //     this.handleMessage(method, msg, newPeer);
+      //   }
+      // );
     });
     this.jsonRPCServer.addListener("disconnect", (peer: JsonRPC) => {
       this.log.info("Peer disconnected");
