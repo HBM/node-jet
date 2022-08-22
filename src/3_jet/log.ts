@@ -21,7 +21,7 @@ export class Logger {
   logLevel: LogLevel;
   callBacks: LogFunction[] | undefined;
   stream: fs.WriteStream | undefined;
-  constructor(settings: logger={logname:"None"}) {
+  constructor(settings: logger = { logname: "None" }) {
     this.logName = settings.logname;
     this.logLevel = settings.loglevel || LogLevel["none"];
     this.callBacks = settings.logCallbacks;
@@ -31,9 +31,10 @@ export class Logger {
   }
 
   stringbuilder = (msg: string, level: LogLevel) => {
-    return `${new Date(Date.now())}\t${this.logName}\t${
-      LogLevel[level]
-    }\t${msg}`;
+    const date = new Date(Date.now());
+    return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}\t${
+      this.logName
+    }\t${LogLevel[level]}\t${msg}`;
   };
 
   log(msg: string, level = LogLevel.debug) {
@@ -64,17 +65,16 @@ export class Logger {
   error(msg: string) {
     this.log(msg, LogLevel.error);
   }
-  flush():Promise<void>{
-    return new Promise((resolve)=>{
-      if(this.stream){
-        const interval = setInterval(()=>{
-          if(!this.stream || !this.stream.pending){
-            clearInterval(interval)
-            resolve()
+  flush(): Promise<void> {
+    return new Promise((resolve) => {
+      if (this.stream) {
+        const interval = setInterval(() => {
+          if (!this.stream || !this.stream.pending) {
+            clearInterval(interval);
+            resolve();
           }
-        })
+        });
       }
-    })
+    });
   }
-
 }

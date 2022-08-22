@@ -189,8 +189,16 @@ export class JsonRPC extends EventEmitter.EventEmitter {
    *
    * @api private
    */
-  _dispatchRequest = (message: MethodRequest) =>
-    this.emit("message", message.method, message);
+  _dispatchRequest = (message: MethodRequest) => {
+    console.log(message.method);
+    if (this.listenerCount(message.method) === 0) {
+      this.logger.error(`Method ${message.method} is unknown`);
+    }
+    this.emit(message.method, message.params);
+    this.emit("beforeAck", message.params);
+    this.respond(message.id);
+    this.emit("afterAck", message.params);
+  };
 
   /**
    * Queue.
@@ -258,7 +266,7 @@ export class JsonRPC extends EventEmitter.EventEmitter {
       }
     });
   };
-  publish = <T extends object>(
+  notify = <T extends object>(
     fetchId: string,
     params: PublishParams
   ): Promise<T> => {
@@ -266,10 +274,8 @@ export class JsonRPC extends EventEmitter.EventEmitter {
       if (!this._isOpen) {
         reject(new ConnectionClosed("Connection is closed"));
       } else {
-        const rpcId = this.messageId.toString();
-        this.messageId++;
         const message: MethodRequest = {
-          id: rpcId.toString(),
+          id: "_",
           method: fetchId,
           params: params,
         };

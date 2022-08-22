@@ -28,7 +28,7 @@ var daemon = new jet.Daemon(
     log:{
       logCallbacks:[console.log],
       logname:"Daemon",
-      loglevel:jet.LogLevel.info},
+      loglevel:jet.LogLevel.socket},
     features:{
       fetch:"simple", 
       asNotification:true
@@ -65,7 +65,7 @@ Todo.prototype.merge = function (other) {
 
 // Create Jet Peer
 var peer = new jet.Peer({
-  port: internalPort,log:{logCallbacks:[console.log],logname:"Peer 1",loglevel:jet.LogLevel.info}
+  port: internalPort,log:{logCallbacks:[console.log],logname:"Peer 1",loglevel:jet.LogLevel.socket}
 })
 const peer2 = new jet.Peer({
   port: internalPort,log:{logCallbacks:[console.log],logname:"Peer 2",loglevel:jet.LogLevel.socket}

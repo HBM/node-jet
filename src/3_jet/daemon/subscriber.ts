@@ -27,7 +27,7 @@ export class Subscriber {
   };
 
   flush = () => {
-    this.requests.forEach((req) => this.owner?.publish(this.id, req));
+    this.requests.forEach((req) => this.owner?.notify(this.id, req));
     this.requests = [];
   };
 }

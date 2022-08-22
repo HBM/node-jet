@@ -1,6 +1,5 @@
 "use strict";
 
-import { EventType } from "../types";
 import EventEmitter from "events";
 import { JsonRPCServer } from "../../2_jsonrpc/server";
 import { TCPServerConfig, WebServerConfig } from "../../1_socket/server";
@@ -9,16 +8,14 @@ import { Logger, logger } from "../log";
 import {
   AddRequest,
   CallRequest,
-  castMessage,
   FetchRequest,
   GetRequest,
-  MethodRequest,
   RemoveRequest,
   SetRequest,
   UnFetchRequest,
   UpdateRequest,
 } from "../messages";
-import { methodNotFound, NotFound, Occupied } from "../errors";
+// import { methodNotFound, NotFound, Occupied } from "../errors";
 import { createPathMatcher } from "./path_matcher";
 import { Subscriber } from "./subscriber";
 import { Route } from "./route";
@@ -124,7 +121,7 @@ export class Daemon extends EventEmitter.EventEmitter {
   log: Logger;
   jsonRPCServer!: JsonRPCServer;
   routes: Record<string, Route> = {};
-  fetcher: Subscriber[] = [];
+  subscriber: Subscriber[] = [];
   constructor(options: DaemonOptions & InfoOptions = defaultOptions) {
     super();
     this.users = options.users || {};
@@ -142,7 +139,7 @@ export class Daemon extends EventEmitter.EventEmitter {
     const path = msg.params.path;
     this.routes[path] = new Route(peer, path, msg.params.value);
     if (msg.params.value) {
-      this.fetcher.forEach((fetchRule) => {
+      this.subscriber.forEach((fetchRule) => {
         if (this.simpleFetch() || fetchRule.matchesPath(path)) {
           this.routes[path].addSubscriber(fetchRule);
         }
@@ -162,15 +159,16 @@ export class Daemon extends EventEmitter.EventEmitter {
   Fetch synchronous: First the peer is informed of all the states matching the fetchrule then the message is acknowledged
   */
   fetch = (msg: FetchRequest, peer: JsonRPC) => {
-    if (this.simpleFetch() && this.fetcher.find((sub) => sub.owner === peer)) {
+    if (
+      this.simpleFetch() &&
+      this.subscriber.find((sub) => sub.owner === peer)
+    ) {
       return Promise.reject("Only one fetcher per peer in simple fetch Mode");
     }
 
     const sub = new Subscriber(msg, peer);
-    this.addListener("notify", () => {
-      sub.flush();
-    });
-    this.fetcher.push(sub);
+    this.addListener("notify", () => sub.flush());
+    this.subscriber.push(sub);
     Object.keys(this.routes)
       .filter(
         (route) =>
@@ -186,7 +184,9 @@ export class Daemon extends EventEmitter.EventEmitter {
   Unfetch synchronous: Unfetch fires and no more updates are send with the given fetch_id. Message is acknowledged
   */
   unfetch = (msg: UnFetchRequest) => {
-    this.fetcher = this.fetcher.filter((fetch) => fetch.id !== msg.params.id);
+    this.subscriber = this.subscriber.filter(
+      (fetch) => fetch.id !== msg.params.id
+    );
     Object.values(this.routes).forEach((route) =>
       route.removeSubscriber(msg.params.id)
     );
@@ -222,7 +222,7 @@ export class Daemon extends EventEmitter.EventEmitter {
   */
   info = () => this.infoObject;
 
-  configure = () => {};
+  configure = (_params: any) => {};
 
   // authenticate = (peer: any, message: Message) => {
   //   const params = checked<object>(message, "params", "object");
@@ -396,9 +396,7 @@ export class Daemon extends EventEmitter.EventEmitter {
       this.log.info("Peer connected");
 
       newPeer.addListener("info", () => this.info());
-      newPeer.addListener("configure", (params) =>
-        this.configure(params, newPeer)
-      );
+      newPeer.addListener("configure", (params) => this.configure(params));
 
       newPeer.addListener("add", (params) => this.add(params, newPeer));
       newPeer.addListener("change", (params) => this.change(params));
@@ -411,6 +409,14 @@ export class Daemon extends EventEmitter.EventEmitter {
       newPeer.addListener("fetch", (params) => this.fetch(params, newPeer));
       newPeer.addListener("unfetch", (params) => this.unfetch(params));
 
+      //called before acknowledging request
+      newPeer.addListener("beforeAck", () => {
+        if (!this.asNotification()) this.emit("notify");
+      });
+      //called after acknowledging request
+      newPeer.addListener("afterAck", () => {
+        if (this.asNotification()) this.emit("notify");
+      });
       // newPeer.addListener(
       //   "message",
       //   (method: EventType, msg: MethodRequest) => {
@@ -424,7 +430,9 @@ export class Daemon extends EventEmitter.EventEmitter {
         this.routes[route].publish("Remove");
         delete this.routes[route];
       });
-      this.fetcher = this.fetcher.filter((fetcher) => fetcher.owner === peer);
+      this.subscriber = this.subscriber.filter(
+        (fetcher) => fetcher.owner === peer
+      );
     });
     this.jsonRPCServer.listen();
     this.log.info("Daemon started");
