@@ -21,14 +21,7 @@ describe("Testing message casting", () => {
       expect(ex.toString()).toEqual("jet.DaemonError: No method");
     }
   });
-  it("Unknown method", () => {
-    try {
-      castMessage<InfoRequest>({ id: "abc", method: "foo" } as any);
-    } catch (ex) {
-      expect(ex).toBeInstanceOf(DaemonError);
-      expect(ex.toString()).toEqual("jet.DaemonError: Method unknown");
-    }
-  });
+
   it("Should parse Info", () => {
     const msg = castMessage<InfoRequest>({ id: "abc", method: "info" } as any);
     expect(typeof msg).toEqual("object");

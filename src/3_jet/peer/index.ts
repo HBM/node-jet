@@ -11,6 +11,7 @@ import State from "./state";
 import Fetcher from "./fetcher";
 import { logger, Logger } from "../log";
 import { isState } from "../utils";
+import { NotFound, Occupied } from "../errors";
 
 const fallbackDaemonInfo: InfoOptions = {
   name: "unknown-daemon",
@@ -106,40 +107,38 @@ export class Peer extends EventEmitter.EventEmitter {
     this.#config = config || {};
     this.#log = new Logger(this.#config.log);
     this.#jsonrpc = new JsonRPC(this.#log, config, sock);
-    this.#jsonrpc.addListener("message", (method: string, m: any) => {
-      this.#log.debug(`${method} request`);
-      let state: State;
-      switch (method) {
-        case "get":
-          state = this.#routes[m.params.path] as State;
-          this.#jsonrpc.respond(
-            m.id,
-            { path: state._path, value: state._value },
-            true
-          );
-          break;
-        case "set":
-          state = this.#routes[m.params.path] as State;
-          state.value(m.params.value);
-          this.#jsonrpc.respond(m.id, {}, true);
-          break;
-        case "call":
-          const callMethod = this.#routes[m.params.path] as Method;
-          callMethod.call(m.params.args);
-          this.#jsonrpc.respond(m.id, {}, true);
-          break;
-        case fetchSimpleId:
-          Object.values(this.#fetcher).forEach((fetcher) => {
-            if (fetcher.matches(m.params.path, m.params.value)) {
-              fetcher.emit("data", m.params);
-            }
-          });
-          break;
-        default:
-          if (method in this.#fetcher) {
-            this.#fetcher[method].emit("data", m.params);
-          }
+    this.#jsonrpc.addListener("get", (_peer, id: string, m: any) => {
+      const state = this.#routes[m.path] as State;
+      if (state) {
+        this.#jsonrpc.respond(id, state.toJson(), true);
+      } else {
+        this.#jsonrpc.respond(id, new NotFound(), false);
       }
+    });
+    this.#jsonrpc.addListener("set", (_peer, id: string, m: any) => {
+      const state = this.#routes[m.path] as State;
+      if (state) {
+        state.value(m.value);
+        this.#jsonrpc.respond(id, state.toJson(), true);
+      } else {
+        this.#jsonrpc.respond(id, new NotFound(), false);
+      }
+    });
+    this.#jsonrpc.addListener("call", (_peer, id: string, m: any) => {
+      const method = this.#routes[m.path] as Method;
+      if (method) {
+        method.call(m.args);
+        this.#jsonrpc.respond(id, {}, true);
+      } else {
+        this.#jsonrpc.respond(id, new NotFound(), false);
+      }
+    });
+    this.#jsonrpc.addListener(fetchSimpleId, (_peer, _id, m: any) => {
+      Object.values(this.#fetcher).forEach((fetcher) => {
+        if (fetcher.matches(m.path, m.value)) {
+          fetcher.emit("data", m);
+        }
+      });
     });
   }
 
@@ -173,9 +172,12 @@ export class Peer extends EventEmitter.EventEmitter {
 
     if (fetchFull) {
       const params = {
-        ...fetcher.message.params,
+        ...fetcher.message,
         id: fetcherId,
       };
+      this.#jsonrpc.addListener(fetcherId, (_peer, _id, args) =>
+        this.#fetcher[fetcherId].emit("data", args)
+      );
       return this.#jsonrpc.send<object[]>("fetch", params).then((res) => {
         if (Array.isArray(res)) {
           res.forEach((data) => {
@@ -207,7 +209,7 @@ export class Peer extends EventEmitter.EventEmitter {
    *   console.log('name', daemonInfo.name) // string
    *   console.log('version', daemonInfo.version) // string
    *   console.log('protocolVersion', daemonInfo.protocolVersion) // number
-   *   onsole.log('can process JSON-RPC batches', daemonInfo.features.batches) // boolean
+   *   console.log('can process JSON-RPC batches', daemonInfo.features.batches) // boolean
    *   console.log('supports authentication', daemonInfo.features.authentication) // boolean
    *   console.log('fetch-mode', daemonInfo.features.fetch); // string: 'full' or 'simple'
    * })
@@ -232,15 +234,16 @@ export class Peer extends EventEmitter.EventEmitter {
       .then(() => this.#info())
       .then((daemonInfo) => {
         this.#daemonInfo = daemonInfo || fallbackDaemonInfo;
-        return this.#config.user
-          ? this.#authenticate(this.#config.user, this.#config.password).then(
-              (access) => {
-                this.#access = access || {};
-                this.#log.debug(`Authenticated Peer: ${this.#access}`);
-                return Promise.resolve();
-              }
-            )
-          : Promise.resolve();
+        return Promise.resolve();
+        // return this.#config.user
+        //   ? this.#authenticate(this.#config.user, this.#config.password).then(
+        //       (access) => {
+        //         this.#access = access || {};
+        //         this.#log.debug(`Authenticated Peer: ${this.#access}`);
+        //         return Promise.resolve();
+        //       }
+        //     )
+        //   : Promise.resolve();
       });
 
   /**
@@ -284,7 +287,6 @@ export class Peer extends EventEmitter.EventEmitter {
         });
       });
     }
-
     return this.#jsonrpc.send("add", stateOrMethod.toJson()).then(() => {
       this.#routes[stateOrMethod._path] = stateOrMethod;
     });
@@ -330,11 +332,11 @@ export class Peer extends EventEmitter.EventEmitter {
    * Authenticate
    * @private
    */
-  #authenticate = (user: string, password: string | undefined) =>
-    this.#jsonrpc.send<AccessType>("authenticate", {
-      user: user,
-      password: password,
-    });
+  // #authenticate = (user: string, password: string | undefined) =>
+  //   this.#jsonrpc.send<AccessType>("authenticate", {
+  //     user: user,
+  //     password: password,
+  //   });
   /**
    * Config
    *

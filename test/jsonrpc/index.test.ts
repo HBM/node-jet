@@ -19,7 +19,7 @@ describe("Testing JsonRpc", () => {
       });
     sock.emit("open");
   });
-  it("Should test unconnected ", (done) => {
+  it("Should test disconnect ", (done) => {
     const sock = sockMock();
     jest.spyOn(Sock, "Socket").mockImplementation(() => sock);
     const jsonrpc = new JsonRPC(new Logger());
@@ -30,9 +30,7 @@ describe("Testing JsonRpc", () => {
           "jet.ConnectionClosed: Connection is closed"
         )
       )
-      .then(() =>
-        jsonrpc.publish("_f", { method: "add", path: "foo", value: 1 })
-      )
+      .then(() => jsonrpc.notify("_f", { event: "Add", path: "foo", value: 1 }))
       .catch((ex) =>
         expect(ex.toString()).toEqual(
           "jet.ConnectionClosed: Connection is closed"
@@ -83,15 +81,15 @@ describe("Testing JsonRpc", () => {
     });
     sock.emit("open");
   });
-  it("Should test publish", (done) => {
+  it("Should test notify", (done) => {
     const sock = sockMock();
     jest.spyOn(Sock, "Socket").mockImplementation(() => sock);
     jest.spyOn(sock, "send").mockImplementation((msg) => {
       expect(msg).toEqual(
         JSON.stringify({
-          id: "1",
+          id: "_",
           method: "_f",
-          params: { method: "add", path: "foo", value: 1 },
+          params: { event: "Add", path: "foo", value: 1 },
         })
       );
       done();
@@ -100,30 +98,30 @@ describe("Testing JsonRpc", () => {
     jsonrpc
       .connect()
       .then(() =>
-        jsonrpc.publish("_f", { method: "add", path: "foo", value: 1 })
+        jsonrpc.notify("_f", { event: "Add", path: "foo", value: 1 })
       );
     sock.emit("open");
   });
-  it("Should test batch publish", (done) => {
+  it("Should test batch notify", (done) => {
     const sock = sockMock();
     jest.spyOn(Sock, "Socket").mockImplementation(() => sock);
     jest.spyOn(sock, "send").mockImplementation((msg) => {
       expect(
         JSON.stringify([
           {
-            id: "1",
+            id: "_",
             method: "_f",
-            params: { method: "add", path: "foo", value: 1 },
+            params: { event: "Add", path: "foo", value: 1 },
           },
           {
-            id: "2",
+            id: "_",
             method: "_f",
-            params: { method: "add", path: "foo", value: 2 },
+            params: { event: "Add", path: "foo", value: 2 },
           },
           {
-            id: "3",
+            id: "_",
             method: "_f",
-            params: { method: "add", path: "foo", value: 3 },
+            params: { event: "Add", path: "foo", value: 3 },
           },
         ])
       ).toContain(msg);
@@ -133,9 +131,9 @@ describe("Testing JsonRpc", () => {
       .connect()
       .then(() =>
         jsonrpc.batch(() => {
-          jsonrpc.publish("_f", { method: "add", path: "foo", value: 1 });
-          jsonrpc.publish("_f", { method: "add", path: "foo", value: 2 });
-          jsonrpc.publish("_f", { method: "add", path: "foo", value: 3 });
+          jsonrpc.notify("_f", { event: "Add", path: "foo", value: 1 });
+          jsonrpc.notify("_f", { event: "Add", path: "foo", value: 2 });
+          jsonrpc.notify("_f", { event: "Add", path: "foo", value: 3 });
         })
       )
 
@@ -143,16 +141,16 @@ describe("Testing JsonRpc", () => {
       .then(done());
     sock.emit("open");
   });
-  it("Should test single batch publish", (done) => {
+  it("Should test single batch notify", (done) => {
     const sock = sockMock();
     jest.spyOn(Sock, "Socket").mockImplementation(() => sock);
     jest.spyOn(sock, "send").mockImplementation((msg) => {
       expect(
         JSON.stringify([
           {
-            id: "1",
+            id: "_",
             method: "_f",
-            params: { method: "add", path: "foo", value: 1 },
+            params: { event: "Add", path: "foo", value: 1 },
           },
         ])
       ).toContain(msg);
@@ -162,7 +160,7 @@ describe("Testing JsonRpc", () => {
       .connect()
       .then(() =>
         jsonrpc.batch(() => {
-          jsonrpc.publish("_f", { method: "add", path: "foo", value: 1 });
+          jsonrpc.notify("_f", { event: "Add", path: "foo", value: 1 });
         })
       )
 
@@ -219,19 +217,15 @@ describe("Testing JsonRpc", () => {
 
     const jsonrpc = new JsonRPC(new Logger());
     jsonrpc.connect().then(() => {
-      jsonrpc.addListener("message", (method, msg) => {
-        expect(method).toEqual("add");
-        expect(msg).toEqual({
-          id: "1",
-          method: "add",
-          params: { method: "add", path: "foo", value: 1 },
-        });
+      jsonrpc.addListener("add", (_peer, id, msg) => {
+        expect(id).toEqual("1");
+        expect(msg).toEqual({ event: "Add", path: "foo", value: 1 });
         done();
       });
       const json = JSON.stringify({
         id: "1",
         method: "add",
-        params: { method: "add", path: "foo", value: 1 },
+        params: { event: "Add", path: "foo", value: 1 },
       });
       sock.emit("message", { data: json });
     });
@@ -245,32 +239,80 @@ describe("Testing JsonRpc", () => {
       {
         id: "1",
         method: "add",
-        params: { method: "add", path: "foo", value: 1 },
+        params: { event: "Add", path: "foo", value: 1 },
       },
       {
         id: "3",
         method: "add",
-        params: { method: "add", path: "foo", value: 1 },
+        params: { event: "Add", path: "foo", value: 1 },
       },
       {
         id: "4",
         method: "add",
-        params: { method: "add", path: "foo", value: 1 },
+        params: { event: "Add", path: "foo", value: 1 },
       },
     ];
     const jsonrpc = new JsonRPC(new Logger());
-    jsonrpc.addListener("message", () => msgMock());
+    jsonrpc.addListener("add", () => msgMock());
     jsonrpc
       .connect()
       .then(() => {
-        jsonrpc.addListener("message", (method, msg) => {
-          expect(method).toEqual("add");
-          expect(messages).toContainEqual(msg);
+        jsonrpc.addListener("add", (_peer, id, msg) => {
+          expect(["1", "3", "4"]).toContainEqual(id);
+          expect(messages.map((msg) => msg.params)).toContainEqual(msg);
         });
 
         sock.emit("message", { data: JSON.stringify(messages) });
       })
       .then(() => waitForExpect(() => expect(msgMock).toBeCalledTimes(3)))
+      .then(() => done());
+    sock.emit("open");
+  });
+  it("Should test incoming request", (done) => {
+    const sock = sockMock();
+    jest.spyOn(Sock, "Socket").mockImplementation(() => sock);
+
+    const jsonrpc = new JsonRPC(new Logger());
+    jsonrpc.connect().then(() => {
+      jsonrpc.addListener("add", (_peer, id, msg) => {
+        expect(id).toEqual("1");
+        expect(msg).toEqual({ event: "Add", path: "foo", value: 1 });
+        done();
+      });
+      const json = JSON.stringify({
+        id: "1",
+        method: "add",
+        params: { event: "Add", path: "foo", value: 1 },
+      });
+      sock.emit("message", { data: json });
+    });
+    sock.emit("open");
+  });
+  it("Should test invalid method", (done) => {
+    const sock = sockMock();
+    jest.spyOn(Sock, "Socket").mockImplementation(() => sock);
+    const msgMock = jest.fn();
+    const message = {
+      id: "1",
+      method: "foo",
+      params: { event: "Add", path: "foo", value: 1 },
+    };
+    const jsonrpc = new JsonRPC(new Logger());
+    jsonrpc
+      .connect()
+      .then(() => {
+        sock.emit("message", { data: JSON.stringify(message) });
+      })
+      .then(() =>
+        waitForExpect(() =>
+          expect(sock.send).toBeCalledWith(
+            JSON.stringify({
+              id: "1",
+              error: { message: "Method not found", code: -32601, data: "foo" },
+            })
+          )
+        )
+      )
       .then(() => done());
     sock.emit("open");
   });

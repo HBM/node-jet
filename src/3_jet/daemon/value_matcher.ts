@@ -1,106 +1,52 @@
 import { invalidParams } from "../errors";
+import { ValueRule } from "../peer/fetcher";
 import { ValueType } from "../types";
-import { accessField, isDefined } from "../utils";
+import { getValue } from "../utils";
 
 type compareFunction = (x: ValueType) => boolean;
-type generatorFunction = (other: string | ValueType) => compareFunction;
+type generatorFunction = (
+  field: string,
+  other: string | ValueType
+) => compareFunction;
 
 const generators: Record<string, generatorFunction> = {
-  equals: (other) => (x) => x === other,
-  lessThan: (other) => (x) => x < other,
-  equalsNot: (other) => (x) => x !== other,
-  greaterThan: (other) => (x) => x > other,
-  isType: (other) => (x) => typeof x === other,
+  equals: (field, other) => (x) => getValue(x, field) === other,
+  lessThan: (field, other) => (x) => getValue(x, field) < other,
+  equalsNot: (field, other) => (x) => getValue(x, field) !== other,
+  greaterThan: (field, other) => (x) => getValue(x, field) > other,
+  isType: (field, other) => (x) => typeof getValue(x, field) === other,
 };
 
-const generatePredicate = (op: string, val: ValueType): compareFunction => {
-  const gen = generators[op];
+const generatePredicate = (field: string, rule: ValueRule): compareFunction => {
+  const gen = generators[rule.operator];
   if (!gen) {
-    throw invalidParams("unknown generator " + op);
+    throw invalidParams("unknown generator " + rule.operator);
   } else {
-    return gen(val);
+    return gen(field, rule.value);
   }
 };
 
-const createValuePredicates = (valueOptions: Record<string, ValueType>) => {
+const createValuePredicates = (valueOptions: Record<string, ValueRule>) => {
   const predicates: compareFunction[] = [];
-  Object.entries(valueOptions).forEach(([op, val]) => {
-    predicates.push(generatePredicate(op, val));
+  Object.entries(valueOptions).forEach(([field, rule]) => {
+    predicates.push(generatePredicate(field, rule));
   });
-  return predicates;
-};
-
-const createValueFieldPredicates = (
-  valueFieldOptions: Record<string, Record<string, ValueType>>
-) => {
-  const predicates: any[] = [];
-  Object.entries(valueFieldOptions).forEach(([fieldStr, rule]) => {
-    const fieldPredicates: any[] = [];
-    const accessor = accessField(fieldStr);
-    Object.entries(rule).forEach(([op, val]) => {
-      fieldPredicates.push(generatePredicate(op, val));
-    });
-    const fieldPredicate = (value: ValueType) => {
-      if (typeof value !== "object") {
-        return false;
-      }
-      try {
-        const field = accessor(value);
-        for (let i = 0; i < fieldPredicates.length; ++i) {
-          if (!fieldPredicates[i](field)) {
-            return false;
-          }
-        }
-        return true;
-      } catch (e) {
-        return false;
-      }
-    };
-    predicates.push(fieldPredicate);
-  });
-
   return predicates;
 };
 
 export const create = (options: any) => {
-  // sorting by value implicitly defines value matcher rule against expected type
-  if (options.sort) {
-    if (options.sort.byValue) {
-      options.value = options.value || {};
-      options.value.isType = options.sort.byValue;
-    } else if (options.sort.byValueField) {
-      const fieldName = Object.keys(options.sort.byValueField)[0];
-      const type = options.sort.byValueField[fieldName];
-      options.valueField = options.valueField || {};
-      options.valueField[fieldName] = options.valueField[fieldName] || {};
-      options.valueField[fieldName].isType = type;
-    }
-  }
-
-  if (!isDefined(options.value) && !isDefined(options.valueField)) {
-    return (value: ValueType | undefined) => !!value;
-  }
-
-  let predicates: string | any[];
-
-  if (isDefined(options.value)) {
-    predicates = createValuePredicates(options.value);
-  } else if (isDefined(options.valueField)) {
-    predicates = createValueFieldPredicates(options.valueField);
-  }
-
-  return (value: ValueType | undefined) => {
-    if (!value) return false;
-    // eslint-disable-line consistent-return
-    try {
+  if (options.value) {
+    const predicates = createValuePredicates(options.value);
+    return (value: ValueType | undefined) => {
+      if (!value) return false;
+      // eslint-disable-line consistent-return
       for (let i = 0; i < predicates.length; ++i) {
         if (!predicates[i](value)) {
           return false;
         }
       }
       return true;
-    } catch (e) {
-      return false;
-    }
-  };
+    };
+  }
+  return () => true;
 };

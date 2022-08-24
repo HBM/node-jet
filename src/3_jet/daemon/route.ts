@@ -1,13 +1,12 @@
 "use strict";
-
+import EventEmitter from "events";
 import JsonRPC from "../../2_jsonrpc";
-import { publishEvent } from "../peer";
 import { ValueType } from "../types";
-import { Subscriber } from "./subscriber";
+import { Subscription } from "./subscription";
 
-export class Route {
+export class Route extends EventEmitter.EventEmitter {
   owner: JsonRPC;
-  subscriptions: Subscriber[] = [];
+  subscriptions: Subscription[] = [];
   value?: ValueType;
   path: string;
   constructor(
@@ -15,38 +14,16 @@ export class Route {
     path: string,
     value: ValueType | undefined = undefined
   ) {
+    super();
     this.owner = owner;
     this.value = value;
     this.path = path;
   }
 
-  addSubscriber = (sub: Subscriber) => {
-    this.subscriptions.push(sub);
-    sub.enqueue({
-      event: "Add",
-      path: this.path,
-      value: this.value,
-    });
-  };
-
-  removeSubscriber = (fetchId: string) => {
-    this.subscriptions = this.subscriptions.filter((sub) => sub.id !== fetchId);
-  };
-
   updateValue = (newValue: ValueType) => {
     if (newValue === this.value) return;
     this.value = newValue;
-    this.publish("Change");
+    this.emit("Change", newValue);
   };
-  publish = (event: publishEvent) => {
-    this.subscriptions.forEach((sub) => {
-      if (sub.matchesValue(this.value)) {
-        sub.enqueue({
-          event: event,
-          path: this.path,
-          value: this.value,
-        });
-      }
-    });
-  };
+  remove = () => this.emit("Remove");
 }

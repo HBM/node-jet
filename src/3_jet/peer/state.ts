@@ -68,14 +68,10 @@ export class State<T = ValueType> extends EventEmitter.EventEmitter {
     return this._value;
   };
 
-  toJson = () => {
-    const params: JsonParams<T> = {
-      path: this._path,
-      value: this._value,
-    };
-    if (this._access) params.access = this._access;
-    return params;
-  };
+  toJson = (): JsonParams<T> => ({
+    path: this._path,
+    value: this._value,
+  });
 }
 
 export default State;

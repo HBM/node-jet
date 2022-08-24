@@ -31,7 +31,7 @@ var daemon = new jet.Daemon(
       loglevel:jet.LogLevel.socket},
     features:{
       fetch:"simple", 
-      asNotification:true
+      asNotification:false
     }
 })
 
@@ -65,10 +65,10 @@ Todo.prototype.merge = function (other) {
 
 // Create Jet Peer
 var peer = new jet.Peer({
-  port: internalPort,log:{logCallbacks:[console.log],logname:"Peer 1",loglevel:jet.LogLevel.socket}
+  port: internalPort,log:{logCallbacks:[console.log],logname:"Peer 1",loglevel:jet.LogLevel.debug}
 })
 const peer2 = new jet.Peer({
-  port: internalPort,log:{logCallbacks:[console.log],logname:"Peer 2",loglevel:jet.LogLevel.socket}
+  port: internalPort,log:{logCallbacks:[console.log],logname:"Peer 2",loglevel:jet.LogLevel.debug}
 
 })
 
@@ -135,17 +135,21 @@ setCompleted.on('call', function (args) {
 })
 var todos = new jet.Fetcher()
   .path('startsWith', 'todo/#')
-  .sortByKey('id', 'number')
+  // .sortByKey('id', 'number')
+  .value("greaterThan",0,"id")
   .range(1, 30)
+  .ascending()
+  .sortByValue()
   .on('data', function (todos) {
-    // console.log("fetch 1",todos.event,todos.path,todos.value)
+    console.log("fetch 1",todos.event,todos.path,todos.value)
     // renderTodos(todos)
   })
 
   var f2 = new jet.Fetcher()
   .path('startsWith', 'test')
+  .value("greaterThan",7)
   .on('data', function (todos) {
-    // console.log("fetch 2",todos.event,todos.path,todos.value)
+    console.log("fetch 2",todos.event,todos.path,todos.value)
     // renderTodos(todos)
   })
 const stateTest = new jet.State("test",4)
@@ -162,6 +166,7 @@ peer.connect()
 .then(()=>peer2.connect())
 .then(()=>peer.call('todo/add',["first"]))
 .then(()=>peer.call('todo/add',["second"]))
+
 .then(()=>peer2.fetch(todos))
 .then(()=>peer2.fetch(f2))
 .then(()=>peer.add(stateTest))
@@ -172,6 +177,7 @@ peer.connect()
 .then(()=>peer.set('todo/value',2))
 .then(()=>peer.call('todo/add',["third"]))
 .then(()=>peer.call('todo/add',["four"]))
+.then(()=>peer.set('todo/#0', {id: 4}))
 .then(()=>peer.set('todo/#2', {completed: true}))
 .catch((ex)=>console.log(ex))
 

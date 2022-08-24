@@ -17,10 +17,10 @@ describe("Testing Method", () => {
   it("Should create json from state", () => {
     const state = new State<ValueType>("foo", {});
     expect(state.toJson()).toEqual({ path: "foo", value: {} });
-    const st2 = new State("foo", 5, true, { id: "usr" });
+    const st2 = new State("foo", 5, true);
     expect(st2.toJson()).toEqual({
       path: "foo",
-      access: { id: "usr" },
+      // access: { id: "usr" },
       value: 5,
     });
   });

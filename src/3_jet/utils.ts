@@ -2,28 +2,22 @@ import { State, Method } from "../jet";
 import { ErrorObject, InvalidArgument, invalidParams } from "./errors";
 import { ValueType } from "./types";
 
-export const isDefined = (x: any) => {
-  if (typeof x === "undefined" || x === null) {
-    return false;
+export const getValue = (o: any, field: string) => {
+  if (field === "") return o;
+  const keys = field.split(".");
+  for (let i = 0; i < keys.length; i++) {
+    const key = keys[i];
+    if (key in o) {
+      o = o[key];
+    } else {
+      return undefined;
+    }
   }
-  return true;
+  return o;
 };
-
-export const accessField = (fieldStr: string) => {
-  if (fieldStr.substring(0, 1) !== "[") {
-    fieldStr = "." + fieldStr;
-  }
-  const funStr = "return t" + fieldStr;
-  return new Function("t", funStr); // eslint-disable-line no-new-func
-};
-
 export const errorObject = (err: any) => {
   let data;
-  if (
-    typeof err === "object" &&
-    isDefined(err.code) &&
-    isDefined(err.message)
-  ) {
+  if (typeof err === "object" && err.code && err.message) {
     return err as ErrorObject;
   } else {
     if (err instanceof InvalidArgument) {
@@ -49,6 +43,8 @@ export const errorObject = (err: any) => {
     }
   }
 };
-export const isState = (stateOrMethod: State<ValueType> | Method ): stateOrMethod is State<ValueType> => {
+export const isState = (
+  stateOrMethod: State<ValueType> | Method
+): stateOrMethod is State<ValueType> => {
   return "_value" in stateOrMethod;
 };

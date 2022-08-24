@@ -1,6 +1,10 @@
 "use strict";
 
-import { ConnectionClosed, createTypedError } from "../3_jet/errors";
+import {
+  ConnectionClosed,
+  createTypedError,
+  methodNotFound,
+} from "../3_jet/errors";
 import { JsonParams, PublishParams } from "../3_jet/peer";
 import { Socket } from "../1_socket";
 import EventEmitter from "events";
@@ -51,6 +55,7 @@ export class JsonRPC extends EventEmitter.EventEmitter {
   messageId = 1;
   _isOpen = false;
   openRequests: Record<string, { resolve: Function; reject: Function }> = {};
+  requestId: string = "";
   resolveDisconnect!: (value: void | PromiseLike<void>) => void;
   rejectDisconnect!: (reason?: any) => void;
   disconnectPromise!: Promise<void>;
@@ -131,7 +136,7 @@ export class JsonRPC extends EventEmitter.EventEmitter {
    */
   _handleMessage = (event: { data: any }) => {
     const message = event.data;
-    this.logger.sock(`Received message:${message}`);
+    this.logger.sock(`Received message: ${message}`);
     try {
       const decoded = decode(message);
       if (Array.isArray(decoded)) {
@@ -190,22 +195,18 @@ export class JsonRPC extends EventEmitter.EventEmitter {
    * @api private
    */
   _dispatchRequest = (message: MethodRequest) => {
-    console.log(message.method);
     if (this.listenerCount(message.method) === 0) {
       this.logger.error(`Method ${message.method} is unknown`);
+      this.respond(message.id, methodNotFound(message.method), false);
+    } else {
+      this.emit(message.method, this, message.id, message.params);
     }
-    this.emit(message.method, message.params);
-    this.emit("beforeAck", message.params);
-    this.respond(message.id);
-    this.emit("afterAck", message.params);
   };
 
   /**
    * Queue.
    */
-  queue = <T extends Message>(message: T) => {
-    this.messages.push(message);
-  };
+  queue = <T extends Message>(message: T) => this.messages.push(message);
 
   /**
    * Flush.
@@ -216,7 +217,7 @@ export class JsonRPC extends EventEmitter.EventEmitter {
         this.messages.length === 1 ? this.messages[0] : this.messages
       );
       if (encoded) {
-        this.logger.sock(`Sending message ${encoded}`);
+        this.logger.sock(`Sending message:  ${encoded}`);
         this.sock.send(encoded);
         this.messages = [];
       }
@@ -225,7 +226,9 @@ export class JsonRPC extends EventEmitter.EventEmitter {
   };
 
   respond = (id: string, params: object, success: boolean) => {
-    this.sock.send(encode({ id: id, [success ? "result" : "error"]: params }));
+    const msg = encode({ id: id, [success ? "result" : "error"]: params });
+    this.logger.sock(`Responding message:  ${msg}`);
+    this.sock.send(msg);
   };
 
   successCb = (id: string, result: any) => {
@@ -260,7 +263,7 @@ export class JsonRPC extends EventEmitter.EventEmitter {
           this.queue(message);
         } else {
           const encoded = encode(message);
-          this.logger.sock(`Sending message:${encoded}`);
+          this.logger.sock(`Sending message:  ${encoded}`);
           this.sock.send(encoded);
         }
       }
@@ -283,7 +286,7 @@ export class JsonRPC extends EventEmitter.EventEmitter {
           this.queue(message);
         } else {
           const encoded = encode(message);
-          this.logger.sock(`Sending message:${encoded}`);
+          this.logger.sock(`Sending message:  ${encoded}`);
           this.sock.send(encoded);
         }
         resolve({} as T); //Publish messages are not acknowledged

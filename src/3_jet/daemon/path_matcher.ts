@@ -1,7 +1,6 @@
 // import { Notification } from "./fetcher";
 import { FetchOptions } from "../messages";
 import { pathRules } from "../types";
-import { isDefined } from "../utils";
 
 const contains = (what: string) => {
   return (path: string) => {
@@ -85,10 +84,8 @@ const generators: Record<any, any> = {
   equalsNotOneOf: negate(equalsOneOf),
 };
 
-
-
 export const createPathMatcher = (options: FetchOptions) => {
-  if (!isDefined(options.path)) {
+  if (!options.path) {
     return () => true;
   }
   const po = options.path;
@@ -96,7 +93,7 @@ export const createPathMatcher = (options: FetchOptions) => {
   pathRules.forEach((name) => {
     let gen;
     let option = po[name];
-    if (isDefined(option)) {
+    if (option) {
       gen = generators[name];
       if (po.caseInsensitive) {
         if (Array.isArray(option)) {

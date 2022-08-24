@@ -3,25 +3,14 @@ import {
   InvalidArgument,
   INVALID_PARAMS_CODE,
 } from "../src/3_jet/errors";
-import { isDefined, accessField, errorObject } from "../src/3_jet/utils";
+import { errorObject, getValue } from "../src/3_jet/utils";
 
 describe("Testing utils", () => {
-  describe("Should test isDefined", () => {
-    it("Should return undefined", () => {
-      expect(isDefined(null)).toBe(false);
-      expect(isDefined(undefined)).toBe(false);
-    });
-    it("Schould return true", () => {
-      expect(isDefined(5)).toBe(true);
-      expect(isDefined({})).toBe(true);
-      expect(isDefined("")).toBe(true);
-    });
-  });
-
-  describe("Should access field", () => {
-    it("Should return field", () => {
-      const getField = accessField("foo.bar");
-      expect(getField({ foo: { bar: 5 } })).toBe(5);
+  describe("Should test getField", () => {
+    it("Should return string error Object", () => {
+      expect(getValue(5, "")).toBe(5);
+      expect(getValue({ id: 5 }, "id")).toBe(5);
+      expect(getValue({ id: 5 }, "x")).toBe(undefined);
     });
   });
   describe("Should test error Object", () => {

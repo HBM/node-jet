@@ -1,5 +1,5 @@
 import { DaemonError, ErrorData, invalidParams } from "./errors";
-import { AccessType, EventType, sortable, ValueType } from "./types";
+import { AccessType, EventType, ValueRule, ValueType } from "./types";
 
 export interface Message {
   id: string;
@@ -76,8 +76,12 @@ export interface UpdateRequest extends MethodRequest {
   };
 }
 
+export interface PathParams {
+  path: string;
+  value?: ValueType;
+}
 export interface AddRequest extends PathRequest {
-  params: { path: string; value?: ValueType };
+  params: PathParams;
 }
 export interface SetRequest extends PathRequest {}
 export interface CallRequest extends PathRequest {}
@@ -85,13 +89,15 @@ export interface RemoveRequest extends PathRequest {}
 
 export interface FetchOptions {
   path: Record<string, string | string[]>;
+  value: Record<
+    string,
+    { operator: ValueRule; value: number | boolean | string }
+  >;
   id: string;
   sort: {
     asArray?: boolean;
     descending?: boolean;
-    byPath?: boolean;
-    byValueField?: Record<string, sortable>;
-    byValue?: boolean;
+    by?: string;
     from?: number;
     to?: number;
   };

@@ -1,74 +1,72 @@
 import EventEmitter from "events";
-import { Subscriber } from "../daemon/subscriber";
-import { FetchRequest } from "../messages";
-import { PathRule, sortable, ValueType } from "../types";
-// import * as crypto from "crypto";
+import { Subscription } from "../daemon/subscription";
+import { FetchOptions } from "../messages";
+import { PathRule, ValueType, ValueRule as Operator } from "../types";
 
-interface ValueRule {
-  key: string;
-  value: string;
+export interface ValueRule {
+  operator: "greaterThan" | "lessThan" | "equals";
+  value: string | number | boolean;
 }
 export class Fetcher extends EventEmitter.EventEmitter {
-  message: FetchRequest = {
-    id: "",
-    method: "fetch",
-    params: { path: {}, sort: {}, id: "" },
-  };
-  valueRules: ValueRule[] = [];
-  rule = {
-    path: this.message.params.path,
-    value: this.valueRules,
-  };
+  message: FetchOptions = { path: {}, value: {}, sort: {}, id: "" };
+  valueRules: Record<string, ValueRule> = {};
+
   constructor() {
     super();
-    this.message = {
-      id: "", //crypto.randomUUID(),
-      method: "fetch",
-      params: { path: {}, sort: {}, id: "" },
-    };
   }
   path = (key: PathRule, value: string) => {
-    this.message.params.path[key as string] = value;
-    this.rule.path = this.message.params.path;
+    this.message.path[key as string] = value;
+    return this;
+  };
+  value = (
+    operator: Operator,
+    value: string | boolean | number,
+    field: string = ""
+  ) => {
+    this.message.value[field] = {
+      operator,
+      value,
+    };
     return this;
   };
   matches = (path: string, value: ValueType | undefined): boolean => {
-    const sub = new Subscriber(this.message);
+    const sub = new Subscription(this.message);
+    console.log(
+      path,
+      this.message,
+      sub.matchesPath(path),
+      sub.matchesValue(value)
+    );
     return sub.matchesPath(path) && sub.matchesValue(value);
   };
 
   differential = () => {
-    this.message.params.sort.asArray = false;
+    this.message.sort.asArray = false;
     return this;
   };
 
   ascending = () => {
-    this.message.params.sort.descending = false;
+    this.message.sort.descending = false;
     return this;
   };
 
   descending = () => {
-    this.message.params.sort.descending = true;
+    this.message.sort.descending = true;
     return this;
   };
-  sortByKey = (key: string, type: sortable) => {
-    if (!this.message.params.sort.byValueField)
-      this.message.params.sort.byValueField = {};
-    this.message.params.sort.byValueField[key] = type;
+
+  sortByValue = (key: string = "") => {
+    this.message.sort.by = key ? `value.${key}` : "value";
     return this;
   };
-  sortByValue = (accept: boolean) => {
-    this.message.params.sort.byValue = accept;
-    return this;
-  };
-  sortByPath = (accept: boolean) => {
-    this.message.params.sort.byPath = accept;
+  sortByPath = () => {
+    this.message.sort.by = "path";
     return this;
   };
 
   range = (_from: number, _to: number) => {
-    this.message.params.sort.from = _from;
-    this.message.params.sort.to = _to;
+    this.message.sort.from = _from;
+    this.message.sort.to = _to;
     return this;
   };
 }
