@@ -48,8 +48,10 @@
     "net": "^1.0.2"
   },
   "main": "./lib/index.js",
-  "files": ["lib"],
-  "version": "3.0.0-beta.0",
+  "files": [
+    "lib"
+  ],
+  "version": "3.0.0-beta.1",
   "repository": {
     "type": "git",
     "url": "https://github.com/HBM/node-jet"
@@ -83,6 +85,5 @@
   "publishConfig": {
     "access": "public"
   },
-  "dependencies": {
-  }
+  "dependencies": {}
 }
