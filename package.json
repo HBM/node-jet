@@ -12,8 +12,8 @@
     "json"
   ],
   "author": {
-    "name": "Gerhard Preuss",
-    "email": "gelipp@gmail.com"
+    "name": "Florian Schopp",
+    "email": "florian_schopp@hotmail.com"
   },
   "contributors": [
     {
@@ -26,7 +26,7 @@
     },
     {
       "name": "Florian Schopp",
-      "email": "schopp@hbm.com"
+      "email": "florian_schopp@hotmail.com"
     }
   ],
   "devDependencies": {
@@ -39,20 +39,20 @@
     "madge": "^5.0.1",
     "np": "^7.6.2",
     "ts-jest": "^28.0.8",
-    "typescript": "^4.7.4"
+    "typescript": "^4.7.4",
+    "wait-for-expect": "^3.0.2"
   },
   "peerDependencies": {
-    "ws": "^8.8.1"
+    "ws": "^8.8.1",
+    "events": "^3.3.0",
+    "net": "^1.0.2"
   },
   "main": "./lib/index.js",
-  "bin": {
-    "jetd.js": "bin/jetd.js",
-    "fetch.js": "bin/fetch.js"
-  },
+  "files": ["lib"],
   "version": "3.0.0-beta.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/lipp/node-jet"
+    "url": "https://github.com/HBM/node-jet"
   },
   "license": "MIT",
   "scripts": {
@@ -64,10 +64,9 @@
   "engines": {
     "node": ">0.8.0"
   },
-  "homepage": "http://jetbus.io",
   "bugs": {
-    "url": "http://github.com/lipp/node-jet/issues",
-    "email": "gelipp@gmail.com"
+    "url": "https://github.com/HBM/node-jet/issues",
+    "email": "florian_schopp@hotmail.com"
   },
   "browser": {
     "ws": false,
@@ -85,8 +84,5 @@
     "access": "public"
   },
   "dependencies": {
-    "events": "^3.3.0",
-    "net": "^1.0.2",
-    "wait-for-expect": "^3.0.2"
   }
 }
