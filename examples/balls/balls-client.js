@@ -6,9 +6,7 @@ var jet = require('node-jet')
 var d3 = require('d3')
 var shared = require('./shared')
 
-var peer = new jet.Peer({
-  url: (window.location.protocol === 'https:' ? 'wss://' : 'ws://') + window.location.host
-})
+var peer = new jet.Peer({port: 10225});
 
 var randomColor = function () {
   var hue = Math.abs(Math.random()) * 360
@@ -60,8 +58,6 @@ var allBalls = new jet.Fetcher()
     renderBall(ball)
   })
 
-peer.fetch(allBalls)
-
 var speedToDelay = {
   fast: 1,
   medium: 3,
@@ -81,11 +77,12 @@ var delayValue = new jet.Fetcher()
     d3.select('input[value="' + speed + '"]').attr('checked', true)
   })
 
-peer.fetch(delayValue)
+
 
 d3.selectAll('input[type="radio"]')
   .on('change', function () {
-    var radio = d3.select(this)
+    console.log("changing")
+    var radio = d3.select('input[type="radio"]')
     var delay = speedToDelay[radio.attr('value')]
     peer.set('balls/delay', delay)
   })
@@ -93,7 +90,8 @@ d3.selectAll('input[type="radio"]')
 var svgContainer = d3.select('svg')
   .attr('viewBox', '0 0 ' + shared.canvasSize + ' ' + shared.canvasSize)
   .on('click', function () {
-    var pos = d3.mouse(this)
+    console.log("clicking")
+    var pos = d3.mouse('svg')
     var dist = function (x, y) {
       var dx = x - pos[0]
       var dy = y - pos[1]
@@ -132,3 +130,5 @@ d3.select('#boom')
   .on('click', function () {
     peer.call('balls/boom', [])
   })
+
+  peer.connect().then(()=>peer.fetch(allBalls)).then(()=>peer.fetch(delayValue))

@@ -31,14 +31,19 @@ export const pathRules = [
 export type PathRule = typeof pathRules[number];
 export type sortable = "boolean" | "number" | "string";
 
-export const valueRules = [
+export interface ValueRule {
+  operator: OperatorType;
+  value: string | number | boolean;
+}
+
+export const operators = [
   "greaterThan",
   "lessThan",
   "equals",
   "equalsNot",
   "isType",
 ] as const;
-export type ValueRule = typeof valueRules[number];
+export type OperatorType = typeof operators[number];
 export interface AccessType {
   id?: string;
 }

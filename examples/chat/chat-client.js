@@ -4,9 +4,7 @@
 
 var jet = require('node-jet')
 
-var peer = new jet.Peer({
-  url: 'ws://' + window.location.host
-})
+var peer = new jet.Peer({port: 11123});
 
 var renderMessages = function (messages) {
   var messageContainer = document.getElementById('messages')
@@ -24,7 +22,7 @@ var messageFetcher = new jet.Fetcher()
   .path('equals', 'chat/messages')
   .on('data', renderMessages)
 
-peer.fetch(messageFetcher)
+
 
 document.getElementById('message-form').addEventListener('submit', function (event) {
   event.preventDefault()
@@ -47,3 +45,5 @@ document.getElementById('message-form').addEventListener('submit', function (eve
 document.getElementById('clear').addEventListener('click', function (event) {
   peer.call('chat/clear')
 })
+
+peer.connect().then(()=>peer.fetch(messageFetcher))

@@ -1,21 +1,16 @@
 "use strict";
 
 import EventEmitter from "events";
-import { JsonRPCServer } from "../../2_jsonrpc/server";
-import { TCPServerConfig, WebServerConfig } from "../../1_socket/server";
-import JsonRPC from "../../2_jsonrpc";
 import { Logger, logger } from "../log";
-import {
-  castMessage,
-  FetchOptions,
-  MethodRequest,
-  PathParams,
-  PathRequest,
-} from "../messages";
+import { FetchOptions, PathParams } from "../messages";
 import { createPathMatcher } from "./path_matcher";
 import { Subscription } from "./subscription";
 import { Route } from "./route";
 import { NotFound, Occupied } from "../errors";
+import JsonRPC from "../../2_jsonrpc";
+import { JsonRPCServer } from "../../2_jsonrpc/server";
+import { WebServerConfig } from "../../1_socket/wsserver";
+import { TCPServerConfig } from "../../1_socket/tcpserver";
 
 const version = "2.2.0";
 
@@ -112,7 +107,7 @@ const defaultOptions: DaemonOptions = {
   users: {},
 };
 
-export class Daemon extends EventEmitter.EventEmitter {
+export class Daemon extends EventEmitter {
   users: Record<string, User>;
   infoObject: InfoObject;
   log: Logger;
@@ -161,8 +156,12 @@ export class Daemon extends EventEmitter.EventEmitter {
   change synchronous: First all Peers are informed about the new value then the message is acknowledged
   */
   change = (peer: JsonRPC, id: string, msg: PathParams) => {
-    this.routes[msg.path].updateValue(msg.value!);
-    this.respond(peer, id);
+    if (msg.path in this.routes) {
+      this.routes[msg.path].updateValue(msg.value!);
+      this.respond(peer, id);
+    } else {
+      peer.respond(id, new NotFound(), false);
+    }
   };
 
   /*
@@ -187,7 +186,7 @@ export class Daemon extends EventEmitter.EventEmitter {
     sub.setRoutes(
       Object.values(this.routes).filter(
         (route) =>
-          this.routes[route.path].value && //check if state
+          this.routes[route.path].value !== undefined && //check if state
           (this.simpleFetch() || sub.matchesPath(route.path)) //check if simpleFetch or pathrule matches
       )
     );
@@ -198,7 +197,13 @@ export class Daemon extends EventEmitter.EventEmitter {
   Unfetch synchronous: Unfetch fires and no more updates are send with the given fetch_id. Message is acknowledged
   */
   unfetch = (peer: JsonRPC, id: string, params: any) => {
-    this.subscriber = this.subscriber.filter((fetch) => fetch.id !== params.id);
+    this.subscriber = this.subscriber.filter((fetch) => {
+      if (fetch.id !== params.id) {
+        return true;
+      }
+      fetch.close();
+      return false;
+    });
     peer.respond(id, {}, true);
   };
 
@@ -225,7 +230,7 @@ export class Daemon extends EventEmitter.EventEmitter {
       return;
     }
     this.routes[route].remove();
-    peer.respond(id, {}, true);
+    this.respond(peer, id);
   };
   /*
   Call and Set requests: Call and set requests are always forwarded synchronous
@@ -332,14 +337,19 @@ export class Daemon extends EventEmitter.EventEmitter {
     });
 
     this.jsonRPCServer.addListener("disconnect", (peer: JsonRPC) => {
-      this.log.info("Peer disconnected");
       this.filterRoutesByPeer(peer).forEach((route) => {
+        this.log.warn("Removing route that was owned by peer");
         this.routes[route].remove();
         delete this.routes[route];
       });
-      this.subscriber = this.subscriber.filter(
-        (fetcher) => fetcher.owner === peer
-      );
+
+      this.subscriber = this.subscriber.filter((fetcher) => {
+        if (fetcher.owner !== peer) {
+          return true;
+        }
+        fetcher.close();
+        return false;
+      });
     });
     this.jsonRPCServer.listen();
     this.log.info("Daemon started");

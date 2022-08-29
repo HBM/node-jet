@@ -1,4 +1,5 @@
-import * as Sock from "../../src/1_socket/server";
+import * as Sock from "../../src/1_socket/wsserver";
+import * as tcpSock from "../../src/1_socket/tcpserver";
 import { Logger, LogLevel } from "../../src/3_jet/log";
 import {
   HTTPServerMock,
@@ -8,7 +9,7 @@ import {
 import { JsonRPCServer } from "../../src/2_jsonrpc/server";
 import { sockMock } from "../mocks/sock";
 
-describe("Testing JsonRpc", () => {
+describe("Testing JsonRpc Server", () => {
   it("Should test wsServer functionality", () => {
     const wsServer = WebsocketServer();
     jest.spyOn(Sock, "WebsocketServer").mockImplementation(() => wsServer);
@@ -33,7 +34,7 @@ describe("Testing JsonRpc", () => {
   });
   it("Should test tcpServer functionality", () => {
     const tcpServer = TCPServer();
-    jest.spyOn(Sock, "TCPServer").mockImplementation(() => tcpServer);
+    jest.spyOn(tcpSock, "TCPServer").mockImplementation(() => tcpServer);
     const server = new JsonRPCServer(new Logger(), { tcpPort: 11234 });
     server.listen();
     const sock = sockMock();

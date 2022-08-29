@@ -1,6 +1,5 @@
 import { invalidParams } from "../errors";
-import { ValueRule } from "../peer/fetcher";
-import { ValueType } from "../types";
+import { ValueRule, ValueType } from "../types";
 import { getValue } from "../utils";
 
 type compareFunction = (x: ValueType) => boolean;
@@ -38,7 +37,7 @@ export const create = (options: any) => {
   if (options.value) {
     const predicates = createValuePredicates(options.value);
     return (value: ValueType | undefined) => {
-      if (!value) return false;
+      if (value === undefined) return false;
       // eslint-disable-line consistent-return
       for (let i = 0; i < predicates.length; ++i) {
         if (!predicates[i](value)) {

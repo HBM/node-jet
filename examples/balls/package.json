@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node balls-server.js",
-    "build": "browserify balls-client.js > public/bundle.js"
+    "build": "rollup --config"
   },
   "author": "Gerhard Preuss",
   "license": "MIT",
@@ -17,6 +17,9 @@
     "d3": "^3.5.5"
   },
   "devDependencies": {
-    "browserify": "^10.2.3"
+    "rollup": "^2.78.1",
+    "rollup-plugin-polyfill-node": "^0.10.2",
+    "@rollup/plugin-commonjs": "^22.0.2",
+    "@rollup/plugin-node-resolve": "^13.3.0"
   }
 }

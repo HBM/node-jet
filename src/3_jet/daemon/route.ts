@@ -2,11 +2,9 @@
 import EventEmitter from "events";
 import JsonRPC from "../../2_jsonrpc";
 import { ValueType } from "../types";
-import { Subscription } from "./subscription";
 
-export class Route extends EventEmitter.EventEmitter {
+export class Route extends EventEmitter {
   owner: JsonRPC;
-  subscriptions: Subscription[] = [];
   value?: ValueType;
   path: string;
   constructor(
@@ -23,7 +21,7 @@ export class Route extends EventEmitter.EventEmitter {
   updateValue = (newValue: ValueType) => {
     if (newValue === this.value) return;
     this.value = newValue;
-    this.emit("Change", newValue);
+    this.emit("Change", this.path, newValue);
   };
-  remove = () => this.emit("Remove");
+  remove = () => this.emit("Remove", this.path);
 }

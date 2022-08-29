@@ -5,7 +5,7 @@ var finalhandler = require('finalhandler')
 var http = require('http')
 var serveStatic = require('serve-static')
 
-var port = parseInt(process.argv[2]) || 80
+var port = parseInt(process.argv[2]) || 8080
 var internalPort = 10222
 
 // Serve this dir as static content 
@@ -20,10 +20,19 @@ var httpServer = http.createServer(function (req, res) {
 httpServer.listen(port)
 
 // Create Jet Daemon
-var daemon = new jet.Daemon()
+var daemon = new jet.Daemon(
+  {
+    log:{
+      logCallbacks:[console.log],
+      logname:"Daemon",
+      loglevel:jet.LogLevel.socket},
+    features:{
+      fetch:"full", 
+      asNotification:false
+    }
+})
 daemon.listen({
-  server: httpServer, // embed jet websocket upgrade handler
-  tcpPort: internalPort // nodejitsu prevents internal websocket connections
+  tcpPort: internalPort,wsPort:11123
 })
 
 // Create Jet Peer
@@ -38,27 +47,28 @@ var peer = new jet.Peer({
 var messages = new jet.State('chat/messages', [])
 
 var append = new jet.Method('chat/append')
-append.on('call', function (args) {
+append.on('call', (args) => {
+  console.log("appending message",args)
   // get last messages
   var msgs = messages.value()
   // append new one
   msgs.push(args.message)
   // publish change
-  messages.value(msgs)
+  messages.value([...msgs])
 })
 
 var clear = new jet.Method('chat/clear')
-clear.on('call', function () {
+clear.on('call', () => {
   messages.value([])
 })
 
-// connect peer and register methods
-Promise.all([
-  peer.connect(),
+peer.connect().then(()=>Promise.all([
+
   peer.add(messages),
   peer.add(append),
-  peer.add(clear)
-]).then(function () {
+  peer.add(clear)]))
+
+.then(() => {
   console.log('ants-server ready')
   console.log('listening on port', port)
 })

@@ -1,13 +1,14 @@
 import EventEmitter from "events";
 import { Subscription } from "../daemon/subscription";
 import { FetchOptions } from "../messages";
-import { PathRule, ValueType, ValueRule as Operator } from "../types";
+import {
+  PathRule,
+  ValueType,
+  OperatorType as Operator,
+  ValueRule,
+} from "../types";
 
-export interface ValueRule {
-  operator: "greaterThan" | "lessThan" | "equals";
-  value: string | number | boolean;
-}
-export class Fetcher extends EventEmitter.EventEmitter {
+export class Fetcher extends EventEmitter {
   message: FetchOptions = { path: {}, value: {}, sort: {}, id: "" };
   valueRules: Record<string, ValueRule> = {};
 
@@ -31,12 +32,6 @@ export class Fetcher extends EventEmitter.EventEmitter {
   };
   matches = (path: string, value: ValueType | undefined): boolean => {
     const sub = new Subscription(this.message);
-    console.log(
-      path,
-      this.message,
-      sub.matchesPath(path),
-      sub.matchesValue(value)
-    );
     return sub.matchesPath(path) && sub.matchesValue(value);
   };
 

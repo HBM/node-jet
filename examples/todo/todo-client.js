@@ -1,130 +1,137 @@
 /*
  * Jet client-server communications:
  */
-
-// var jet = require('node-jet')
-var jet = require("node-jet")
-const protocol = window.location.protocol === 'http:' ? 'ws://' : 'wss://'
-var peer = new jet.Peer({
-  url: `${protocol}${window.location.host}:8080`
-})
+import { Peer, Fetcher } from "node-jet";
+const protocol = window.location.protocol === "http:" ? "ws://" : "wss://";
+const todoList= {}
+var peer = new Peer({port: 11123});
 
 var addTodo = (title) => {
-  peer.call('todo/add', [title])
-}
+  peer.call("todo/add", [title]);
+};
 
-var removeTodo = function (id) {
-  peer.call('todo/remove', [id])
-}
+var removeTodo = (id) => {
+  peer.call("todo/remove", [id]);
+};
 
-var setTodoTitle = function (id, title) {
-  peer.set('todo/#' + id, {
-    title: title
-  })
-}
+var setTodoTitle = (id, title) => {
+  peer.set("todo/#" + id, {
+    title: title,
+  });
+};
 
-var setTodoCompleted = function (id, completed) {
-  peer.set('todo/#' + id, {
-    completed: completed
-  })
-}
+var setTodoCompleted = (todo,completed=undefined) => {
+  peer.set("todo/#" + todo.id, {
+    id: todo.id,
+    title: todo.title,
+    completed: completed?completed:!todo.completed,
+  });
+};
 
-var todos = new jet.Fetcher()
-  .path('startsWith', 'todo/#')
-  .sortByKey('id', 'number')
-  .range(1, 30)
-  .on('data', function (todos) {
-    renderTodos(todos)
-  })
+var todos = new Fetcher()
+  .path("startsWith", "todo/#")
+  .on("data", (todo) => {
+    switch(todo.event){
+      case "Add":
+      case "Change":
+        todoList[todo.path] = todo.value
+        break
+      case "Remove":
+        delete todoList[todo.path]
+        break
+    }
+    renderTodos();
+  });
 
-peer.fetch(todos)
+
 
 /*
- * GUI Logic: 
+ * GUI Logic:
  */
 
-var renderTodo = function (todo) {
-  var container = document.createElement('li')
-  if (todo.value.completed) {
-    container.className = 'completed'
+var renderTodo = (todo) =>{
+  var container = document.createElement("li");
+  if (todo.completed) {
+    container.className = "completed";
   }
-  var view = document.createElement('div')
-  var toggleCompleted = document.createElement('input')
-  toggleCompleted.type = 'checkbox'
-  toggleCompleted.className = 'toggle'
-  toggleCompleted.checked = todo.value.completed
-  toggleCompleted.addEventListener('change', function () {
-    setTodoCompleted(todo.value.id, !todo.value.completed)
-  })
-  view.appendChild(toggleCompleted)
+  var view = document.createElement("div");
+  var toggleCompleted = document.createElement("input");
+  toggleCompleted.type = "checkbox";
+  toggleCompleted.className = "toggle";
+  toggleCompleted.checked = todo.completed;
+  toggleCompleted.addEventListener("change", () => {
+    setTodoCompleted(todo);
+  });
+  view.appendChild(toggleCompleted);
 
-  var title = document.createElement('label')
-  title.innerHTML = todo.value.title
-  view.appendChild(title)
+  var title = document.createElement("label");
+  title.innerHTML = todo.title;
+  view.appendChild(title);
 
-  var removeButton = document.createElement('button')
-  removeButton.className = 'destroy'
-  removeButton.addEventListener('click', function () {
-    removeTodo(todo.value.id)
-  })
-  view.appendChild(removeButton)
+  var removeButton = document.createElement("button");
+  removeButton.className = "destroy";
+  removeButton.addEventListener("click", () => {
+    removeTodo(todo.id);
+  });
+  view.appendChild(removeButton);
 
-  container.appendChild(view)
+  container.appendChild(view);
 
-  return container
-}
+  return container;
+};
 
-var getCompleted
-var getUncompleted
+var getCompleted;
+var getUncompleted;
 
-var renderTodos = function (todos) {
-  var root = document.getElementById('todo-list')
+var renderTodos = () => {
+  var root = document.getElementById("todo-list");
   while (root.firstChild) {
-    root.removeChild(root.firstChild)
+    root.removeChild(root.firstChild);
   }
-  todos.forEach(function (todo) {
-    root.appendChild(renderTodo(todo))
-  })
+  Object.values(todoList).forEach((todo) => {
+    root.appendChild(renderTodo(todo));
+  });
 
-  getCompleted = function () {
-    return todos.filter(function (todo) {
-      return todo.value.completed === true
-    })
-  }
+  getCompleted = () => Object.values(todoList).filter((todo) =>todo.completed === true)
+ 
 
-  getUncompleted = function () {
-    return todos.filter(function (todo) {
-      return todo.value.completed === false
-    })
-  }
+  getUncompleted = () => Object.values(todoList).filter((todo) => todo.completed === false)
+ 
 
-  var itemsLeft = document.getElementById('todo-count')
-  itemsLeft.innerHTML = '' + getUncompleted().length + ' left'
+  var itemsLeft = document.getElementById("todo-count");
+  itemsLeft.innerHTML = "" + getUncompleted().length + " left";
+};
 
-}
+document
+  .getElementById("clear-completed")
+  .addEventListener("click", () => {
+    getCompleted().forEach((todo) => {
+      removeTodo(todo.id);
+    });
+  });
 
-document.getElementById('clear-completed').addEventListener('click', function () {
-  getCompleted().forEach(function (todo) {
-    removeTodo(todo.value.id)
-  })
-})
-
-document.getElementById('toggle-all').addEventListener('click', function () {
-  var uncompleted = getUncompleted()
+document.getElementById("toggle-all").addEventListener("click", () =>{
+  var uncompleted = getUncompleted();
   if (uncompleted.length > 0) {
-    uncompleted.forEach(function (todo) {
-      setTodoCompleted(todo.value.id, true)
-    })
+    uncompleted.forEach((todo) =>{
+      setTodoCompleted(todo, true);
+    });
   } else {
-    getCompleted().forEach(function (todo) {
-      setTodoCompleted(todo.value.id, false)
-    })
+    getCompleted().forEach((todo) => {
+      setTodoCompleted(todo, false);
+    });
   }
-})
+});
 
-document.getElementById('todo-form').addEventListener('submit', function (event) {
-  var titleInput = document.getElementById('new-todo')
-  addTodo(titleInput.value)
-  titleInput.value = ''
-  event.preventDefault()
+document
+  .getElementById("todo-form")
+  .addEventListener("submit", (event) =>{
+    var titleInput = document.getElementById("new-todo");
+    addTodo(titleInput.value);
+    titleInput.value = "";
+    event.preventDefault();
+  });
+
+peer.connect().then(()=>{
+  peer.fetch(todos)
 })

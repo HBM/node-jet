@@ -5,13 +5,13 @@ import { AccessType, fetchSimpleId, ValueType } from "../types";
 
 import JsonRPC, { JsonRpcConfig } from "../../2_jsonrpc";
 import EventEmitter from "events";
-import { Socket } from "../../1_socket";
 import Method from "./method";
 import State from "./state";
 import Fetcher from "./fetcher";
 import { logger, Logger } from "../log";
 import { isState } from "../utils";
-import { NotFound, Occupied } from "../errors";
+import { NotFound } from "../errors";
+import { Socket } from "../../1_socket/socket";
 
 const fallbackDaemonInfo: InfoOptions = {
   name: "unknown-daemon",
@@ -54,20 +54,6 @@ export interface PeerConfig extends JsonRpcConfig {
   rejectUnauthorized?: boolean; // Defaults to true
 }
 
-// const genPeerId = (sock: Socket): string => {
-//   if (sock instanceof netImpl.Socket) {
-//     return sock.remoteAddress + ":" + sock.remotePort;
-//   } else {
-//     // this is a websocket
-//     try {
-//       sock = sock._sender._socket;
-//       return `${sock.remoteAddress}:${sock.remotePort}`;
-//     } catch (e) {
-//       return uuidv4();
-//     }
-//   }
-// };
-
 /**
  * Create a Jet Peer instance.
  * @class
@@ -93,12 +79,11 @@ export interface PeerConfig extends JsonRpcConfig {
  * var peer = new jet.Peer({url: 'ws://jetbus.io:8080'})
  */
 
-export class Peer extends EventEmitter.EventEmitter {
+export class Peer extends EventEmitter {
   #fetchId = 1;
   #config: PeerConfig;
   #jsonrpc: JsonRPC;
   #daemonInfo: InfoOptions = fallbackDaemonInfo;
-  #access?: AccessType;
   #routes: Record<string, Method | State> = {};
   #fetcher: Record<string, Fetcher> = {};
   #log: Logger;
@@ -175,15 +160,11 @@ export class Peer extends EventEmitter.EventEmitter {
         ...fetcher.message,
         id: fetcherId,
       };
-      this.#jsonrpc.addListener(fetcherId, (_peer, _id, args) =>
-        this.#fetcher[fetcherId].emit("data", args)
-      );
+      this.#jsonrpc.addListener(fetcherId, (_peer, _id, args) => {
+        if (fetcherId in this.#fetcher)
+          this.#fetcher[fetcherId].emit("data", args);
+      });
       return this.#jsonrpc.send<object[]>("fetch", params).then((res) => {
-        if (Array.isArray(res)) {
-          res.forEach((data) => {
-            fetcher.emit("data", data);
-          });
-        }
         return Promise.resolve(res);
       });
     }
@@ -228,9 +209,9 @@ export class Peer extends EventEmitter.EventEmitter {
    *   console.log('connect failed', err)
    * })
    */
-  connect = () =>
+  connect = (controller: AbortController = new AbortController()) =>
     this.#jsonrpc
-      .connect()
+      .connect(controller)
       .then(() => this.#info())
       .then((daemonInfo) => {
         this.#daemonInfo = daemonInfo || fallbackDaemonInfo;

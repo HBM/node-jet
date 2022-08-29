@@ -21,6 +21,17 @@ export class Subscription {
     this.id = msg.id;
   }
 
+  close = () => {
+    this.routes.forEach((route) => {
+      route.removeListener("Change", this.handleChange);
+      route.removeListener("Remove", this.handleRemove);
+    });
+  };
+
+  handleChange = (path: string, value: ValueType) =>
+    this.enqueue({ path: path, event: "Change", value });
+  handleRemove = (path: string) =>
+    this.enqueue({ path: path, event: "Remove" });
   addRoute = (route: Route) => {
     this.routes.push(route);
     if (this.valueMatcher(route.value)) {
@@ -31,12 +42,8 @@ export class Subscription {
       });
     }
 
-    route.addListener("Change", (value) =>
-      this.enqueue({ path: route.path, event: "Change", value })
-    );
-    route.addListener("Remove", () =>
-      this.enqueue({ path: route.path, event: "Remove" })
-    );
+    route.addListener("Change", this.handleChange);
+    route.addListener("Remove", this.handleRemove);
   };
   setRoutes = (routes: Route[]) => {
     routes.forEach((route) => this.addRoute(route));
@@ -49,6 +56,8 @@ export class Subscription {
   };
 
   send = () => {
+    // if (this.messages.length > 0)
+    //   console.log("Publishing sub", this.id, this.messages);
     this.messages.forEach((msg) => {
       this.owner?.notify(this.id, msg);
     });

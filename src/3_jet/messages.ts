@@ -1,5 +1,5 @@
 import { DaemonError, ErrorData, invalidParams } from "./errors";
-import { AccessType, EventType, ValueRule, ValueType } from "./types";
+import { AccessType, EventType, OperatorType, ValueType } from "./types";
 
 export interface Message {
   id: string;
@@ -19,9 +19,6 @@ export const castMessage = <T extends MethodRequest>(msg: MethodRequest): T => {
   if (!("id" in msg)) throw new DaemonError("No id");
 
   if (!("method" in msg)) throw new DaemonError("No method");
-  // console.log(msg);
-  // if (!events.includes(msg.method as EventType))
-  //   throw new DaemonError("Method unknown");
   const method = msg.method as EventType;
   const params = msg.params;
   switch (method) {
@@ -91,7 +88,7 @@ export interface FetchOptions {
   path: Record<string, string | string[]>;
   value: Record<
     string,
-    { operator: ValueRule; value: number | boolean | string }
+    { operator: OperatorType; value: number | boolean | string }
   >;
   id: string;
   sort: {

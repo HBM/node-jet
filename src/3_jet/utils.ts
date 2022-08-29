@@ -1,4 +1,5 @@
-import { State, Method } from "../jet";
+import { State } from "./peer/state";
+import { Method } from "./peer/method";
 import { ErrorObject, InvalidArgument, invalidParams } from "./errors";
 import { ValueType } from "./types";
 

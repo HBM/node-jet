@@ -1,40 +1,10 @@
 /* istanbul ignore file */
 import EventEmitter from "events";
-import { WebSocketImpl, netImpl, Socket } from ".";
-import MessageSocket from "./message-socket";
+import { WebSocketImpl } from ".";
 import { WebSocket, WebSocketServer as WsServer } from "ws";
-import { Server } from "net";
 import { Server as HTTPServer } from "http";
+import { Socket } from "./socket";
 
-export interface TCPServerConfig {
-  tcpPort?: number;
-}
-export class TCPServer extends EventEmitter.EventEmitter {
-  config: TCPServerConfig;
-  tcpServer!: Server;
-  connectionId: number = 1;
-  constructor(config: TCPServerConfig) {
-    super();
-    this.config = config;
-  }
-  listen = () => {
-    this.tcpServer = netImpl.createServer((peerSocket: any) => {
-      //   this.log("TCP Peer connected", peerSocket.address());
-      const sock = new Socket();
-      sock.addNativeSocket(new MessageSocket(peerSocket));
-      sock.id = `ws_${this.connectionId}`;
-      this.connectionId++;
-      peerSocket.addListener("close", () => {
-        this.emit("disconnect", sock);
-      });
-      this.emit("connection", sock);
-    });
-    this.tcpServer.listen(this.config.tcpPort);
-  };
-  close = () =>{
-    this.tcpServer.close()
-  }
-}
 export interface WebServerConfig {
   url?: string;
   wsPort?: number;
@@ -43,9 +13,8 @@ export interface WebServerConfig {
   wsPingInterval?: number;
 }
 
-export class WebsocketServer extends EventEmitter.EventEmitter {
+export class WebsocketServer extends EventEmitter {
   config: WebServerConfig;
-  tcpServer!: Server;
   wsServer!: WsServer;
   connectionId = 1;
   constructor(config: WebServerConfig) {
@@ -94,6 +63,7 @@ export class WebsocketServer extends EventEmitter.EventEmitter {
       }
       ws.addListener("close", () => {
         clearInterval(pingInterval);
+        this.emit("disconnect", sock);
       });
       ws.addListener("disconnect", () => {
         this.emit("disconnect", sock);
@@ -102,7 +72,7 @@ export class WebsocketServer extends EventEmitter.EventEmitter {
       this.emit("connection", sock);
     });
   };
-  close = () =>{
-    this.wsServer.close()
-  }
+  close = () => {
+    this.wsServer.close();
+  };
 }

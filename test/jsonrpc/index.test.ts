@@ -1,4 +1,4 @@
-import * as Sock from "../../src/1_socket/index";
+import * as Sock from "../../src/1_socket/socket";
 import { sockMock } from "../mocks/sock";
 import JsonRPC from "../../src/2_jsonrpc";
 import { Logger } from "../../src/3_jet/log";
@@ -11,12 +11,24 @@ describe("Testing JsonRpc", () => {
     jest.spyOn(Sock, "Socket").mockImplementation(() => sock);
     const jsonrpc = new JsonRPC(new Logger());
     jsonrpc
-      .connect()
-      .then(() => jsonrpc.connect())
+      .connect(new AbortController())
+      .then(() => jsonrpc.connect(new AbortController()))
       .then(() => {
         jsonrpc.close().then(() => done());
         sock.emit("close");
       });
+    sock.emit("open");
+  });
+  it("Should test abort ", (done) => {
+    const sock = sockMock();
+    jest.spyOn(Sock, "Socket").mockImplementation(() => sock);
+    const jsonrpc = new JsonRPC(new Logger());
+    const abortControler = new AbortController();
+    jsonrpc
+      .connect(abortControler)
+      .then(() => console.log("Connected"))
+      .catch(() => done());
+    abortControler.abort();
     sock.emit("open");
   });
   it("Should test disconnect ", (done) => {
@@ -128,7 +140,7 @@ describe("Testing JsonRpc", () => {
     });
     const jsonrpc = new JsonRPC(new Logger());
     jsonrpc
-      .connect()
+      .connect(new AbortController())
       .then(() =>
         jsonrpc.batch(() => {
           jsonrpc.notify("_f", { event: "Add", path: "foo", value: 1 });
@@ -157,7 +169,7 @@ describe("Testing JsonRpc", () => {
     });
     const jsonrpc = new JsonRPC(new Logger());
     jsonrpc
-      .connect()
+      .connect(new AbortController())
       .then(() =>
         jsonrpc.batch(() => {
           jsonrpc.notify("_f", { event: "Add", path: "foo", value: 1 });
@@ -185,7 +197,7 @@ describe("Testing JsonRpc", () => {
       ],
     });
     const jsonrpc = new JsonRPC(logger);
-    jsonrpc.connect().then(() => {
+    jsonrpc.connect(new AbortController()).then(() => {
       const json = "Invalid Json";
       sock.emit("message", { data: json });
     });
@@ -208,7 +220,9 @@ describe("Testing JsonRpc", () => {
       ],
     });
     const jsonrpc = new JsonRPC(logger);
-    jsonrpc.connect().then(() => sock.emit("error", "sock error"));
+    jsonrpc
+      .connect(new AbortController())
+      .then(() => sock.emit("error", "sock error"));
     sock.emit("open");
   });
   it("Should test incoming request", (done) => {
@@ -216,7 +230,7 @@ describe("Testing JsonRpc", () => {
     jest.spyOn(Sock, "Socket").mockImplementation(() => sock);
 
     const jsonrpc = new JsonRPC(new Logger());
-    jsonrpc.connect().then(() => {
+    jsonrpc.connect(new AbortController()).then(() => {
       jsonrpc.addListener("add", (_peer, id, msg) => {
         expect(id).toEqual("1");
         expect(msg).toEqual({ event: "Add", path: "foo", value: 1 });
@@ -255,7 +269,7 @@ describe("Testing JsonRpc", () => {
     const jsonrpc = new JsonRPC(new Logger());
     jsonrpc.addListener("add", () => msgMock());
     jsonrpc
-      .connect()
+      .connect(new AbortController())
       .then(() => {
         jsonrpc.addListener("add", (_peer, id, msg) => {
           expect(["1", "3", "4"]).toContainEqual(id);
@@ -273,7 +287,7 @@ describe("Testing JsonRpc", () => {
     jest.spyOn(Sock, "Socket").mockImplementation(() => sock);
 
     const jsonrpc = new JsonRPC(new Logger());
-    jsonrpc.connect().then(() => {
+    jsonrpc.connect(new AbortController()).then(() => {
       jsonrpc.addListener("add", (_peer, id, msg) => {
         expect(id).toEqual("1");
         expect(msg).toEqual({ event: "Add", path: "foo", value: 1 });
@@ -299,7 +313,7 @@ describe("Testing JsonRpc", () => {
     };
     const jsonrpc = new JsonRPC(new Logger());
     jsonrpc
-      .connect()
+      .connect(new AbortController())
       .then(() => {
         sock.emit("message", { data: JSON.stringify(message) });
       })

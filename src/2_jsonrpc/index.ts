@@ -3,10 +3,10 @@
 import {
   ConnectionClosed,
   createTypedError,
+  invalidRequest,
   methodNotFound,
 } from "../3_jet/errors";
 import { JsonParams, PublishParams } from "../3_jet/peer";
-import { Socket } from "../1_socket";
 import EventEmitter from "events";
 import {
   castMessage,
@@ -16,6 +16,7 @@ import {
   ResultMessage,
 } from "../3_jet/messages";
 import { logger, Logger } from "../3_jet/log";
+import { Socket } from "../1_socket/socket";
 /**
  * Helper shorthands.
  */
@@ -46,7 +47,7 @@ export interface JsonRpcConfig {
  * JsonRPC constructor.
  * @private
  */
-export class JsonRPC extends EventEmitter.EventEmitter {
+export class JsonRPC extends EventEmitter {
   sock!: Socket;
   config: JsonRpcConfig;
   messages: Array<Message> = [];
@@ -63,6 +64,7 @@ export class JsonRPC extends EventEmitter.EventEmitter {
   rejectConnect!: (reason?: any) => void;
   connectPromise!: Promise<void>;
   logger: Logger;
+  abortController!: AbortController;
   constructor(logger: Logger, config?: JsonRpcConfig, sock?: Socket) {
     super();
     this.config = config || {};
@@ -93,8 +95,14 @@ export class JsonRPC extends EventEmitter.EventEmitter {
     this.sock.addEventListener("message", this._handleMessage);
     this.sock.addEventListener("open", () => {
       this._isOpen = true;
-      this.resolveConnect();
       this.createDisonnectPromise();
+      if (this.abortController.signal.aborted) {
+        this.logger.warn("user requested abort");
+        this.close();
+        this.rejectConnect();
+      } else {
+        this.resolveConnect();
+      }
     });
     this.sock.addEventListener("close", () => {
       this._isOpen = false;
@@ -103,10 +111,13 @@ export class JsonRPC extends EventEmitter.EventEmitter {
     });
   };
 
-  connect = (): Promise<void> => {
+  connect = (
+    controller: AbortController = new AbortController()
+  ): Promise<void> => {
     if (this._isOpen) {
       return Promise.resolve();
     }
+    this.abortController = controller;
     const config = this.config;
     this.sock = new Socket();
     this.sock.connect(config.url, config.ip, config.port || 11122);
@@ -150,6 +161,8 @@ export class JsonRPC extends EventEmitter.EventEmitter {
         this._dispatchSingleMessage(decoded);
       }
     } catch (err: any) {
+      console.log(err, message);
+      this.respond("", invalidRequest("Invalid format"), false);
       this.logger.error(err);
     }
   };

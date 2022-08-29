@@ -1,30 +1,26 @@
 import EventEmitter from "events";
 import JsonRPC from ".";
-import { Socket } from "../1_socket";
-import {
-  TCPServer,
-  TCPServerConfig,
-  WebServerConfig,
-  WebsocketServer,
-} from "../1_socket/server";
+import { Socket } from "../1_socket/socket";
+import { TCPServer, TCPServerConfig } from "../1_socket/tcpserver";
+import { WebServerConfig, WebsocketServer } from "../1_socket/wsserver";
 import { Logger } from "../3_jet/log";
 
-export class JsonRPCServer extends EventEmitter.EventEmitter {
+export class JsonRPCServer extends EventEmitter {
   config: TCPServerConfig & WebServerConfig;
   tcpServer!: TCPServer;
   wsServer!: WebsocketServer;
   connections: Record<string, JsonRPC> = {};
   log: Logger;
-  constructor(log:Logger,config: TCPServerConfig & WebServerConfig) {
+  constructor(log: Logger, config: TCPServerConfig & WebServerConfig) {
     super();
     this.config = config;
-    this.log= log
+    this.log = log;
   }
   listen = () => {
     if (this.config.tcpPort) {
       this.tcpServer = new TCPServer(this.config);
       this.tcpServer.addListener("connection", (sock: Socket) => {
-        const jsonRpc = new JsonRPC(this.log,{}, sock);
+        const jsonRpc = new JsonRPC(this.log, {}, sock);
         this.connections[sock.id] = jsonRpc;
         this.emit("connection", jsonRpc);
       });
@@ -37,7 +33,8 @@ export class JsonRPCServer extends EventEmitter.EventEmitter {
     if (this.config.wsPort || this.config.server) {
       this.wsServer = new WebsocketServer(this.config);
       this.wsServer.addListener("connection", (sock: Socket) => {
-        const jsonRpc = new JsonRPC(this.log,{}, sock);
+        const jsonRpc = new JsonRPC(this.log, {}, sock);
+        this.connections[sock.id] = jsonRpc;
         this.emit("connection", jsonRpc);
       });
       this.wsServer.addListener("disconnect", (sock: Socket) => {
@@ -47,12 +44,12 @@ export class JsonRPCServer extends EventEmitter.EventEmitter {
       this.wsServer.listen();
     }
   };
-  close = ()=>{
-    if(this.tcpServer){
-      this.tcpServer.close()
+  close = () => {
+    if (this.tcpServer) {
+      this.tcpServer.close();
     }
-    if(this.wsServer){
-      this.wsServer.close()
+    if (this.wsServer) {
+      this.wsServer.close();
     }
-  }
+  };
 }

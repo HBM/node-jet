@@ -19,7 +19,7 @@ import { JsonParams } from ".";
  * @param {object} [access] Access rights for this state. Per default unrestricted access to all Peers.
  *
  */
-export class State<T = ValueType> extends EventEmitter.EventEmitter {
+export class State<T = ValueType> extends EventEmitter {
   _path: string;
   _value: T;
   _access: AccessType | null;

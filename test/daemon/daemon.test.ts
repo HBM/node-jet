@@ -360,11 +360,13 @@ describe("Testing Peer", () => {
     });
     it("Should test unfetch", (done) => {
       const peer = simpleFecherPeer();
+      const peer2 = simpleFecherPeer();
       const mockServer = jsonRPCServer();
       jest.spyOn(Server, "JsonRPCServer").mockImplementation(() => mockServer);
       const daemon = new Daemon();
       daemon.listen({});
       mockServer.simulateConnection(peer);
+      mockServer.simulateConnection(peer2);
       peer.publish = jest.fn();
 
       //Adding state
@@ -380,22 +382,40 @@ describe("Testing Peer", () => {
           mockServer.simulateMessage(peer, "change", changeState("bar", 1))
         )
         .then(() =>
+          mockServer.simulateMessage(peer, "change", changeState("foo", 1))
+        )
+        .then(() =>
           mockServer.simulateMessage(peer, "change", changeState("bar4", 6))
         )
         .then(() =>
           mockServer.simulateMessage(peer, "fetch", {
+            id: "5",
+            method: "fetch",
+            params: { path: { equals: "foo2" }, id: "__f__1" },
+          } as MethodRequest)
+        )
+        .then(() =>
+          mockServer.simulateMessage(peer2, "fetch", {
             id: "6",
             method: "fetch",
-            params: { path: { startswith: "bar" }, id: "__f__1" },
+            params: { path: { startswith: "bar" }, id: "__f__2" },
+          } as MethodRequest)
+        )
+        .then(() =>
+          mockServer.simulateMessage(peer, "fetch", {
+            id: "7",
+            method: "fetch",
+            params: { path: { startswith: "foo" }, id: "__f__3" },
           } as MethodRequest)
         )
         .then(() =>
           mockServer.simulateMessage(peer, "unfetch", {
-            id: "7",
+            id: "8",
             method: "unfetch",
             params: { id: "__f__1" },
           } as MethodRequest)
         )
+        .then(() => mockServer.simulateDisconnect(peer))
         .then(() => done());
     });
 

@@ -1,21 +1,17 @@
 /* istanbul ignore file */
 import EventEmitter from "events";
-import net from "net";
+import { Socket, connect } from "net";
 
-/**
- * MessageSocket constructor function.
- * @private
- */
-export class MessageSocket extends EventEmitter.EventEmitter {
+export class MessageSocket extends EventEmitter {
   last = Buffer.alloc(0);
   len = -1;
-  socket: net.Socket;
-  constructor(port: number | net.Socket, ip: string = "") {
+  socket: Socket;
+  constructor(port: number | Socket, ip: string = "") {
     super();
-    if (port instanceof net.Socket) {
+    if (port instanceof Socket) {
       this.socket = port;
     } else {
-      this.socket = net.connect(port, ip);
+      this.socket = connect(port as number, ip);
       this.socket.on("connect", () => {
         this.emit("open");
       });
