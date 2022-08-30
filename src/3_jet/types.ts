@@ -1,4 +1,7 @@
 "use strict";
+
+import { Fetcher } from "../jet";
+
 export const events = [
   "configure",
   "info",
@@ -31,11 +34,37 @@ export const pathRules = [
 export type PathRule = typeof pathRules[number];
 export type sortable = "boolean" | "number" | "string";
 
+export type pathFunction = {
+  (
+    key:
+      | "equals"
+      | "equalsNot"
+      | "endsWith"
+      | "startsWith"
+      | "startsNotWith"
+      | "endsNotWith",
+    value: string
+  ): Fetcher;
+  (
+    key:
+      | "contains"
+      | "containsNot"
+      | "containsAllOf"
+      | "containsOneOf"
+      | "equalsOneOf"
+      | "equalsNotOneOf",
+    value: string[]
+  ): Fetcher;
+};
 export interface ValueRule {
   operator: OperatorType;
   value: string | number | boolean;
 }
-
+export type PublishMessage = {
+  path: string;
+  event: string;
+  value?: ValueType;
+};
 export const operators = [
   "greaterThan",
   "lessThan",

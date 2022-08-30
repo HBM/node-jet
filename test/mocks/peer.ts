@@ -7,6 +7,7 @@ export const fullFetcherPeer = () => ({
   addListener: jest.fn(),
   connect: jest.fn().mockReturnValue(Promise.resolve()),
   respond: jest.fn(),
+  sendRequest: jest.fn().mockReturnValue(Promise.resolve()),
   send: jest
     .fn()
     .mockImplementation((method) =>
@@ -24,8 +25,9 @@ export const simpleFecherPeer = (): any => {
     connect: () => Promise.resolve(),
     callbacks: {},
     respond: jest.fn(),
-    notify: jest.fn(),
-    send: jest
+    send: jest.fn(),
+    queue: jest.fn(),
+    sendRequest: jest
       .fn()
       .mockImplementation((method) =>
         method === "info"

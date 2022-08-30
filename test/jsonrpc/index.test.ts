@@ -36,13 +36,15 @@ describe("Testing JsonRpc", () => {
     jest.spyOn(Sock, "Socket").mockImplementation(() => sock);
     const jsonrpc = new JsonRPC(new Logger());
     jsonrpc
-      .send("add", { path: "foo", value: 3 })
+      .sendRequest("add", { path: "foo", value: 3 })
       .catch((ex) =>
         expect(ex.toString()).toEqual(
           "jet.ConnectionClosed: Connection is closed"
         )
       )
-      .then(() => jsonrpc.notify("_f", { event: "Add", path: "foo", value: 1 }))
+      .then(() =>
+        jsonrpc.queue({ event: "Add", path: "foo", value: 1 } as any, "__f__")
+      )
       .catch((ex) =>
         expect(ex.toString()).toEqual(
           "jet.ConnectionClosed: Connection is closed"
@@ -66,7 +68,7 @@ describe("Testing JsonRpc", () => {
       done();
     });
     const jsonrpc = new JsonRPC(new Logger(), {}, sock);
-    jsonrpc.send("add", { path: "foo", value: 3 });
+    jsonrpc.sendRequest("add", { path: "foo", value: 3 });
   });
   it("Should test batch send", (done) => {
     const sock = sockMock();
@@ -82,18 +84,18 @@ describe("Testing JsonRpc", () => {
       );
       done();
     });
-    const jsonrpc = new JsonRPC(new Logger());
+    const jsonrpc = new JsonRPC(new Logger(), { batches: true });
     jsonrpc.connect().then(() => {
-      jsonrpc.batch(() => {
-        jsonrpc.send("add", { path: "foo", value: 3 });
-        jsonrpc.send("add", { path: "foo1", value: 4 });
-        jsonrpc.send("add", { path: "foo2", value: 5 });
-        jsonrpc.send("add", { path: "foo3", value: 6 });
-      });
+      jsonrpc.sendImmedeate = false;
+      jsonrpc.sendRequest("add", { path: "foo", value: 3 });
+      jsonrpc.sendRequest("add", { path: "foo1", value: 4 });
+      jsonrpc.sendRequest("add", { path: "foo2", value: 5 });
+      jsonrpc.sendRequest("add", { path: "foo3", value: 6 });
+      jsonrpc.send();
     });
     sock.emit("open");
   });
-  it("Should test notify", (done) => {
+  it("Should test publish", (done) => {
     const sock = sockMock();
     jest.spyOn(Sock, "Socket").mockImplementation(() => sock);
     jest.spyOn(sock, "send").mockImplementation((msg) => {
@@ -110,7 +112,7 @@ describe("Testing JsonRpc", () => {
     jsonrpc
       .connect()
       .then(() =>
-        jsonrpc.notify("_f", { event: "Add", path: "foo", value: 1 })
+        jsonrpc.queue({ event: "Add", path: "foo", value: 1 } as any, "_f")
       );
     sock.emit("open");
   });
@@ -141,13 +143,13 @@ describe("Testing JsonRpc", () => {
     const jsonrpc = new JsonRPC(new Logger());
     jsonrpc
       .connect(new AbortController())
-      .then(() =>
-        jsonrpc.batch(() => {
-          jsonrpc.notify("_f", { event: "Add", path: "foo", value: 1 });
-          jsonrpc.notify("_f", { event: "Add", path: "foo", value: 2 });
-          jsonrpc.notify("_f", { event: "Add", path: "foo", value: 3 });
-        })
-      )
+      .then(() => {
+        jsonrpc.sendImmedeate = false;
+        jsonrpc.queue({ event: "Add", path: "foo", value: 1 } as any, "_f");
+        jsonrpc.queue({ event: "Add", path: "foo", value: 2 } as any, "_f");
+        jsonrpc.queue({ event: "Add", path: "foo", value: 3 } as any, "_f");
+        jsonrpc.send();
+      })
 
       .then(() => waitForExpect(() => expect(sock.send).toBeCalledTimes(1)))
       .then(done());
@@ -170,11 +172,9 @@ describe("Testing JsonRpc", () => {
     const jsonrpc = new JsonRPC(new Logger());
     jsonrpc
       .connect(new AbortController())
-      .then(() =>
-        jsonrpc.batch(() => {
-          jsonrpc.notify("_f", { event: "Add", path: "foo", value: 1 });
-        })
-      )
+      .then(() => {
+        jsonrpc.queue({ event: "Add", path: "foo", value: 1 } as any, "_f");
+      })
 
       .then(() => waitForExpect(() => expect(sock.send).toBeCalledTimes(1)))
       .then(done());
@@ -358,7 +358,7 @@ describe("Testing JsonRpc", () => {
 
     const jsonrpc = new JsonRPC(new Logger());
     jsonrpc.connect().then(() => {
-      jsonrpc.send("add", { path: "foo" }).then((res) => {
+      jsonrpc.sendRequest("add", { path: "foo" }).then((res) => {
         expect(res).toEqual("this is my result");
         done();
       });
@@ -374,7 +374,7 @@ describe("Testing JsonRpc", () => {
 
     const jsonrpc = new JsonRPC(new Logger());
     jsonrpc.connect().then(() => {
-      jsonrpc.send("add", { path: "foo" }).catch((res) => {
+      jsonrpc.sendRequest("add", { path: "foo" }).catch((res) => {
         expect(res).toEqual("this is my error");
         done();
       });
@@ -390,12 +390,15 @@ describe("Testing JsonRpc", () => {
 
     const jsonrpc = new JsonRPC(new Logger());
     jsonrpc.connect().then(() => {
-      jsonrpc.send("add", { path: "foo" }).catch((res) => {
-        expect(res.toString()).toEqual(
-          "jet.NotFound: No State/Method matching the specified path"
-        );
-        done();
-      });
+      jsonrpc
+        .sendRequest("add", { path: "foo" }, true)
+        .catch((res) => {
+          expect(res.toString()).toEqual(
+            "jet.NotFound: No State/Method matching the specified path"
+          );
+          done();
+        })
+        .catch((ex) => console.log(ex));
       const json = JSON.stringify({
         id: "1",
         error: { code: INVALID_PARAMS_CODE, data: { pathNotExists: "Foo" } },

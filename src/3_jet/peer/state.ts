@@ -60,7 +60,7 @@ export class State<T = ValueType> extends EventEmitter {
    */
 
   value = (newValue: T | undefined = undefined) => {
-    if (newValue && newValue !== this._value) {
+    if (newValue !== undefined && newValue !== this._value) {
       this._value = newValue;
       this.emit("set", newValue);
     }

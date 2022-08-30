@@ -32,9 +32,8 @@ describe("Testing Peer", () => {
         .then((res) => {
           expect(res.message).toEqual({
             features: {
-              authentication: true,
               asNotification: false,
-              batches: true,
+              batches: false,
               fetch: "full",
             },
             name: "node-jet",
@@ -139,7 +138,7 @@ describe("Testing Peer", () => {
       daemon.listen({});
       mockServer.simulateConnection(peer) as any;
 
-      jest.spyOn(peer, "send").mockImplementation((method, msg: any) => {
+      jest.spyOn(peer, "sendRequest").mockImplementation((method, msg: any) => {
         return method === "set"
           ? Promise.resolve(msg)
           : Promise.reject("method was not set");
@@ -181,11 +180,6 @@ describe("Testing Peer", () => {
       daemon.listen({});
       mockServer.simulateConnection(peer);
 
-      // jest.spyOn(peer, "send").mockImplementation((method, msg: any) => {
-      //   return method === "call"
-      //     ? Promise.resolve({})
-      //     : Promise.reject("method was not call");
-      // });
       mockServer
         .simulateMessage(peer, "add", AddMethod("bar"))
         .then((res) => {
@@ -218,13 +212,13 @@ describe("Testing Peer", () => {
       const daemon = new Daemon({
         features: {
           fetch: "full",
+          asNotification: true,
         },
       });
       daemon.listen({});
       mockServer.simulateConnection(peer);
       peer.publish = jest.fn();
-      jest.spyOn(peer, "notify").mockImplementation((id, msg: any) => {
-        expect(id).toEqual("__f__1");
+      jest.spyOn(peer, "queue").mockImplementation((msg: any) => {
         expect(["Add", "Change"]).toContainEqual(msg.event);
         expect(["bar", "bar2", "bar4"]).toContainEqual(msg.path);
         return Promise.resolve();
@@ -250,7 +244,51 @@ describe("Testing Peer", () => {
         )
         .then((res) => {
           //important that the add event was called before ack
-          expect(peer.notify).toBeCalledTimes(4);
+          expect(peer.queue).toBeCalledTimes(4);
+          expect(res.message).toEqual({});
+          expect(res.success).toEqual(true);
+        })
+        .then(() => done());
+    });
+    it("test full fetch", (done) => {
+      const peer = simpleFecherPeer();
+      const mockServer = jsonRPCServer();
+      jest.spyOn(Server, "JsonRPCServer").mockImplementation(() => mockServer);
+      const daemon = new Daemon({
+        features: {
+          fetch: "full",
+        },
+      });
+      daemon.listen({});
+      mockServer.simulateConnection(peer);
+      peer.publish = jest.fn();
+      jest.spyOn(peer, "queue").mockImplementation((msg: any) => {
+        expect(["Add", "Change"]).toContainEqual(msg.event);
+        expect(["bar", "bar2", "bar4"]).toContainEqual(msg.path);
+        return Promise.resolve();
+      });
+      //Adding state
+      mockServer
+        .simulateMessage(peer, "add", AddState("bar", 1))
+        .then(() =>
+          mockServer.simulateMessage(peer, "add", AddState("bar2", 3))
+        )
+        .then(() =>
+          mockServer.simulateMessage(peer, "fetch", {
+            id: "4",
+            method: "fetch",
+            params: { path: { startswith: "bar" }, id: "__f__1" },
+          } as MethodRequest)
+        )
+        .then(() =>
+          mockServer.simulateMessage(peer, "add", AddState("bar4", 1))
+        )
+        .then(() =>
+          mockServer.simulateMessage(peer, "change", changeState("bar4", 6))
+        )
+        .then((res) => {
+          //important that the add event was called before ack
+          expect(peer.queue).toBeCalledTimes(4);
           expect(res.message).toEqual({});
           expect(res.success).toEqual(true);
         })
@@ -269,8 +307,7 @@ describe("Testing Peer", () => {
       daemon.listen({});
       mockServer.simulateConnection(peer);
       peer.publish = jest.fn();
-      jest.spyOn(peer, "notify").mockImplementation((id, msg: any) => {
-        expect(id).toEqual("__f__1");
+      jest.spyOn(peer, "queue").mockImplementation((msg: any) => {
         expect(["Add", "Change"]).toContainEqual(msg.event);
         expect(["bar", "bar2", "bar4"]).toContainEqual(msg.path);
         return Promise.resolve();
@@ -299,7 +336,7 @@ describe("Testing Peer", () => {
         )
         .then((res) => {
           //important that the add event was called before ack
-          expect(peer.notify).toBeCalledTimes(5);
+          expect(peer.queue).toBeCalledTimes(5);
           expect(res.message).toEqual({});
           expect(res.success).toEqual(true);
         })
@@ -324,8 +361,7 @@ describe("Testing Peer", () => {
       daemon.listen({});
       mockServer.simulateConnection(peer);
       peer.publish = jest.fn();
-      jest.spyOn(peer, "notify").mockImplementation((id, msg: any) => {
-        expect(id).toEqual("__f__1");
+      jest.spyOn(peer, "queue").mockImplementation((msg: any) => {
         expect(["Add", "Change"]).toContainEqual(msg.event);
         expect(["bar", "bar2", "bar4"]).toContainEqual(msg.path);
         return Promise.resolve();
@@ -461,31 +497,5 @@ describe("Testing Peer", () => {
         )
         .then(() => done());
     });
-    // it("Should test invalid method", (done) => {
-    //   const peer = simpleFecherPeer();
-    //   const mockServer = jsonRPCServer();
-    //   jest.spyOn(Server, "JsonRPCServer").mockImplementation(() => mockServer);
-    //   const daemon = new Daemon();
-    //   daemon.listen({});
-    //   const fetchId = "__f__1";
-    //   const newValue = 6;
-    //   mockServer.simulateConnection(peer) as any;
-    //   mockServer
-    //     .simulateMessage(
-    //       peer,
-    //       "foo" as any,
-    //       {
-    //         id: "1",
-    //         method: "foo",
-    //         params: { path: "bar", value: 2 },
-    //       } as MethodRequest
-    //     )
-    //     .then((res) => {
-    //       expect(res.message).toEqual("Unknown method");
-    //       expect(res.success).toEqual(false);
-    //     })
-    //     .then(() => mockServer.simulateDisconnect(peer))
-    //     .then(() => done());
-    // });
   });
 });

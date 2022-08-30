@@ -16,7 +16,6 @@ const version = "2.2.0";
 
 interface Features {
   batches?: boolean;
-  authentication?: boolean;
   fetch?: "full" | "simple";
   asNotification?: boolean;
 }
@@ -42,8 +41,7 @@ class InfoObject implements InfoOptions {
     this.version = version;
     this.protocolVersion = "1.1.0";
     this.features = {
-      batches: true,
-      authentication: true,
+      batches: options.features?.batches || false,
       fetch: options.features?.fetch || "full",
       asNotification: options.features?.asNotification || false,
     };
@@ -108,7 +106,6 @@ const defaultOptions: DaemonOptions = {
 };
 
 export class Daemon extends EventEmitter {
-  users: Record<string, User>;
   infoObject: InfoObject;
   log: Logger;
   jsonRPCServer!: JsonRPCServer;
@@ -116,7 +113,6 @@ export class Daemon extends EventEmitter {
   subscriber: Subscription[] = [];
   constructor(options: DaemonOptions & InfoOptions = defaultOptions) {
     super();
-    this.users = options.users || {};
     this.infoObject = new InfoObject(options);
     this.log = new Logger(options.log);
   }
@@ -178,6 +174,7 @@ export class Daemon extends EventEmitter {
         { error: "Only one fetcher per peer in simple fetch Mode" },
         false
       );
+      return;
     }
     const sub = new Subscription(msg, peer);
     this.addListener("notify", sub.send);
@@ -236,8 +233,7 @@ export class Daemon extends EventEmitter {
   Call and Set requests: Call and set requests are always forwarded synchronous
   */
   forward = (method: "set" | "call", params: PathParams) =>
-    this.routes[params.path].owner.send(method, params);
-
+    this.routes[params.path].owner.sendRequest(method, params, true);
   /*
   Info requests: Info requests are always synchronous
   */
@@ -309,7 +305,11 @@ export class Daemon extends EventEmitter {
   listen = (
     listenOptions: TCPServerConfig & WebServerConfig = defaultListenOptions
   ) => {
-    this.jsonRPCServer = new JsonRPCServer(this.log, listenOptions);
+    this.jsonRPCServer = new JsonRPCServer(
+      this.log,
+      listenOptions,
+      this.infoObject.features.batches
+    );
     this.jsonRPCServer.addListener("connection", (newPeer: JsonRPC) => {
       this.log.info("Peer connected");
 
@@ -325,14 +325,16 @@ export class Daemon extends EventEmitter {
       newPeer.addListener("unfetch", this.unfetch);
 
       newPeer.addListener("set", (_peer, id, params) =>
-        this.forward("set", params).then((res) =>
-          newPeer.respond(id, res, true)
-        )
+        this.forward("set", params).then((res) => {
+          newPeer.respond(id, res, true);
+          newPeer.send();
+        })
       );
       newPeer.addListener("call", (_peer, id, params) =>
-        this.forward("call", params).then((res) =>
-          newPeer.respond(id, res, true)
-        )
+        this.forward("call", params).then((res) => {
+          newPeer.respond(id, res, true);
+          newPeer.send();
+        })
       );
     });
 

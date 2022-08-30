@@ -6,7 +6,7 @@ import {
   invalidRequest,
   methodNotFound,
 } from "../3_jet/errors";
-import { JsonParams, PublishParams } from "../3_jet/peer";
+import { JsonParams } from "../3_jet/peer";
 import EventEmitter from "events";
 import {
   castMessage,
@@ -27,8 +27,6 @@ export type resultCallback =
   | ((_success: boolean, _result?: any) => void)
   | undefined;
 
-type MessageCallback = (asString: string, decoded: object) => void;
-
 const isResultMessage = (msg: Message): msg is ResultMessage => {
   return "result" in msg;
 };
@@ -36,8 +34,7 @@ const isErrorMessage = (msg: Message): msg is ErrorMessage => {
   return "error" in msg;
 };
 export interface JsonRpcConfig {
-  onSend?: MessageCallback;
-  onReceive?: MessageCallback;
+  batches?: boolean;
   url?: string;
   port?: number;
   ip?: string;
@@ -51,11 +48,11 @@ export class JsonRPC extends EventEmitter {
   sock!: Socket;
   config: JsonRpcConfig;
   messages: Array<Message> = [];
-  willFlush = false;
   fakeContext: any;
   messageId = 1;
   _isOpen = false;
   openRequests: Record<string, { resolve: Function; reject: Function }> = {};
+  batchPromises: Promise<object>[] = [];
   requestId: string = "";
   resolveDisconnect!: (value: void | PromiseLike<void>) => void;
   rejectDisconnect!: (reason?: any) => void;
@@ -65,9 +62,11 @@ export class JsonRPC extends EventEmitter {
   connectPromise!: Promise<void>;
   logger: Logger;
   abortController!: AbortController;
+  sendImmedeate: boolean;
   constructor(logger: Logger, config?: JsonRpcConfig, sock?: Socket) {
     super();
     this.config = config || {};
+    this.sendImmedeate = config?.batches ? false : true;
     this.createDisonnectPromise();
     this.createConnectPromise();
     this.logger = logger;
@@ -132,7 +131,7 @@ export class JsonRPC extends EventEmitter {
     if (!this._isOpen) {
       return Promise.resolve();
     }
-    this.flush();
+    this.send();
     this.sock.close();
     return this.disconnectPromise;
   };
@@ -151,15 +150,16 @@ export class JsonRPC extends EventEmitter {
     try {
       const decoded = decode(message);
       if (Array.isArray(decoded)) {
-        this.willFlush = true;
         decoded.forEach((singleMessage) => {
           this._dispatchSingleMessage(singleMessage);
         });
-        this.flush();
       } else {
-        this.willFlush = false;
         this._dispatchSingleMessage(decoded);
       }
+
+      this.send().catch((ex) => {
+        this.logger.error(ex);
+      });
     } catch (err: any) {
       console.log(err, message);
       this.respond("", invalidRequest("Invalid format"), false);
@@ -219,29 +219,42 @@ export class JsonRPC extends EventEmitter {
   /**
    * Queue.
    */
-  queue = <T extends Message>(message: T) => this.messages.push(message);
+  queue = <T extends Message>(message: T, id = "") => {
+    if (!this._isOpen) {
+      return Promise.reject(new ConnectionClosed("Connection is closed"));
+    }
+    if (id) {
+      this.messages.push({ id: "_", method: id, params: message } as Message);
+    } else {
+      this.messages.push(message);
+    }
+    if (this.sendImmedeate) {
+      this.send();
+    }
+  };
 
   /**
-   * Flush.
+   * Send.
    */
-  flush = () => {
+  send = () => {
     if (this.messages.length > 0) {
       const encoded = encode(
         this.messages.length === 1 ? this.messages[0] : this.messages
       );
-      if (encoded) {
-        this.logger.sock(`Sending message:  ${encoded}`);
-        this.sock.send(encoded);
-        this.messages = [];
-      }
+      this.logger.sock(`Sending message:  ${encoded}`);
+      this.sock.send(encoded);
+      this.messages = [];
     }
-    this.willFlush = false;
+    return Promise.all(this.batchPromises).then((res) => {
+      this.batchPromises = [];
+      return Promise.resolve(res);
+    });
   };
 
   respond = (id: string, params: object, success: boolean) => {
-    const msg = encode({ id: id, [success ? "result" : "error"]: params });
-    this.logger.sock(`Responding message:  ${msg}`);
-    this.sock.send(msg);
+    // const msg = encode({ id: id, [success ? "result" : "error"]: params });
+    // this.logger.sock(`Responding message:  ${msg}`);
+    this.queue({ id: id, [success ? "result" : "error"]: params });
   };
 
   successCb = (id: string, result: any) => {
@@ -259,8 +272,12 @@ export class JsonRPC extends EventEmitter {
   /**
    * Service.
    */
-  send = <T extends object>(method: string, params: JsonParams): Promise<T> => {
-    return new Promise((resolve, reject) => {
+  sendRequest = <T extends object>(
+    method: string,
+    params: JsonParams,
+    immedeate: boolean | undefined = undefined
+  ): Promise<T> => {
+    const promise = new Promise<T>((resolve, reject) => {
       if (!this._isOpen) {
         reject(new ConnectionClosed("Connection is closed"));
       } else {
@@ -272,48 +289,17 @@ export class JsonRPC extends EventEmitter {
           method: method,
           params: params,
         };
-        if (this.willFlush) {
-          this.queue(message);
-        } else {
-          const encoded = encode(message);
-          this.logger.sock(`Sending message:  ${encoded}`);
-          this.sock.send(encoded);
+        this.queue(message);
+        if (immedeate) {
+          this.send();
         }
       }
     });
-  };
-  notify = <T extends object>(
-    fetchId: string,
-    params: PublishParams
-  ): Promise<T> => {
-    return new Promise((resolve, reject) => {
-      if (!this._isOpen) {
-        reject(new ConnectionClosed("Connection is closed"));
-      } else {
-        const message: MethodRequest = {
-          id: "_",
-          method: fetchId,
-          params: params,
-        };
-        if (this.willFlush) {
-          this.queue(message);
-        } else {
-          const encoded = encode(message);
-          this.logger.sock(`Sending message:  ${encoded}`);
-          this.sock.send(encoded);
-        }
-        resolve({} as T); //Publish messages are not acknowledged
-      }
-    });
-  };
-
-  /**
-   * Batch.
-   */
-  batch = (action: () => void) => {
-    this.willFlush = true;
-    action();
-    this.flush();
+    this.batchPromises.push(promise);
+    if (immedeate || this.sendImmedeate) return promise;
+    else {
+      return Promise.resolve({} as T);
+    }
   };
 }
 

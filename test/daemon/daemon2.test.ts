@@ -17,7 +17,6 @@ describe("Testing Daemon 2 (Notifications)", () => {
       features: {
         batches: true,
         asNotification: true,
-        authentication: true,
         fetch: "full",
       },
     });
@@ -33,7 +32,6 @@ describe("Testing Daemon 2 (Notifications)", () => {
       .then((res) => {
         expect(res.message).toEqual({
           features: {
-            authentication: true,
             asNotification: true,
             batches: true,
             fetch: "full",
@@ -74,7 +72,6 @@ describe("Testing Daemon 2 (Notifications)", () => {
       features: {
         batches: true,
         asNotification: true,
-        authentication: true,
         fetch: "full",
       },
     });
@@ -143,7 +140,6 @@ describe("Testing Daemon 2 (Notifications)", () => {
       features: {
         batches: true,
         asNotification: true,
-        authentication: true,
         fetch: "full",
       },
     });

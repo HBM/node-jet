@@ -11,16 +11,22 @@ export class JsonRPCServer extends EventEmitter {
   wsServer!: WebsocketServer;
   connections: Record<string, JsonRPC> = {};
   log: Logger;
-  constructor(log: Logger, config: TCPServerConfig & WebServerConfig) {
+  batches: boolean;
+  constructor(
+    log: Logger,
+    config: TCPServerConfig & WebServerConfig,
+    batches: boolean = false
+  ) {
     super();
     this.config = config;
+    this.batches = batches;
     this.log = log;
   }
   listen = () => {
     if (this.config.tcpPort) {
       this.tcpServer = new TCPServer(this.config);
       this.tcpServer.addListener("connection", (sock: Socket) => {
-        const jsonRpc = new JsonRPC(this.log, {}, sock);
+        const jsonRpc = new JsonRPC(this.log, { batches: this.batches }, sock);
         this.connections[sock.id] = jsonRpc;
         this.emit("connection", jsonRpc);
       });
@@ -33,7 +39,7 @@ export class JsonRPCServer extends EventEmitter {
     if (this.config.wsPort || this.config.server) {
       this.wsServer = new WebsocketServer(this.config);
       this.wsServer.addListener("connection", (sock: Socket) => {
-        const jsonRpc = new JsonRPC(this.log, {}, sock);
+        const jsonRpc = new JsonRPC(this.log, { batches: this.batches }, sock);
         this.connections[sock.id] = jsonRpc;
         this.emit("connection", jsonRpc);
       });

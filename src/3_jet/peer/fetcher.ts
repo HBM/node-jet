@@ -6,6 +6,7 @@ import {
   ValueType,
   OperatorType as Operator,
   ValueRule,
+  pathFunction,
 } from "../types";
 
 export class Fetcher extends EventEmitter {
@@ -15,7 +16,7 @@ export class Fetcher extends EventEmitter {
   constructor() {
     super();
   }
-  path = (key: PathRule, value: string) => {
+  path: pathFunction = (key: PathRule, value: string | string[]) => {
     this.message.path[key as string] = value;
     return this;
   };

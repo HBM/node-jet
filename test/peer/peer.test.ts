@@ -5,6 +5,7 @@ import State from "../../src/3_jet/peer/state";
 import { ValueType, EventType } from "../../src/3_jet/types";
 import { Fetcher, NotFound } from "../../src/jet";
 import { fullFetcherPeer, simpleFecherPeer } from "../mocks/peer";
+import { fetchSimpleId } from "../../lib/3_jet/types";
 describe("Testing Peer", () => {
   describe("Should handle daemon messages", () => {
     describe("Should send different messages full fetch", () => {
@@ -139,46 +140,14 @@ describe("Testing Peer", () => {
         done();
       });
     });
-    // xit("Should fail to authenticate", (done) => {
-    //   const connectSpy = jest.fn().mockReturnValue(Promise.resolve());
-    //   const sendSpy = jest
-    //     .fn()
-    //     .mockImplementation((method, _args) =>
-    //       method === "authenticate"
-    //         ? Promise.reject("Wrong credentials")
-    //         : Promise.resolve({})
-    //     );
-    //   const jsonrpc = {
-    //     ...fullFetcherPeer(),
-    //     connect: connectSpy,
-    //     send: sendSpy,
-    //   };
-    //   jest.spyOn(JsonRPC, "default").mockImplementation(() => jsonrpc);
-    //   const peer = new Peer({ user: "foo", password: "bar" });
-    //   peer
-    //     .connect()
-    //     .then(() => {
-    //       console.log("entered then");
-    //     })
-    //     .catch((ex) => {
-    //       expect(connectSpy).toBeCalled();
-    //       expect(sendSpy).toBeCalledWith("info", {});
-    //       expect(sendSpy).toBeCalledWith("authenticate", {
-    //         password: "bar",
-    //         user: "foo",
-    //       });
-    //       expect(ex).toBe("Wrong credentials");
-    //       done();
-    //     });
-    // });
 
-    it("Should connect peer without credentials", (done) => {
+    it("Should connect to peer", (done) => {
       const connectSpy = jest.fn().mockReturnValue(Promise.resolve());
       const sendSpy = jest.fn().mockReturnValue(Promise.resolve());
       const jsonrpc = {
         ...fullFetcherPeer(),
         connect: connectSpy,
-        send: sendSpy,
+        sendRequest: sendSpy,
       };
       jest.spyOn(JsonRPC, "default").mockImplementation(() => jsonrpc);
       const peer = new Peer();
@@ -188,32 +157,11 @@ describe("Testing Peer", () => {
         done();
       });
     });
-    //   xit("Should connect to peer with credentials", (done) => {
-    //     const connectSpy = jest.fn().mockReturnValue(Promise.resolve());
-    //     const sendSpy = jest.fn().mockReturnValue(Promise.resolve());
-    //     const jsonrpc = {
-    //       ...fullFetcherPeer(),
-    //       connect: connectSpy,
-    //       send: sendSpy,
-    //     };
-    //     jest.spyOn(JsonRPC, "default").mockImplementation(() => jsonrpc);
-    //     const peer = new Peer({ user: "foo", password: "bar" });
-    //     peer.connect().then(() => {
-    //       expect(connectSpy).toBeCalled();
-    //       expect(sendSpy).toBeCalledWith("info", {});
-    //       expect(sendSpy).toBeCalledWith("authenticate", {
-    //         password: "bar",
-    //         user: "foo",
-    //       });
-    //       done();
-    //     });
-    //   });
-    // });
   });
   describe("Should test add methods", () => {
     it("Should fail to add a state", (done) => {
       const sendSpy = jest.fn().mockReturnValue(Promise.reject("invalid path"));
-      const jsonrpc = { ...fullFetcherPeer(), send: sendSpy };
+      const jsonrpc = { ...fullFetcherPeer(), sendRequest: sendSpy };
       jest.spyOn(JsonRPC, "default").mockImplementation(() => jsonrpc);
       const peer = new Peer();
       peer.add(new State<ValueType>("My path", 3)).catch((ex) => {
@@ -224,7 +172,7 @@ describe("Testing Peer", () => {
     });
     it("Should add a state and change the value", (done) => {
       const sendSpy = jest.fn().mockReturnValue(Promise.resolve({}));
-      const jsonrpc = { ...fullFetcherPeer(), send: sendSpy };
+      const jsonrpc = { ...fullFetcherPeer(), sendRequest: sendSpy };
       jest.spyOn(JsonRPC, "default").mockImplementation(() => jsonrpc);
       const peer = new Peer();
       const myState = new State<ValueType>("My path", 4);
@@ -237,7 +185,7 @@ describe("Testing Peer", () => {
     });
     it("Should add a method", (done) => {
       const sendSpy = jest.fn().mockReturnValue(Promise.resolve({}));
-      const jsonrpc = { ...fullFetcherPeer(), send: sendSpy };
+      const jsonrpc = { ...fullFetcherPeer(), sendRequest: sendSpy };
       jest.spyOn(JsonRPC, "default").mockImplementation(() => jsonrpc);
       const peer = new Peer();
       peer.add(new Method("My path")).then(() => {
@@ -247,7 +195,7 @@ describe("Testing Peer", () => {
     });
     it("Should add a method", (done) => {
       const sendSpy = jest.fn().mockReturnValue(Promise.resolve({}));
-      const jsonrpc = { ...fullFetcherPeer(), send: sendSpy };
+      const jsonrpc = { ...fullFetcherPeer(), sendRequest: sendSpy };
       jest.spyOn(JsonRPC, "default").mockImplementation(() => jsonrpc);
       const peer = new Peer();
       peer.add(new Method("My path")).then(() => {
@@ -257,14 +205,14 @@ describe("Testing Peer", () => {
     });
     it("Should create batch", () => {
       const sendSpy = jest.fn().mockReturnValue(Promise.resolve({}));
-      const jsonrpc = { ...fullFetcherPeer(), send: sendSpy };
+      const jsonrpc = { ...fullFetcherPeer(), sendRequest: sendSpy };
       jest.spyOn(JsonRPC, "default").mockImplementation(() => jsonrpc);
       const peer = new Peer();
       peer.batch(() => {});
     });
     it("Should send configure", (done) => {
       const sendSpy = jest.fn().mockReturnValue(Promise.resolve({}));
-      const jsonrpc = { ...fullFetcherPeer(), send: sendSpy };
+      const jsonrpc = { ...fullFetcherPeer(), sendRequest: sendSpy };
       jest.spyOn(JsonRPC, "default").mockImplementation(() => jsonrpc);
       const peer = new Peer();
       peer.configure({}).then(() => {
@@ -276,7 +224,7 @@ describe("Testing Peer", () => {
   describe("Should test removing a state", () => {
     it("Should fail to remove a state", (done) => {
       const sendSpy = jest.fn().mockReturnValue(Promise.reject("invalid path"));
-      const jsonrpc = { ...fullFetcherPeer(), send: sendSpy };
+      const jsonrpc = { ...fullFetcherPeer(), sendRequest: sendSpy };
       jest.spyOn(JsonRPC, "default").mockImplementation(() => jsonrpc);
       const peer = new Peer();
       peer.remove(new State<ValueType>("My path", 5)).catch((ex) => {
@@ -287,7 +235,7 @@ describe("Testing Peer", () => {
     });
     it("Should remove a state", (done) => {
       const sendSpy = jest.fn().mockReturnValue(Promise.resolve({}));
-      const jsonrpc = { ...fullFetcherPeer(), send: sendSpy };
+      const jsonrpc = { ...fullFetcherPeer(), sendRequest: sendSpy };
       jest.spyOn(JsonRPC, "default").mockImplementation(() => jsonrpc);
       const peer = new Peer();
       peer.remove(new State<ValueType>("My path", 5)).then(() => {
@@ -299,7 +247,7 @@ describe("Testing Peer", () => {
   describe("Should test getting a state", () => {
     it("Should fail to get a state", (done) => {
       const sendSpy = jest.fn().mockReturnValue(Promise.reject("invalid path"));
-      const jsonrpc = { ...fullFetcherPeer(), send: sendSpy };
+      const jsonrpc = { ...fullFetcherPeer(), sendRequest: sendSpy };
       jest.spyOn(JsonRPC, "default").mockImplementation(() => jsonrpc);
       const peer = new Peer();
       peer.get({ path: { startsWith: "a" } }).catch((ex) => {
@@ -310,7 +258,7 @@ describe("Testing Peer", () => {
     });
     it("Should get a state", (done) => {
       const sendSpy = jest.fn().mockReturnValue(Promise.resolve(5));
-      const jsonrpc = { ...fullFetcherPeer(), send: sendSpy };
+      const jsonrpc = { ...fullFetcherPeer(), sendRequest: sendSpy };
       jest.spyOn(JsonRPC, "default").mockImplementation(() => jsonrpc);
       const peer = new Peer();
       peer.get({ path: { startsWith: "a" } }).then((res) => {
@@ -324,7 +272,7 @@ describe("Testing Peer", () => {
   describe("Should test setting a state", () => {
     it("Should fail to set a state", (done) => {
       const sendSpy = jest.fn().mockReturnValue(Promise.reject("invalid path"));
-      const jsonrpc = { ...fullFetcherPeer(), send: sendSpy };
+      const jsonrpc = { ...fullFetcherPeer(), sendRequest: sendSpy };
       jest.spyOn(JsonRPC, "default").mockImplementation(() => jsonrpc);
       const peer = new Peer();
       peer.set("Foo", 5, { timeout: 5, valueAsResult: true }).catch((ex) => {
@@ -340,7 +288,7 @@ describe("Testing Peer", () => {
     });
     it("Should set a state", (done) => {
       const sendSpy = jest.fn().mockReturnValue(Promise.resolve(5));
-      const jsonrpc = { ...fullFetcherPeer(), send: sendSpy };
+      const jsonrpc = { ...fullFetcherPeer(), sendRequest: sendSpy };
       jest.spyOn(JsonRPC, "default").mockImplementation(() => jsonrpc);
       const peer = new Peer();
       peer.set("Foo", 5).then((res) => {
@@ -353,7 +301,7 @@ describe("Testing Peer", () => {
   describe("Should test calling a method", () => {
     it("Should fail to call a method", (done) => {
       const sendSpy = jest.fn().mockReturnValue(Promise.reject("invalid path"));
-      const jsonrpc = { ...fullFetcherPeer(), send: sendSpy };
+      const jsonrpc = { ...fullFetcherPeer(), sendRequest: sendSpy };
       jest.spyOn(JsonRPC, "default").mockImplementation(() => jsonrpc);
       const peer = new Peer();
       peer.call("Foo", [5], { timeout: 5 }).catch((ex) => {
@@ -368,7 +316,7 @@ describe("Testing Peer", () => {
     });
     it("Should call a method", (done) => {
       const sendSpy = jest.fn().mockReturnValue(Promise.resolve({}));
-      const jsonrpc = { ...fullFetcherPeer(), send: sendSpy };
+      const jsonrpc = { ...fullFetcherPeer(), sendRequest: sendSpy };
       jest.spyOn(JsonRPC, "default").mockImplementation(() => jsonrpc);
       const peer = new Peer();
       peer.call("Foo", { abc: 4 }).then((res) => {
@@ -384,7 +332,7 @@ describe("Testing Peer", () => {
   describe("Should test calling a method", () => {
     it("Should fail to call a method", (done) => {
       const sendSpy = jest.fn().mockReturnValue(Promise.reject("invalid path"));
-      const jsonrpc = { ...fullFetcherPeer(), send: sendSpy };
+      const jsonrpc = { ...fullFetcherPeer(), sendRequest: sendSpy };
       jest.spyOn(JsonRPC, "default").mockImplementation(() => jsonrpc);
       const peer = new Peer();
       peer.call("Foo", [5], { timeout: 5 }).catch((ex) => {
@@ -399,7 +347,7 @@ describe("Testing Peer", () => {
     });
     it("Should call a method", (done) => {
       const sendSpy = jest.fn().mockReturnValue(Promise.resolve({}));
-      const jsonrpc = { ...fullFetcherPeer(), send: sendSpy };
+      const jsonrpc = { ...fullFetcherPeer(), sendRequest: sendSpy };
       jest.spyOn(JsonRPC, "default").mockImplementation(() => jsonrpc);
       const peer = new Peer();
       peer.call("Foo", { abc: 4 }).then((res) => {
@@ -415,7 +363,7 @@ describe("Testing Peer", () => {
   describe("Should test fetching", () => {
     it("Should fail to fetch", (done) => {
       const sendSpy = jest.fn().mockReturnValue(Promise.reject("invalid path"));
-      const jsonrpc = { ...fullFetcherPeer(), send: sendSpy };
+      const jsonrpc = { ...fullFetcherPeer(), sendRequest: sendSpy };
       jest.spyOn(JsonRPC, "default").mockImplementation(() => jsonrpc);
       const peer = new Peer();
       peer.fetch(new Fetcher()).catch((ex) => {
@@ -437,7 +385,7 @@ describe("Testing Peer", () => {
             ? Promise.resolve({ features: { fetch: "full" } })
             : Promise.resolve([4, 3, 2])
         );
-      const jsonrpc = { ...fullFetcherPeer(), send: sendSpy };
+      const jsonrpc = { ...fullFetcherPeer(), sendRequest: sendSpy };
       jest.spyOn(JsonRPC, "default").mockImplementation(() => jsonrpc);
       const peer = new Peer();
       peer
@@ -465,14 +413,29 @@ describe("Testing Peer", () => {
         });
     });
     it("Should simple fetch", (done) => {
+      const cbs = {};
       const mockPeer = simpleFecherPeer();
+      mockPeer.addListener = jest
+        .fn()
+        .mockImplementation((eventName, callback) => {
+          cbs[eventName] = callback;
+          return mockPeer;
+        });
       jest.spyOn(JsonRPC, "default").mockImplementation(() => mockPeer);
       const peer = new Peer();
+      const state = new State<ValueType>("bc", 5);
       peer
         .connect()
-        .then(() => peer.fetch(new Fetcher().path("startsWith", "a")))
+        .then(() =>
+          cbs[fetchSimpleId](mockPeer, "id", {
+            path: "foo",
+            event: "add",
+            value: 5,
+          })
+        )
+        .then(() => peer.fetch(new Fetcher().path("startsWith", "f")))
         .then((res) => {
-          expect(mockPeer.send).toBeCalledWith("fetch", {
+          expect(mockPeer.sendRequest).toBeCalledWith("fetch", {
             id: "fetch_all",
             path: { startsWith: "" },
           });
@@ -480,7 +443,7 @@ describe("Testing Peer", () => {
         })
         .then(() => peer.fetch(new Fetcher().path("equals", "b")))
         .then(() => {
-          expect(mockPeer.send).toBeCalledTimes(2);
+          expect(mockPeer.sendRequest).toBeCalledTimes(2);
           done();
         });
     });
@@ -505,7 +468,7 @@ describe("Testing Peer", () => {
 
       jest
         .spyOn(JsonRPC, "default")
-        .mockReturnValue({ ...fullFetcherPeer(), send: sendSpy });
+        .mockReturnValue({ ...fullFetcherPeer(), sendRequest: sendSpy });
       const peer = new Peer();
       const fetcher = new Fetcher();
       peer
@@ -528,7 +491,7 @@ describe("Testing Peer", () => {
         );
       jest
         .spyOn(JsonRPC, "default")
-        .mockReturnValue({ ...simpleFecherPeer(), send: sendSpy });
+        .mockReturnValue({ ...simpleFecherPeer(), sendRequest: sendSpy });
       const peer = new Peer();
       const fetcher = new Fetcher();
       const f2 = new Fetcher();

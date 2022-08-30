@@ -51,16 +51,12 @@ export class Subscription {
   matchesPath = (path: string) => this.pathMatcher(path);
   matchesValue = (value: ValueType | undefined) => this.valueMatcher(value);
 
-  enqueue = (msg: object) => {
+  enqueue = (msg: any) => {
     this.messages.push(msg);
   };
 
   send = () => {
-    // if (this.messages.length > 0)
-    //   console.log("Publishing sub", this.id, this.messages);
-    this.messages.forEach((msg) => {
-      this.owner?.notify(this.id, msg);
-    });
+    this.messages.forEach((msg) => this.owner?.queue(msg, this.id));
     this.messages = [];
   };
 }
