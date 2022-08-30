@@ -49,11 +49,12 @@ describe("Testing Peer", () => {
         peer.add(s).then(() => {
           const par = { path: "foo", value: 5 };
           cbs["set"](undefined, "fooId", par);
-          expect(setMock).toBeCalledTimes(1);
+          expect(s._value).toEqual(5);
           expect(jsonRpc.respond).toBeCalledWith("fooId", par, true);
           done();
         });
       });
+
       it("should fail set", () => {
         cbs["set"](undefined, "fooId", { path: "foo" });
         expect(jsonRpc.respond).toBeCalledWith("fooId", new NotFound(), false);
@@ -154,10 +155,12 @@ describe("Testing Peer", () => {
       peer.connect().then(() => {
         expect(connectSpy).toBeCalled();
         expect(sendSpy).toBeCalledWith("info", {});
+        expect(peer.isConnected()).toBe(true);
         done();
       });
     });
   });
+
   describe("Should test add methods", () => {
     it("Should fail to add a state", (done) => {
       const sendSpy = jest.fn().mockReturnValue(Promise.reject("invalid path"));

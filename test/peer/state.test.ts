@@ -8,7 +8,7 @@ describe("Testing Method", () => {
     const state = new State("foo", 5);
     expect(state.path()).toEqual("foo");
     expect(state.value()).toEqual(5);
-    state.addListener("set", (newValue) => {
+    state.addListener("change", (newValue) => {
       expect(newValue).toEqual(8);
       done();
     });

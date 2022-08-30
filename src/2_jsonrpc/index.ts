@@ -220,6 +220,7 @@ export class JsonRPC extends EventEmitter {
    * Queue.
    */
   queue = <T extends Message>(message: T, id = "") => {
+    // console.log("Queuing", id, message);
     if (!this._isOpen) {
       return Promise.reject(new ConnectionClosed("Connection is closed"));
     }
@@ -277,6 +278,7 @@ export class JsonRPC extends EventEmitter {
     params: JsonParams,
     immedeate: boolean | undefined = undefined
   ): Promise<T> => {
+    console.log("Request", method, params);
     const promise = new Promise<T>((resolve, reject) => {
       if (!this._isOpen) {
         reject(new ConnectionClosed("Connection is closed"));

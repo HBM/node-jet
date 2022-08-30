@@ -6,6 +6,7 @@ export const fullFetcherPeer = () => ({
   ...(jest.createMockFromModule("../../src/2_jsonrpc") as JsonRPC.JsonRPC),
   addListener: jest.fn(),
   connect: jest.fn().mockReturnValue(Promise.resolve()),
+  _isOpen: true,
   respond: jest.fn(),
   sendRequest: jest.fn().mockReturnValue(Promise.resolve()),
   send: jest

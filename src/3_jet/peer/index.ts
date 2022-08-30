@@ -104,7 +104,8 @@ export class Peer extends EventEmitter {
     this.#jsonrpc.addListener("set", (_peer, id: string, m: any) => {
       const state = this.#routes[m.path] as State;
       if (state) {
-        state.value(m.value);
+        state._value = m.value;
+        state.emit("set", m.value);
         this.#jsonrpc.respond(id, state.toJson(), true);
       } else {
         this.#jsonrpc.respond(id, new NotFound(), false);
@@ -131,6 +132,8 @@ export class Peer extends EventEmitter {
       }
     );
   }
+
+  isConnected = () => this.#jsonrpc._isOpen;
 
   unfetch = (fetcher: Fetcher): Promise<any> => {
     const [id, _f] = Object.entries(this.#fetcher).find(
@@ -275,7 +278,7 @@ export class Peer extends EventEmitter {
    */
   add = (stateOrMethod: Method | State) => {
     if (isState(stateOrMethod)) {
-      stateOrMethod.addListener("set", (newValue) => {
+      stateOrMethod.addListener("change", (newValue) => {
         this.#jsonrpc.sendRequest("change", {
           path: stateOrMethod._path,
           value: newValue,
