@@ -77,7 +77,7 @@ const peer2 = new jet.Peer({
 var todoStates = {}
 
 // Provide a "todo/add" method to create new todos
-var jetState = new jet.State('todo/value',0)
+var jetState = new jet.State('todo/value',{test:4})
 jetState.on("set",(value)=>{
   console.log("Changed value", value)
   jetState.value(12345)

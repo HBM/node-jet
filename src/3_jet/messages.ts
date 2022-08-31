@@ -5,19 +5,7 @@ export interface Message {
   id: string;
 }
 
-// const isMember = (msg: Message, field: string | string[]) => {
-//   if (Array.isArray(field)) {
-//     field.forEach((el) => {
-//       if (!(el in msg)) return false;
-//     });
-//     return true;
-//   } else {
-//     return field in msg;
-//   }
-// };
 export const castMessage = <T extends MethodRequest>(msg: MethodRequest): T => {
-  if (!("id" in msg)) throw new DaemonError("No id");
-
   if (!("method" in msg)) throw new DaemonError("No method");
   const method = msg.method as EventType;
   const params = msg.params;
