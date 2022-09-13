@@ -187,7 +187,7 @@ export class JsonRPC extends EventEmitter {
    *
    * @api private
    */
-  _dispatchResponse = (message: Message) => {
+  _dispatchResponse = (message: ResultMessage | ErrorMessage) => {
     const mid = message.id;
     if (isResultMessage(message)) {
       this.successCb(mid, message.result as any);
@@ -225,7 +225,7 @@ export class JsonRPC extends EventEmitter {
       return Promise.reject(new ConnectionClosed("Connection is closed"));
     }
     if (id) {
-      this.messages.push({ id: "_", method: id, params: message } as Message);
+      this.messages.push({ method: id, params: message } as Message);
     } else {
       this.messages.push(message);
     }

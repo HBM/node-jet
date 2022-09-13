@@ -2,7 +2,7 @@ import { DaemonError, ErrorData, invalidParams } from "./errors";
 import { AccessType, EventType, OperatorType, ValueType } from "./types";
 
 export interface Message {
-  id: string;
+  id?: string;
 }
 
 export const castMessage = <T extends MethodRequest>(msg: MethodRequest): T => {
@@ -36,13 +36,16 @@ export const castMessage = <T extends MethodRequest>(msg: MethodRequest): T => {
   }
 };
 export interface ResultMessage extends Message {
+  id: string;
   result: ValueType;
 }
 
 export interface ErrorMessage extends Message {
+  id: string;
   error: string | { code: number; data: ErrorData };
 }
 export interface MethodRequest extends Message {
+  id: string;
   method: string;
   params?: object;
 }

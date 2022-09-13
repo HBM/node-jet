@@ -12,33 +12,33 @@ var port = parseInt(process.argv[2]) || 8080
 var internalPort = 11128
 
 // Serve this dir as static content
-var serve = serveStatic('./')
+// var serve = serveStatic('./')
 
 // Create Webserver
-var httpServer = http.createServer(function (req, res) {
-  var done = finalhandler(req, res)
-  serve(req, res, done)
-})
+// var httpServer = http.createServer(function (req, res) {
+//   var done = finalhandler(req, res)
+//   serve(req, res, done)
+// })
 
-httpServer.listen(port)
+// httpServer.listen(port)
 
-// Create Jet Daemon
-var daemon = new jet.Daemon(
-  {
-    log:{
-      logCallbacks:[console.log],
-      logname:"Daemon",
-      loglevel:jet.LogLevel.socket},
-    features:{
-      fetch:"simple",
-      batches: true, 
-      asNotification:true
-    }
-})
+// // Create Jet Daemon
+// var daemon = new jet.Daemon(
+//   {
+//     log:{
+//       logCallbacks:[console.log],
+//       logname:"Daemon",
+//       loglevel:jet.LogLevel.socket},
+//     features:{
+//       fetch:"simple",
+//       batches: true, 
+//       asNotification:true
+//     }
+// })
 
-daemon.listen({
-  tcpPort: internalPort,wsPort:11123
-})
+// daemon.listen({
+//   tcpPort: internalPort,wsPort:11123
+// })
 console.log('todo-server ready')
 console.log('listening on port', port)
 
@@ -67,12 +67,14 @@ Todo.prototype.merge = (other) => {
 
 // Create Jet Peer
 var peer = new jet.Peer({
-  port: internalPort,log:{logCallbacks:[console.log],logname:"Peer 1",loglevel:jet.LogLevel.info}
+  // url: `ws://172.19.191.155:8081/`,
+  url: `ws://172.19.211.59:11123/api/jet/`,
+  log:{logCallbacks:[console.log],logname:"Peer 1",loglevel:jet.LogLevel.socket}
 })
-const peer2 = new jet.Peer({
-  port: internalPort,log:{logCallbacks:[console.log],logname:"Peer 2",loglevel:jet.LogLevel.debug}
+// const peer2 = new jet.Peer({
+//   port: internalPort,log:{logCallbacks:[console.log],logname:"Peer 2",loglevel:jet.LogLevel.debug}
 
-})
+// })
 
 var todoStates = {}
 
@@ -151,17 +153,21 @@ var todos = new jet.Fetcher()
     // renderTodos(todos)
   })
 const stateTest = new jet.State("test",0)
+const delay = ms => new Promise(resolve => setTimeout(resolve, ms))
 console.log("Adding 1st peer")
 peer.connect()
-.then(()=>peer.batch(()=>{
-  peer.add(jetState)
-  // peer.add(stateTest)
-  // peer.add(addTodo)
-  // peer.add(removeTodo)
-  // peer.add(setCompleted)
-  // peer.add(clearCompletedTodos)
-  peer.fetch(f2)
-}))
+// .then(()=>peer.batch(()=>{
+//   // peer.add(jetState)
+//   // peer.add(stateTest)
+//   // peer.add(addTodo)
+//   // peer.add(removeTodo)
+//   // peer.add(setCompleted)
+//   // peer.add(clearCompletedTodos)
+//   peer.fetch(f2)
+// }))
+.then(()=>peer.fetch(f2))
+.then(()=>delay(100))
+.then(()=>peer.unfetch(f2))
 // .then(()=>peer.call('todo/add',["another one"]))
 // .then(()=>peer2.connect())
 // .then(()=>peer.batch(()=>{
@@ -173,8 +179,8 @@ peer.connect()
 // .then(()=>peer.add(new jet.State("test3",4)))
 // .then(()=>stateTest.value(2))
 // .then(()=>stateTest.value(0))
-.then(()=>peer.set('todo/value',2))
-.then(()=>peer.get({path:{"equals":'todo/value'}}))
+// .then(()=>peer.set('todo/value',2))
+// .then(()=>peer.get({path:{"equals":'todo/value'}}))
 // .then(()=>peer.call('todo/add',["third"]))
 // .then(()=>peer.call('todo/add',["four"]))
 // .then(()=>peer.set('todo/#0', {id: 4}))

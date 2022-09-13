@@ -141,11 +141,16 @@ export class Peer extends EventEmitter {
     ) || [null, null];
     if (!id) return Promise.reject("Could not find fetcher");
     if (!this.fetchFull()) {
-      delete this.#fetcher[id];
-      if (Object.keys(this.#fetcher).length === 1) {
+      if (Object.keys(this.#fetcher).length === 2) {
         const param = { id: fetchSimpleId };
-        return this.#jsonrpc.sendRequest<object[]>("unfetch", param);
+        console.log("sending unfetch");
+        return this.#jsonrpc
+          .sendRequest("unfetch", param)
+          .then(() => console.log("Unfetched"))
+          .then(() => delete this.#fetcher[id])
+          .then(() => Promise.resolve());
       } else {
+        delete this.#fetcher[id];
         return Promise.resolve({});
       }
     } else {
