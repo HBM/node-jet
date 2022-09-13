@@ -42,11 +42,6 @@
     "typescript": "^4.7.4",
     "wait-for-expect": "^3.0.2"
   },
-  "peerDependencies": {
-    "ws": "^8.8.1",
-    "events": "^3.3.0",
-    "net": "^1.0.2"
-  },
   "main": "./lib/index.js",
   "files": [
     "lib"
@@ -85,5 +80,9 @@
   "publishConfig": {
     "access": "public"
   },
-  "dependencies": {}
+  "dependencies": {
+    "ws": "^8.8.1",
+    "events": "^3.3.0",
+    "net": "^1.0.2"
+  }
 }

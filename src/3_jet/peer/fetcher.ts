@@ -15,6 +15,7 @@ export class Fetcher extends EventEmitter {
 
   constructor() {
     super();
+    this.setMaxListeners(0);
   }
   path: pathFunction = (key: PathRule, value: string | string[]) => {
     this.message.path[key as string] = value;
