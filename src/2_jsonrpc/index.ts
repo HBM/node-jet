@@ -136,8 +136,11 @@ export class JsonRPC extends EventEmitter {
     return this.disconnectPromise;
   };
 
-  _handleError = (err: any) => {
-    this.logger.error(`Error in socket connection:${err}`);
+  _handleError = (err: { message: any }) => {
+    this.logger.error(`Error in socket connection: ${err.message}`);
+    if (!this._isOpen) {
+      this.rejectConnect(err.message);
+    }
   };
   /**
    * _dispatchMessage

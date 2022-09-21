@@ -104,7 +104,7 @@ export class Peer extends EventEmitter {
     this.#jsonrpc.addListener("set", (_peer, id: string, m: any) => {
       const state = this.#routes[m.path] as State;
       if (state) {
-        state._value = m.value;
+        state.value(m.value);
         state.emit("set", m.value);
         this.#jsonrpc.respond(id, state.toJson(), true);
       } else {
@@ -358,23 +358,8 @@ export class Peer extends EventEmitter {
    * @param {number} [options.timeout]
    *
    */
-  set = (
-    path: string,
-    value: ValueType,
-    options: {
-      timeout?: number;
-      valueAsResult?: boolean;
-      skipResult?: boolean;
-    } = {}
-  ) => {
-    const params = {
-      path: path,
-      value: value,
-    } as JsonParams;
-    if (options.timeout) params.timeout = options.timeout;
-    if (options.valueAsResult) params.valueAsResult = options.valueAsResult;
-    return this.#jsonrpc.sendRequest("set", params);
-  };
+  set = (path: string, value: ValueType) =>
+    this.#jsonrpc.sendRequest("set", { path, value });
 }
 
 export default Peer;
