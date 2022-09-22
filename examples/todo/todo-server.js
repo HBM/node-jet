@@ -28,9 +28,9 @@ var daemon = new jet.Daemon(
     log:{
       logCallbacks:[console.log],
       logname:"Daemon",
-      loglevel:jet.LogLevel.socket},
+      loglevel:jet.LogLevel.info},
     features:{
-      fetch:"simple",
+      fetch:"full",
       batches: true, 
       asNotification:true
     }
@@ -148,7 +148,7 @@ var todos = new jet.Fetcher()
   })
 
   var f2 = new jet.Fetcher()
-  .path('startsWith', 'test')
+  .path('foo', 'test')
   .on('data', function (todos) {
     console.log("fetch 2",todos.event,todos.path,todos.value)
     // renderTodos(todos)
@@ -157,15 +157,21 @@ const stateTest = new jet.State("test",0)
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms))
 // console.log("Adding 1st peer")
 peer.connect()
-.then(()=>peer.batch(()=>{
+.then(()=>
+peer.batch(()=>{
   peer.add(jetState)
-  peer.add(stateTest)
   peer.add(addTodo)
   peer.add(removeTodo)
   peer.add(setCompleted)
   peer.add(clearCompletedTodos)
+  peer.add(stateTest)
   peer.fetch(f2)
 }))
+.then(()=>peer.add(stateTest))
+.then(()=>peer.remove(stateTest))
+// // .then(()=>peer.add(stateTest))
+// .then(()=>peer.remove(stateTest))
+// .then(()=>peer.remove(stateTest))
 // .then(()=>stateTest.value(4))
 // .then(()=>peer.set("test",5))
 // // .then(()=>peer.get({path:{"startsWith":"test"}}))
@@ -191,7 +197,7 @@ peer.connect()
 // .then(()=>peer.call('todo/add',["four"]))
 // .then(()=>peer.set('todo/#0', {id: 4}))
 // .then(()=>peer.set('todo/#2', {completed: true}))
-.catch((ex)=>console.log("Caught exception",ex))
+.catch((ex)=>console.log("Caught it",ex))
 
 
 

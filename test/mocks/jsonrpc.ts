@@ -4,9 +4,9 @@ import { EventType } from "../../src/3_jet/types";
 import { Peer } from "../../src/jet";
 
 export const jsonRPCServer = (): server.JsonRPCServer & {
-  simulateConnection: (peer: Peer) => void;
+  simulateConnection: (peer: Peer) => Promise<void>;
   simulateDisconnect: (peer: any) => void;
-  simulateMessage: (peer: any, method: EventType, msg: MethodRequest) => any;
+  message: (peer: any, msg: MethodRequest) => any;
 } => {
   let cbs: Function[] = [];
   const mock = {
@@ -15,13 +15,9 @@ export const jsonRPCServer = (): server.JsonRPCServer & {
     ) as server.JsonRPCServer),
     listen: () => {},
     callbacks: {},
-    simulateConnection: (_peer: any) => {},
-    simulateDisconnect: (_peer: any) => {},
-    simulateMessage: (
-      _peer: any,
-      _method: EventType,
-      _msg: MethodRequest
-    ) => {},
+    simulateConnection: (_peer: any) => Promise.resolve(),
+    simulateDisconnect: (_peer: any) => Promise.resolve(),
+    message: (_peer: any, _msg: MethodRequest) => {},
     close: () => {},
   };
 
@@ -35,9 +31,10 @@ export const jsonRPCServer = (): server.JsonRPCServer & {
     jest.spyOn(peer, "respond").mockImplementation((id, message, success) => {
       cbs.forEach((cb) => cb({ id: id, message: message, success: success }));
     });
+    return Promise.resolve();
   };
 
-  mock.simulateMessage = (peer, method: EventType, msg: MethodRequest) => {
+  mock.message = (peer, msg: MethodRequest) => {
     return new Promise((resolve) => {
       const check = ({ id, message, success }) => {
         if (id === msg.id) {
@@ -46,12 +43,13 @@ export const jsonRPCServer = (): server.JsonRPCServer & {
         }
       };
       cbs.push(check);
-      peer.callbacks[method].forEach((cb) => cb(peer, msg.id, msg.params));
+      peer.callbacks[msg.method].forEach((cb) => cb(peer, msg.id, msg.params));
     });
   };
 
   mock.simulateDisconnect = (peer: any) => {
     mock.callbacks["disconnect"].forEach((cb) => cb(peer));
+    return Promise.resolve();
   };
   return mock;
 };

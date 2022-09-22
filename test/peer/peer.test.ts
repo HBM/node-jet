@@ -3,9 +3,10 @@ import * as JsonRPC from "../../src/2_jsonrpc/index";
 import Method from "../../src/3_jet/peer/method";
 import State from "../../src/3_jet/peer/state";
 import { ValueType, EventType } from "../../src/3_jet/types";
-import { Fetcher, NotFound } from "../../src/jet";
+import { Fetcher, invalidMethod, NotFound } from "../../src/jet";
 import { fullFetcherPeer, simpleFecherPeer } from "../mocks/peer";
 import { fetchSimpleId } from "../../lib/3_jet/types";
+import waitForExpect from "wait-for-expect";
 describe("Testing Peer", () => {
   describe("Should handle daemon messages", () => {
     describe("Should send different messages full fetch", () => {
@@ -38,6 +39,22 @@ describe("Testing Peer", () => {
         cbs["get"](undefined, "fooId", { path: "foo" });
         expect(jsonRpc.respond).toBeCalledWith("fooId", new NotFound(), false);
       });
+      it("should fail to get a method", (done) => {
+        const m = new Method("foo");
+        peer
+          .add(m)
+          .then(() => cbs["get"](undefined, "fooId", { path: "foo" }))
+          .then(() =>
+            waitForExpect(() =>
+              expect(jsonRpc.respond).toBeCalledWith(
+                "fooId",
+                new invalidMethod(),
+                false
+              )
+            )
+          )
+          .then(() => done());
+      });
       it("should test set", (done) => {
         const s = new State<ValueType>("foo", 5);
         const setMock = jest
@@ -59,6 +76,23 @@ describe("Testing Peer", () => {
         cbs["set"](undefined, "fooId", { path: "foo" });
         expect(jsonRpc.respond).toBeCalledWith("fooId", new NotFound(), false);
       });
+      it("should fail to set a method", (done) => {
+        const m = new Method("foo");
+
+        peer
+          .add(m)
+          .then(() => cbs["set"](undefined, "fooId", { path: "foo" }))
+          .then(() =>
+            waitForExpect(() =>
+              expect(jsonRpc.respond).toBeCalledWith(
+                "fooId",
+                new invalidMethod(),
+                false
+              )
+            )
+          )
+          .then(() => done());
+      });
 
       it("should test call", (done) => {
         const m = new Method("bar");
@@ -76,6 +110,22 @@ describe("Testing Peer", () => {
       it("should fail call", () => {
         cbs["call"](undefined, "fooId", { path: "foo" });
         expect(jsonRpc.respond).toBeCalledWith("fooId", new NotFound(), false);
+      });
+      it("should fail to set a method", (done) => {
+        const m = new State("foo", 5);
+        peer
+          .add(m)
+          .then(() => cbs["call"](undefined, "fooId", { path: "foo" }))
+          .then(() =>
+            waitForExpect(() =>
+              expect(jsonRpc.respond).toBeCalledWith(
+                "fooId",
+                new invalidMethod(),
+                false
+              )
+            )
+          )
+          .then(() => done());
       });
       it("should test fetch", (done) => {
         const m = new Fetcher().path("equals", "foo");
@@ -278,12 +328,10 @@ describe("Testing Peer", () => {
       const jsonrpc = { ...fullFetcherPeer(), sendRequest: sendSpy };
       jest.spyOn(JsonRPC, "default").mockImplementation(() => jsonrpc);
       const peer = new Peer();
-      peer.set("Foo", 5, { timeout: 5, valueAsResult: true }).catch((ex) => {
+      peer.set("Foo", 5).catch((ex) => {
         expect(sendSpy).toBeCalledWith("set", {
           path: "Foo",
           value: 5,
-          timeout: 5,
-          valueAsResult: true,
         });
         expect(ex).toBe("invalid path");
         done();

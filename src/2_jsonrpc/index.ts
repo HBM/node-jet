@@ -2,9 +2,9 @@
 
 import {
   ConnectionClosed,
-  createTypedError,
-  invalidRequest,
-  methodNotFound,
+  JsonRPCError,
+  methodNotFoundError,
+  ParseError,
 } from "../3_jet/errors";
 import { JsonParams } from "../3_jet/peer";
 import EventEmitter from "events";
@@ -159,13 +159,11 @@ export class JsonRPC extends EventEmitter {
       } else {
         this._dispatchSingleMessage(decoded);
       }
-
-      this.send().catch((ex) => {
-        this.logger.error(ex);
+      this.send().catch((err) => {
+        this.logger.error(err);
       });
     } catch (err: any) {
-      console.log(err, message);
-      this.respond("", invalidRequest("Invalid format"), false);
+      this.respond("", new ParseError(message), false);
       this.logger.error(err);
     }
   };
@@ -196,11 +194,7 @@ export class JsonRPC extends EventEmitter {
       this.successCb(mid, message.result as any);
     }
     if (isErrorMessage(message)) {
-      const err =
-        typeof message.error === "string"
-          ? message.error
-          : createTypedError(message.error);
-      this.errorCb(mid, err);
+      this.errorCb(mid, message.error);
     }
   };
 
@@ -213,7 +207,7 @@ export class JsonRPC extends EventEmitter {
   _dispatchRequest = (message: MethodRequest) => {
     if (this.listenerCount(message.method) === 0) {
       this.logger.error(`Method ${message.method} is unknown`);
-      this.respond(message.id, methodNotFound(message.method), false);
+      this.respond(message.id, new methodNotFoundError(message.method), false);
     } else {
       this.emit(message.method, this, message.id, message.params);
     }
@@ -223,9 +217,8 @@ export class JsonRPC extends EventEmitter {
    * Queue.
    */
   queue = <T extends Message>(message: T, id = "") => {
-    // console.log("Queuing", id, message);
     if (!this._isOpen) {
-      return Promise.reject(new ConnectionClosed("Connection is closed"));
+      return Promise.reject(new ConnectionClosed());
     }
     if (id) {
       this.messages.push({ method: id, params: message } as Message);
@@ -248,16 +241,22 @@ export class JsonRPC extends EventEmitter {
       this.logger.sock(`Sending message:  ${encoded}`);
       this.sock.send(encoded);
       this.messages = [];
+    } else {
+      return Promise.resolve();
     }
-    return Promise.all(this.batchPromises).then((res) => {
-      this.batchPromises = [];
-      return Promise.resolve(res);
-    });
+    return Promise.all(this.batchPromises)
+      .then((res) => {
+        this.batchPromises = [];
+        return Promise.resolve(res);
+      })
+      .catch((ex) => {
+        this.batchPromises = [];
+        this.logger.error(JSON.stringify(ex));
+        return Promise.reject(ex);
+      });
   };
 
   respond = (id: string, params: object, success: boolean) => {
-    // const msg = encode({ id: id, [success ? "result" : "error"]: params });
-    // this.logger.sock(`Responding message:  ${msg}`);
     this.queue({ id: id, [success ? "result" : "error"]: params });
   };
 
@@ -267,7 +266,7 @@ export class JsonRPC extends EventEmitter {
       delete this.openRequests[id];
     }
   };
-  errorCb = (id: string, error: any) => {
+  errorCb = (id: string, error: JsonRPCError) => {
     if (id in this.openRequests) {
       this.openRequests[id].reject(error);
       delete this.openRequests[id];
@@ -283,7 +282,7 @@ export class JsonRPC extends EventEmitter {
   ): Promise<T> => {
     const promise = new Promise<T>((resolve, reject) => {
       if (!this._isOpen) {
-        reject(new ConnectionClosed("Connection is closed"));
+        reject(new ConnectionClosed());
       } else {
         const rpcId = this.messageId.toString();
         this.messageId++;
@@ -300,7 +299,11 @@ export class JsonRPC extends EventEmitter {
       }
     });
     this.batchPromises.push(promise);
-    if (immedeate || this.sendImmedeate) return promise;
+    if (immedeate || this.sendImmedeate)
+      return promise.catch((err) => {
+        this.logger.error(JSON.stringify(err));
+        return Promise.reject(err);
+      });
     else {
       return Promise.resolve({} as T);
     }

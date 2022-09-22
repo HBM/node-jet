@@ -35,16 +35,13 @@ describe("Testing Path matcher", () => {
   });
   it("Should match path", () => {
     const params = {
-      path: { equalNot: "a", endsWith: "b" },
+      path: { equalsNot: "a" },
       sort: {},
       id: "",
       value: {},
     } as FetchOptions;
     const matcher = createPathMatcher(params);
-    expect(["a", "b", "ab", "abc"].filter((el) => matcher(el))).toEqual([
-      "b",
-      "ab",
-    ]);
+    expect(["a", "b", "ab", "abc"].filter((el) => matcher(el))).toEqual([]);
   });
   it("Equals one of", () => {
     const params = {
@@ -123,12 +120,32 @@ describe("Testing Path matcher", () => {
   it("Case insensitive path", () => {
     const params = {
       value: {},
-      path: { startsWith: ["a", "b"], endsWith: "b", caseInsensitive: "true" },
+      path: { startsWith: "A", caseInsensitive: "true" },
       sort: {},
       id: "",
     } as FetchOptions;
     const matcher = createPathMatcher(params);
-    expect(["a", "b", "ab", "abc"].filter((el) => matcher(el))).toEqual([]);
+    expect(["a", "b", "aB", "aBc", "ab"].filter((el) => matcher(el))).toEqual([
+      "a",
+      "aB",
+      "aBc",
+      "ab",
+    ]);
+  });
+  it("Case insensitive path array", () => {
+    const params = {
+      value: {},
+      path: { containsOneOf: ["A", "a"], caseInsensitive: "true" },
+      sort: {},
+      id: "",
+    } as FetchOptions;
+    const matcher = createPathMatcher(params);
+    expect(["a", "b", "aB", "aBc", "ab"].filter((el) => matcher(el))).toEqual([
+      "a",
+      "aB",
+      "aBc",
+      "ab",
+    ]);
   });
   it("No path rules", () => {
     const params = { sort: {}, id: "" } as FetchOptions;

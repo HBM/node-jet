@@ -3,7 +3,7 @@ import * as JsonRPC from "../../src/2_jsonrpc/index";
 import Method from "../../src/3_jet/peer/method";
 import State from "../../src/3_jet/peer/state";
 import { ValueType } from "../../src/3_jet/types";
-import { Fetcher } from "../../src/jet";
+import { Fetcher, InvalidArgument } from "../../src/jet";
 import { create } from "../../src/3_jet/daemon/value_matcher";
 import { FetchOptions } from "../../src/3_jet/messages";
 describe("Testing Value matcher", () => {
@@ -64,15 +64,7 @@ describe("Testing Value matcher", () => {
       id: "",
       value: { "": { operator: "foo", value: "number" } },
     } as any;
-    try {
-      const matcher = create(params);
-    } catch (ex) {
-      expect(ex).toEqual({
-        code: -32602,
-        data: "unknown generator foo",
-        message: "Invalid params",
-      });
-    }
+    expect(() => create(params)).toThrow(new InvalidArgument());
   });
   it("Should test invalid values", () => {
     const params = {

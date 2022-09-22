@@ -1,111 +1,89 @@
-import * as error from "../src/3_jet/errors";
+import { Peer } from "../src";
+import * as JsonRPC from "../src/2_jsonrpc";
+import {
+  ConnectionClosed,
+  ConnectionInUse,
+  FetchOnly,
+  InvalidArgument,
+  invalidMethod,
+  invalidRequest,
+  JSONRPCError,
+  methodNotFoundError,
+  ParseError,
+  PeerTimeout,
+} from "../src/3_jet/errors";
+import { fullFetcherPeer } from "./mocks/peer";
 describe("Testing errors", () => {
-  it("DaemonError", () => {
-    expect(new error.DaemonError("Internal Daemon Error").toString()).toEqual(
-      "jet.DaemonError: Internal Daemon Error"
-    );
-  });
-  it("PeerError", () => {
-    expect(new error.PeerError("Internal Peer Error").toString()).toEqual(
-      "jet.PeerError: Internal Peer Error"
-    );
-  });
   it("PeerTimeoutError", () => {
-    expect(new error.PeerTimeout().toString()).toEqual(
-      "jet.PeerTimeout: The peer processing the request did not respond within the specified timeout"
-    );
+    const err = new PeerTimeout();
+    expect(err).toBeInstanceOf(JSONRPCError);
+    expect(err).toBeInstanceOf(PeerTimeout);
+    expect(err.code).toEqual(-32001);
+    expect(err.name).toEqual("jet.PeerTimeout");
   });
-  it("BaseError", () => {
-    expect(new error.BaseError("BaseError", "foo").toString()).toEqual(
-      "jet.BaseError: foo"
-    );
+  it("FetchOnly", () => {
+    const err = new FetchOnly();
+    expect(err).toBeInstanceOf(JSONRPCError);
+    expect(err).toBeInstanceOf(FetchOnly);
+    expect(err.code).toEqual(-32602);
+    expect(err.name).toEqual("jet.FetchOnly");
   });
+  it("ParseError", () => {
+    const err = new ParseError();
+    expect(err).toBeInstanceOf(JSONRPCError);
+    expect(err).toBeInstanceOf(ParseError);
+    expect(err.code).toEqual(-32600);
+    expect(err.name).toEqual("jet.ParseError");
+  });
+  it("InvalidRequest", () => {
+    const err = new invalidRequest();
+    expect(err).toBeInstanceOf(JSONRPCError);
+    expect(err).toBeInstanceOf(invalidRequest);
+    expect(err.code).toEqual(-32600);
+    expect(err.name).toEqual("jet.invalidRequest");
+  });
+  it("methodNotFoundError", () => {
+    const err = new methodNotFoundError();
+    expect(err).toBeInstanceOf(JSONRPCError);
+    expect(err).toBeInstanceOf(methodNotFoundError);
+    expect(err.code).toEqual(-32601);
+    expect(err.name).toEqual("jet.MethodNotFound");
+  });
+
   it("ConnectionInUse", () => {
-    expect(new error.ConnectionInUse("foo").toString()).toEqual(
-      "jet.ConnectionInUse: foo"
-    );
+    const err = new ConnectionInUse();
+    expect(err).toBeInstanceOf(JSONRPCError);
+    expect(err).toBeInstanceOf(ConnectionInUse);
+    expect(err.code).toEqual(-32002);
+    expect(err.name).toEqual("jet.ConnectionInUse");
   });
   it("ConnectionClosed", () => {
-    expect(new error.ConnectionClosed("Connection closed").toString()).toEqual(
-      "jet.ConnectionClosed: Connection closed"
-    );
+    const err = new ConnectionClosed();
+    expect(err).toBeInstanceOf(JSONRPCError);
+    expect(err).toBeInstanceOf(ConnectionClosed);
+    expect(err.code).toEqual(-32002);
+    expect(err.name).toEqual("jet.ConnectionClosed");
   });
   it("InvalidArgument", () => {
-    expect(new error.InvalidArgument(undefined).toString()).toEqual(
-      "jet.InvalidArgument: The provided argument(s) have been refused by the State/Method"
-    );
+    const err = new InvalidArgument();
+    expect(err).toBeInstanceOf(JSONRPCError);
+    expect(err).toBeInstanceOf(InvalidArgument);
+    expect(err.code).toEqual(-32602);
+    expect(err.name).toEqual("jet.InvalidArgument");
+  });
+  it("InvalidMethod", () => {
+    const err = new invalidMethod();
+    expect(err).toBeInstanceOf(JSONRPCError);
+    expect(err).toBeInstanceOf(invalidMethod);
+    expect(err.code).toEqual(-32600);
+    expect(err.name).toEqual("jet.invalidMethod");
   });
 
-  it("Creating typed errors", () => {
-    var err;
-    err = error.createTypedError({
-      code: error.INVALID_PARAMS_CODE,
-      data: { pathNotExists: "foo" },
-    });
-    expect(err.toString()).toEqual(
-      "jet.NotFound: No State/Method matching the specified path"
-    );
-    err = error.createTypedError({
-      code: error.INVALID_PARAMS_CODE,
-      data: { pathAlreadyExists: "foo" },
-    });
-    expect(err.toString()).toEqual(
-      "jet.Occupied: A State/Method with the same path has already been added"
-    );
-    err = error.createTypedError({
-      code: error.INVALID_PARAMS_CODE,
-      data: { fetchOnly: "foo" },
-    });
-    expect(err.toString()).toEqual(
-      "jet.FetchOnly: The State cannot be modified"
-    );
-    err = error.createTypedError({
-      code: error.INVALID_PARAMS_CODE,
-      data: { invalidUser: "foo" },
-    });
-    expect(err.toString()).toEqual(
-      "jet.InvalidUser: The specified user does not exist"
-    );
-    err = error.createTypedError({
-      code: error.INVALID_PARAMS_CODE,
-      data: { invalidPassword: "foo" },
-    });
-    expect(err.toString()).toEqual(
-      "jet.InvalidPassword: The specified password is wrong"
-    );
-    err = error.createTypedError({
-      code: error.INVALID_PARAMS_CODE,
-      data: { invalidArgument: { message: "foo" } },
-    });
-    expect(err.toString()).toEqual("jet.InvalidArgument: foo");
-    err = error.createTypedError({
-      code: error.INVALID_PARAMS_CODE,
-      data: { noAccess: "foo" },
-    });
-    expect(err.toString()).toEqual(
-      "jet.Unauthorized: The request is not authorized for the user"
-    );
-    err = error.createTypedError({
-      code: error.RESPONSE_TIMEOUT_CODE,
-      data: { noAccess: "foo" },
-    });
-    expect(err.toString()).toEqual(
-      "jet.PeerTimeout: The peer processing the request did not respond within the specified timeout"
-    );
-    err = error.createTypedError({
-      code: error.INTERNAL_ERROR_CODE,
-      data: "foo",
-    });
-    expect(err.toString()).toEqual("jet.PeerError: foo");
-  });
-
-  it("Functions", () => {
-    let msg;
-    msg = error.methodNotFound("Method not found");
-    expect(msg.message).toBe("Method not found");
-    msg = error.invalidRequest("invalid request");
-    expect(msg.message).toBe("Invalid Request");
-    msg = error.responseTimeout({});
-    expect(msg.message).toBe("Response Timeout");
+  it("FetchOnly", () => {
+    const err = new FetchOnly();
+    expect(err).toBeInstanceOf(JSONRPCError);
+    expect(err).toBeInstanceOf(FetchOnly);
+    expect(err.code).toEqual(-32602);
+    expect(err.name).toEqual("jet.FetchOnly");
   });
 });

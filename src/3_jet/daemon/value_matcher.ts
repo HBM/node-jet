@@ -1,4 +1,4 @@
-import { invalidParams } from "../errors";
+import { InvalidArgument } from "../errors";
 import { ValueRule, ValueType } from "../types";
 import { getValue } from "../utils";
 
@@ -19,7 +19,7 @@ const generators: Record<string, generatorFunction> = {
 const generatePredicate = (field: string, rule: ValueRule): compareFunction => {
   const gen = generators[rule.operator];
   if (!gen) {
-    throw invalidParams("unknown generator " + rule.operator);
+    throw new InvalidArgument("unknown rule " + rule.operator);
   } else {
     return gen(field, rule.value);
   }

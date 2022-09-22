@@ -1,6 +1,6 @@
 import { State } from "./peer/state";
 import { Method } from "./peer/method";
-import { ErrorObject, InvalidArgument, invalidParams } from "./errors";
+import { InvalidArgument, JSONRPCError } from "./errors";
 import { ValueType } from "./types";
 
 export const getValue = (o: any, field: string) => {
@@ -19,29 +19,23 @@ export const getValue = (o: any, field: string) => {
 export const errorObject = (err: any) => {
   let data;
   if (typeof err === "object" && err.code && err.message) {
-    return err as ErrorObject;
+    return err as JSONRPCError;
   } else {
-    if (err instanceof InvalidArgument) {
-      return invalidParams({
-        invalidArgument: err,
-      });
+    data = {} as any;
+    if (typeof err === "object") {
+      data.message = err.message;
+      data.stack = err.stack;
+      data.lineNumber = err.lineNumber;
+      data.fileName = err.fileName;
     } else {
-      data = {} as any;
-      if (typeof err === "object") {
-        data.message = err.message;
-        data.stack = err.stack;
-        data.lineNumber = err.lineNumber;
-        data.fileName = err.fileName;
-      } else {
-        data.message = err;
-        data.stack = "no stack available";
-      }
-      return {
-        code: -32603,
-        message: "Internal error",
-        data: data,
-      };
+      data.message = err;
+      data.stack = "no stack available";
     }
+    return {
+      code: -32603,
+      message: "Internal error",
+      data: data,
+    };
   }
 };
 export const isState = (

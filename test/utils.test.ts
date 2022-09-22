@@ -22,7 +22,9 @@ describe("Testing utils", () => {
     it("Should return invalid argument Object", () => {
       const dummy = errorObject(new InvalidArgument("foo"));
       expect(dummy.code).toBe(INVALID_PARAMS_CODE);
-      expect(dummy.message).toBe("Invalid params");
+      expect(dummy.message).toBe(
+        "The provided argument(s) have been refused by the State/Method"
+      );
     });
     it("Should return stack Object", () => {
       const dummy = errorObject({

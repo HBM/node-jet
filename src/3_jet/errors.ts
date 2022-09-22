@@ -1,315 +1,153 @@
 "use strict";
-
+const errorUrlBase =
+  "https://github.com/lipp/node-jet/blob/master/doc/peer.markdown";
+export const PARSE_ERROR_CODE = -32600;
+export const INVALID_REQUEST = -32600;
+export const METHOD_NOT_FOUND = -32601;
 export const INVALID_PARAMS_CODE = -32602;
 export const INTERNAL_ERROR_CODE = -32603;
 export const RESPONSE_TIMEOUT_CODE = -32001;
-export const INVALID_REQUEST = -32600;
-export const METHOD_NOT_FOUND = -32601;
+export const CONNECTION_ERROR_CODE = -32002;
 
 export interface ErrorData {
-  pathNotExists?: string;
-  pathAlreadyExists?: string;
-  fetchOnly?: string;
-  invalidUser?: string;
-  invalidPassword?: string;
-  invalidArgument?: { message: string };
-  noAccess?: string;
+  url: string;
+  name: string;
+  details: string;
 }
-export interface ErrorObject{
-  code:number,
-  message:string,
-  stack?:any,
-  lineNumber?:number,
-  fileName?:string
+export interface JsonRPCError {
+  code: number;
+  message: string;
+  data?: ErrorData;
 }
 
-export const invalidParams = (data: ErrorData | string) => {
-  return {
-    message: "Invalid params",
-    code: INVALID_PARAMS_CODE,
-    data: data,
-  };
-};
-
-export const methodNotFound = (data: ErrorData | string) => ({
-    message: "Method not found",
-    code: METHOD_NOT_FOUND,
-    data: data,
-  })
-
-export const invalidRequest = (data: ErrorData | string) => ({
-    message: "Invalid Request",
-    code: INVALID_REQUEST,
-    data: data,
-  })
-
-export const responseTimeout = (data: ErrorData) => ({
-    message: "Response Timeout",
-    code: RESPONSE_TIMEOUT_CODE,
-    data: data,
-  })
-
-/**
- * @module errors
- * @desc
- *
- * A pseudo-module for grouping all error classes.
- *
- * All error classes are available as members of the Jet module
- *
- * ```javascript
- * var jet = require('node-jet')
- * var err = new jet.InvalidArguments('wrong type')
- * ```
- *
- */
-
-/**
- * @class
- * @classdesc
- * The base class for all jet errors.
- *
- */
-export class BaseError extends Error {
-  url = "";
-  constructor(
-    name: string,
-    message: string | undefined,
-    strStack = "no remote stack"
-  ) {
-    super(message);
+export class JSONRPCError extends Error implements JSONRPCError {
+  code: number;
+  message: string;
+  data?: ErrorData;
+  constructor(code: number, name: string, message: string, details = "") {
+    super();
+    this.code = code;
     this.name = "jet." + name;
-    const errorUrlBase =
-      "https://github.com/lipp/node-jet/blob/master/doc/peer.markdown";
-    this.url = errorUrlBase + "#jet" + name.toLowerCase();
-    this.stack = strStack;
+    this.message = message;
+    this.data = {
+      name: "jet." + name,
+      url: errorUrlBase + "#jet" + name.toLowerCase(),
+      details: details,
+    };
+  }
+  toString = () =>
+    `code: ${this.code} \nname: ${this.name} \n${this.message} \n${this.data}`;
+}
+
+export class ParseError extends JSONRPCError {
+  constructor(details = "") {
+    super(
+      PARSE_ERROR_CODE,
+      "ParseError",
+      "Message could not be parsed",
+      details
+    );
+  }
+}
+class InvalidParamError extends JSONRPCError {
+  constructor(name: string, message: string, details = "") {
+    super(INVALID_PARAMS_CODE, name, message, details);
   }
 }
 
-/**
- * A url which points to a website describing the error in more depth.
- * @var {string} url
- * @memberof module:errors~BaseError.prototype
- *
- */
-
-/**
- * The class name of the error
- * @var {string} name
- * @memberof module:errors~BaseError.prototype
- *
- */
-
-/**
- * The error message.
- * @var {string} message
- * @memberof module:errors~BaseError.prototype
- *
- */
-
-/**
- * The (remote) stacktrace of the exception.
- * @var {string} stack
- * @memberof module:errors~BaseError.prototype
- *
- */
-
-export class DaemonError extends BaseError {
-  constructor(msg: string) {
-    super("DaemonError", msg);
+export class NotFound extends InvalidParamError {
+  constructor(details?: string) {
+    super("NotFound", "No State/Method matching the specified path", details);
   }
 }
-
-/**
- * Creates a new instance.
- * @classdesc The Peer processing the 'set' or 'get' request threw an error during dispatching the request.
- * @class
- * @augments module:errors~BaseError
- *
- */
-
-export class PeerError extends BaseError {
-  constructor(_msg: string) {
-    super("PeerError", _msg);
-  }
-}
-
-/**
- * Creates a new instance.
- * @classdesc The user (name) provided is not registered at the Daemon.
- * @class
- * @augments module:errors~BaseError
- *
- */
-export class InvalidUser extends BaseError {
-  constructor() {
-    super("InvalidUser", "The specified user does not exist");
-  }
-}
-
-/**
- * Creates a new instance.
- * @classdesc The password provided for the user is not correct.
- * @class
- * @augments module:errors~BaseError
- *
- */
-export class InvalidPassword extends BaseError {
-  constructor() {
-    super("InvalidPassword", "The specified password is wrong");
-  }
-}
-
-/**
- * Creates a new instance.
- * @classdesc The peer (user/password) is not authorized to perform the requested action.
- * @class
- * @augments module:errors~BaseError
- *
- */
-
-export class Unauthorized extends BaseError {
-  constructor() {
-    super("Unauthorized", "The request is not authorized for the user");
-  }
-}
-
-/**
- * Creates a new instance.
- * @classdesc The connection to the specified endpoint could not be established or has been closed.
- * @class
- * @augments module:errors~BaseError
- *
- */
-export class ConnectionClosed extends BaseError {
-  constructor(err: string) {
-    super("ConnectionClosed", err);
-  }
-}
-
-/**
- * Creates a new instance.
- * @classdesc The connection to the specified endpoint could not be established or has been closed.
- * @class
- * @augments module:errors~BaseError
- *
- */
- export class ConnectionInUse extends BaseError {
-  constructor(err: string) {
-    super("ConnectionInUse", err);
-  }
-}
-
-/**
- * Creates a new instance.
- * @classdesc The State or Method specified by `path` has not been added to the Daemon. One
- * could `fetch` the respective State or Method to wait until it becomes available.
- * @class
- * @augments module:errors~BaseError
- *
- */
-
-export class NotFound extends BaseError {
-  constructor() {
-    super("NotFound", "No State/Method matching the specified path");
-  }
-}
-
-/**
- * Creates a new instance.
- * @classdesc The provided arguments for 'set' or 'call' have been refused by the State or Method.
- * @class
- * @param {string} [message] A custom error message to forward to the requestor.
- * @augments module:errors~BaseError
- *
- */
-
-export class InvalidArgument extends BaseError {
-  constructor(msg: string|undefined) {
+export class InvalidArgument extends InvalidParamError {
+  constructor(details?: string) {
     super(
       "InvalidArgument",
-      msg || "The provided argument(s) have been refused by the State/Method"
+      "The provided argument(s) have been refused by the State/Method",
+      details
     );
   }
 }
 
-/**
- * Creates a new instance.
- * @classdesc The Peer processing the 'set' or 'call' request has not answered within the specified `timeout`.
- * @class
- * @augments module:errors~BaseError
- *
- */
-
-export class PeerTimeout extends BaseError {
-  constructor() {
-    super(
-      "PeerTimeout",
-      "The peer processing the request did not respond within the specified timeout"
-    );
-  }
-}
-
-/**
- * Creates a new instance.
- * @classdesc The state or method cannot be added to the Daemon because another state or method with the
- * same `path` already exists.
- * @class
- * @augments module:errors~BaseError
- *
- */
-
-export class Occupied extends BaseError {
-  constructor() {
+export class Occupied extends InvalidParamError {
+  constructor(details?: string) {
     super(
       "Occupied",
-      "A State/Method with the same path has already been added"
+      "A State/Method with the same path has already been added",
+      details
+    );
+  }
+}
+export class FetchOnly extends InvalidParamError {
+  constructor(details?: string) {
+    super("FetchOnly", "The State cannot be modified", details);
+  }
+}
+export class methodNotFoundError extends JSONRPCError {
+  constructor(details = "") {
+    super(METHOD_NOT_FOUND, "MethodNotFound", "Method not found", details);
+  }
+}
+
+export class invalidMethod extends JSONRPCError {
+  constructor(details?: string) {
+    super(
+      INVALID_REQUEST,
+      "invalidMethod",
+      "The path does not support this method",
+      details
+    );
+  }
+}
+export class invalidRequest extends JSONRPCError {
+  constructor(
+    name = "invalidRequest",
+    message = "Invalid Request",
+    details = ""
+  ) {
+    super(INVALID_REQUEST, name, message, details);
+  }
+}
+export class notAllowed extends invalidRequest {
+  constructor(details?: string) {
+    super("NotAllowed", "Not allowed", details);
+  }
+}
+// export const responseTimeout = (data: ErrorData) => ({
+//   message: "Response Timeout",
+//   code: RESPONSE_TIMEOUT_CODE,
+//   data: data,
+// });
+
+export class ConnectionClosed extends JSONRPCError {
+  constructor(details?: string) {
+    super(
+      CONNECTION_ERROR_CODE,
+      "ConnectionClosed",
+      "The connection is closed",
+      details
     );
   }
 }
 
-/**
- * Creates a new instance.
- * @classdesc The state or method is fetch-only (aka read-only).
- * @class
- * @augments module:errors~BaseError
- *
- */
-
-export class FetchOnly extends BaseError {
-  constructor() {
-    super("FetchOnly", "The State cannot be modified");
+export class ConnectionInUse extends JSONRPCError {
+  constructor(err?: string) {
+    super(
+      CONNECTION_ERROR_CODE,
+      "ConnectionInUse",
+      "Could not establish connection",
+      err
+    );
   }
 }
-
-export const createTypedError = (jsonrpcError: {
-  code: number;
-  data: ErrorData | string;
-}) => {
-  const code = jsonrpcError.code;
-  if (code === INVALID_PARAMS_CODE) {
-    const data = jsonrpcError.data as ErrorData;
-    if (data.pathNotExists) {
-      return new NotFound();
-    } else if (data.pathAlreadyExists) {
-      return new Occupied();
-    } else if (data.fetchOnly) {
-      return new FetchOnly();
-    } else if (data.invalidUser) {
-      return new InvalidUser();
-    } else if (data.invalidPassword) {
-      return new InvalidPassword();
-    } else if (data.invalidArgument) {
-      return new InvalidArgument(
-        data.invalidArgument && data.invalidArgument.message
-      );
-    } else if (data.noAccess) {
-      return new Unauthorized();
-    }
-  } else if (code === RESPONSE_TIMEOUT_CODE) {
-    return new PeerTimeout();
-  } else if (code === INTERNAL_ERROR_CODE) {
-    const data = jsonrpcError.data as string;
-    return new PeerError(data);
+export class PeerTimeout extends JSONRPCError {
+  constructor(details?: string) {
+    super(
+      RESPONSE_TIMEOUT_CODE,
+      "PeerTimeout",
+      "The peer processing the request did not respond within the specified timeout",
+      details
+    );
   }
-};
+}

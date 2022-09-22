@@ -1,12 +1,12 @@
-import { DaemonError, ErrorData, invalidParams } from "./errors";
-import { AccessType, EventType, OperatorType, ValueType } from "./types";
+import { InvalidArgument, invalidRequest, JSONRPCError } from "./errors";
+import { EventType, OperatorType, ValueType } from "./types";
 
 export interface Message {
   id?: string;
 }
 
 export const castMessage = <T extends MethodRequest>(msg: MethodRequest): T => {
-  if (!("method" in msg)) throw new DaemonError("No method");
+  if (!("method" in msg)) throw new invalidRequest("No method");
   const method = msg.method as EventType;
   const params = msg.params;
   switch (method) {
@@ -14,22 +14,23 @@ export const castMessage = <T extends MethodRequest>(msg: MethodRequest): T => {
       return msg as T;
     case "configure":
       if (!params || !("name" in params))
-        throw invalidParams("Only params.name supported");
+        throw new InvalidArgument("Only params.name supported");
       return msg as T;
     case "unfetch":
       if (!params || !("id" in params))
-        throw invalidParams("Fetch id required");
+        throw new InvalidArgument("Fetch id required");
       return msg as T;
     default:
-      if (!params || !("path" in params)) throw invalidParams("Path required");
+      if (!params || !("path" in params))
+        throw new InvalidArgument("Path required");
   }
   switch (method) {
     case "fetch":
-      if (!("id" in params)) throw invalidParams("Fetch id required");
+      if (!("id" in params)) throw new InvalidArgument("Fetch id required");
       return msg as T;
     case "change":
     case "set":
-      if (!("value" in params)) throw invalidParams("Value required");
+      if (!("value" in params)) throw new InvalidArgument("Value required");
       return msg as T;
     default:
       return msg as T;
@@ -42,7 +43,7 @@ export interface ResultMessage extends Message {
 
 export interface ErrorMessage extends Message {
   id: string;
-  error: string | { code: number; data: ErrorData };
+  error: JSONRPCError;
 }
 export interface MethodRequest extends Message {
   id: string;
@@ -98,18 +99,4 @@ export interface FetchRequest extends MethodRequest {
 }
 export interface UnFetchRequest extends MethodRequest {
   params: { id: string };
-}
-
-export interface ParamType {
-  path?: object | string;
-  id?: string;
-  fetchOnly?: ValueType;
-  value?: ValueType;
-  access?: AccessType;
-  event?: EventType;
-  changes?: any;
-  valueAsResult?: any;
-  n?: any;
-  args?: any;
-  name?: string;
 }

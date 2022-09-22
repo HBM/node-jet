@@ -3,23 +3,17 @@ import {
   ConfigureRequest,
   InfoRequest,
 } from "../src/3_jet/messages";
-import { DaemonError } from "../src/3_jet/errors";
+import { InvalidArgument, invalidRequest } from "../src/3_jet/errors";
 describe("Testing message casting", () => {
   it("Id error", () => {
-    try {
-      castMessage<InfoRequest>({} as any);
-    } catch (ex) {
-      expect(ex).toBeInstanceOf(DaemonError);
-      expect(ex.toString()).toEqual("jet.DaemonError: No id");
-    }
+    expect(() => castMessage<InfoRequest>({} as any)).toThrow(
+      new invalidRequest("no method")
+    );
   });
   it("Method error", () => {
-    try {
-      castMessage<InfoRequest>({ id: "abc" } as any);
-    } catch (ex) {
-      expect(ex).toBeInstanceOf(DaemonError);
-      expect(ex.toString()).toEqual("jet.DaemonError: No method");
-    }
+    expect(() => castMessage<InfoRequest>({ id: "abc" } as any)).toThrow(
+      new invalidRequest("no method")
+    );
   });
 
   it("Should parse Info", () => {
@@ -27,15 +21,13 @@ describe("Testing message casting", () => {
     expect(typeof msg).toEqual("object");
   });
   it("Configure error", () => {
-    try {
-      const msg = castMessage<ConfigureRequest>({
+    expect(() =>
+      castMessage<ConfigureRequest>({
         id: "abc",
         method: "configure",
         params: { foo: "bar" },
-      } as any);
-    } catch (ex) {
-      expect(ex.message).toEqual("Invalid params");
-    }
+      } as any)
+    ).toThrow(new InvalidArgument("no method"));
   });
   it("Should parse Configure", () => {
     const msg = castMessage<InfoRequest>({
@@ -46,11 +38,9 @@ describe("Testing message casting", () => {
     expect(typeof msg).toEqual("object");
   });
   it("Add without path", () => {
-    try {
-      castMessage<InfoRequest>({ id: "abc", method: "add" } as any);
-    } catch (ex) {
-      expect(ex.message).toEqual("Invalid params");
-    }
+    expect(() =>
+      castMessage<InfoRequest>({ id: "abc", method: "add" } as any)
+    ).toThrow(new InvalidArgument("no method"));
   });
   it("Should parse Add", () => {
     const msg = castMessage<InfoRequest>({
@@ -61,11 +51,9 @@ describe("Testing message casting", () => {
     expect(typeof msg).toEqual("object");
   });
   it("Remove without path", () => {
-    try {
-      castMessage<InfoRequest>({ id: "abc", method: "remove" } as any);
-    } catch (ex) {
-      expect(ex.message).toEqual("Invalid params");
-    }
+    expect(() =>
+      castMessage<InfoRequest>({ id: "abc", method: "remove" } as any)
+    ).toThrow(new InvalidArgument("no method"));
   });
   it("Should parse Remove", () => {
     const msg = castMessage<InfoRequest>({
@@ -76,15 +64,13 @@ describe("Testing message casting", () => {
     expect(typeof msg).toEqual("object");
   });
   it("fetch without id", () => {
-    try {
+    expect(() =>
       castMessage<InfoRequest>({
         id: "abc",
         method: "fetch",
         params: { path: { equals: "foo" } },
-      } as any);
-    } catch (ex) {
-      expect(ex.message).toEqual("Invalid params");
-    }
+      } as any)
+    ).toThrow(new InvalidArgument("no method"));
   });
   it("Should parse fetch", () => {
     const msg = castMessage<InfoRequest>({
@@ -95,11 +81,9 @@ describe("Testing message casting", () => {
     expect(typeof msg).toEqual("object");
   });
   it("Unfetch without path", () => {
-    try {
-      castMessage<InfoRequest>({ id: "abc", method: "unfetch" } as any);
-    } catch (ex) {
-      expect(ex.message).toEqual("Invalid params");
-    }
+    expect(() =>
+      castMessage<InfoRequest>({ id: "abc", method: "unfetch" } as any)
+    ).toThrow(new InvalidArgument("Fetch id required"));
   });
   it("Should parse Unfetch", () => {
     const msg = castMessage<InfoRequest>({
@@ -110,15 +94,13 @@ describe("Testing message casting", () => {
     expect(typeof msg).toEqual("object");
   });
   it("Change without value", () => {
-    try {
+    expect(() =>
       castMessage<InfoRequest>({
         id: "abc",
         method: "change",
         params: { path: "foo" },
-      } as any);
-    } catch (ex) {
-      expect(ex.message).toEqual("Invalid params");
-    }
+      } as any)
+    ).toThrow(new InvalidArgument("Value required"));
   });
   it("Should parse change", () => {
     const msg = castMessage<InfoRequest>({

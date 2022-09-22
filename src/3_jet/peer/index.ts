@@ -10,7 +10,7 @@ import State from "./state";
 import Fetcher from "./fetcher";
 import { logger, Logger } from "../log";
 import { isState } from "../utils";
-import { NotFound } from "../errors";
+import { invalidMethod, NotFound } from "../errors";
 import { Socket } from "../../1_socket/socket";
 import { Subscription } from "../daemon/subscription";
 
@@ -94,30 +94,58 @@ export class Peer extends EventEmitter {
     this.#log = new Logger(this.#config.log);
     this.#jsonrpc = new JsonRPC(this.#log, config, sock);
     this.#jsonrpc.addListener("get", (_peer, id: string, m: any) => {
-      const state = this.#routes[m.path] as State;
-      if (state) {
-        this.#jsonrpc.respond(id, state.toJson(), true);
+      if (m.path in this.#routes) {
+        const state = this.#routes[m.path] as State;
+        if (!isState(state)) {
+          const error = new invalidMethod(
+            `Tried to get value of ${m.path} which is a method`
+          );
+          this.#log.error(error.toString());
+          this.#jsonrpc.respond(id, error, false);
+        } else {
+          this.#jsonrpc.respond(id, state.toJson(), true);
+        }
       } else {
-        this.#jsonrpc.respond(id, new NotFound(), false);
+        this.#jsonrpc.respond(id, new NotFound(m.path), false);
       }
     });
     this.#jsonrpc.addListener("set", (_peer, id: string, m: any) => {
-      const state = this.#routes[m.path] as State;
-      if (state) {
+      if (m.path in this.#routes) {
+        const state = this.#routes[m.path];
+        if (!isState(state)) {
+          const error = new invalidMethod(
+            `Tried to set ${m.path} which is a method`
+          );
+          this.#log.error(error.toString());
+          this.#jsonrpc.respond(id, error, false);
+          return;
+        }
         state.value(m.value);
         state.emit("set", m.value);
         this.#jsonrpc.respond(id, state.toJson(), true);
       } else {
-        this.#jsonrpc.respond(id, new NotFound(), false);
+        const error = new NotFound(m.path);
+        this.#log.error(error.toString());
+        this.#jsonrpc.respond(id, error, false);
       }
     });
     this.#jsonrpc.addListener("call", (_peer, id: string, m: any) => {
-      const method = this.#routes[m.path] as Method;
-      if (method) {
+      if (m.path in this.#routes) {
+        const method = this.#routes[m.path];
+        if (isState(method)) {
+          const error = new invalidMethod(
+            `Tried to call ${m.path} which is a state`
+          );
+          this.#log.error(error.toString());
+          this.#jsonrpc.respond(id, error, false);
+          return;
+        }
         method.call(m.args);
         this.#jsonrpc.respond(id, {}, true);
       } else {
-        this.#jsonrpc.respond(id, new NotFound(), false);
+        const error = new NotFound(m.path);
+        this.#log.error(error.toString());
+        this.#jsonrpc.respond(id, error, false);
       }
     });
     this.#jsonrpc.addListener(
@@ -143,10 +171,8 @@ export class Peer extends EventEmitter {
     if (!this.fetchFull()) {
       if (Object.keys(this.#fetcher).length === 2) {
         const param = { id: fetchSimpleId };
-        console.log("sending unfetch");
         return this.#jsonrpc
           .sendRequest("unfetch", param)
-          .then(() => console.log("Unfetched"))
           .then(() => delete this.#fetcher[id])
           .then(() => Promise.resolve());
       } else {
