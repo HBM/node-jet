@@ -1,6 +1,6 @@
 "use strict";
 
-import EventEmitter from "events";
+import { EventEmitter } from "events";
 import { Logger, logger } from "../log";
 import { FetchOptions, PathParams } from "../messages";
 import { createPathMatcher } from "./path_matcher";

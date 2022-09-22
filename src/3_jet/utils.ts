@@ -1,6 +1,6 @@
 import { State } from "./peer/state";
 import { Method } from "./peer/method";
-import { InvalidArgument, JSONRPCError } from "./errors";
+import { JSONRPCError } from "./errors";
 import { ValueType } from "./types";
 
 export const getValue = (o: any, field: string) => {
