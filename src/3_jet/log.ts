@@ -77,4 +77,9 @@ export class Logger {
       }
     })
   }
+  close = () => {
+    if (this.stream) {
+      this.stream.end()
+    }
+  }
 }

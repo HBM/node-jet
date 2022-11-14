@@ -4,8 +4,4 @@ lib
 .cache
 .vscode
 
-examples/todo/public/bundle.js
-
-examples/chat/public/bundle.js
-
-examples/ants/public/bundle.js
+examples/*/public/bundle.js

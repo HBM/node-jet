@@ -182,9 +182,7 @@ describe('Testing JsonRpc', () => {
       logCallbacks: [
         (msg) => {
           console.log(msg)
-          expect(msg).toContain(
-            'Mock	error	SyntaxError: Unexpected token I in JSON at position 0'
-          )
+          expect(msg).toContain('Mock	error	SyntaxError: Unexpected token')
           done()
         }
       ]
