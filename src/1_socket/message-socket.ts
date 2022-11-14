@@ -1,6 +1,6 @@
 /* istanbul ignore file */
-import EventEmitter from "events";
 import { Socket, connect } from "net";
+import { EventEmitter } from ".";
 
 export class MessageSocket extends EventEmitter {
   last = Buffer.alloc(0);

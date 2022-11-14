@@ -1,8 +1,8 @@
 "use strict";
 
 import { AccessType, ValueType } from "../types";
-import EventEmitter from "events";
 import { JsonParams } from ".";
+import { EventEmitter } from "../../1_socket";
 
 /**
  * Create a Jet State instance

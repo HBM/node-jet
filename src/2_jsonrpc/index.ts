@@ -7,7 +7,6 @@ import {
   ParseError,
 } from "../3_jet/errors";
 import { JsonParams } from "../3_jet/peer";
-import EventEmitter from "events";
 import {
   castMessage,
   ErrorMessage,
@@ -17,6 +16,7 @@ import {
 } from "../3_jet/messages";
 import { logger, Logger } from "../3_jet/log";
 import { Socket } from "../1_socket/socket";
+import { EventEmitter } from "../1_socket";
 /**
  * Helper shorthands.
  */

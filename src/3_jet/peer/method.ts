@@ -1,8 +1,8 @@
 /**
  * Helpers
  */
-import EventEmitter from "events";
 import { JsonParams } from ".";
+import { EventEmitter } from "../../1_socket";
 import { AccessType } from "../types";
 /**
  * Method

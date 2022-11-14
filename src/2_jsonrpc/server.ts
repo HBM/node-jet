@@ -1,5 +1,5 @@
-import EventEmitter from "events";
 import JsonRPC from ".";
+import { EventEmitter } from "../1_socket";
 import { Socket } from "../1_socket/socket";
 import { TCPServer, TCPServerConfig } from "../1_socket/tcpserver";
 import { WebServerConfig, WebsocketServer } from "../1_socket/wsserver";

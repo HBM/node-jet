@@ -1,6 +1,5 @@
 /* istanbul ignore file */
-import EventEmitter from "events";
-import { WebSocketImpl } from ".";
+import { EventEmitter, WebSocketImpl } from ".";
 import { WebSocket, WebSocketServer as WsServer } from "ws";
 import { Server as HTTPServer } from "http";
 import { Socket } from "./socket";

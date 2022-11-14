@@ -43,3 +43,9 @@ export const isState = (
 ): stateOrMethod is State<ValueType> => {
   return "_value" in stateOrMethod;
 };
+
+export const isMethod = (
+  stateOrMethod: State<ValueType> | Method
+): stateOrMethod is Method => {
+  return "args" in stateOrMethod;
+};

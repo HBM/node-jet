@@ -1,6 +1,5 @@
 "use strict";
 
-import { EventEmitter } from "events";
 import { Logger, logger } from "../log";
 import { FetchOptions, PathParams } from "../messages";
 import { createPathMatcher } from "./path_matcher";
@@ -17,6 +16,7 @@ import JsonRPC from "../../2_jsonrpc";
 import { JsonRPCServer } from "../../2_jsonrpc/server";
 import { WebServerConfig } from "../../1_socket/wsserver";
 import { TCPServerConfig } from "../../1_socket/tcpserver";
+import { EventEmitter } from "../../1_socket";
 
 const version = "2.2.0";
 
@@ -356,27 +356,31 @@ export class Daemon extends EventEmitter {
       newPeer.addListener("fetch", this.fetch);
       newPeer.addListener("unfetch", this.unfetch);
 
-      newPeer.addListener("set", (_peer, id, params) =>
-        this.forward("set", params)
-          .then((res) => {
-            newPeer.respond(id, res, true);
-            newPeer.send();
-          })
-          .catch((err) => {
-            newPeer.respond(id, err, false);
-            newPeer.send();
-          })
+      newPeer.addListener(
+        "set",
+        (_peer: JsonRPC, id: string, params: PathParams) =>
+          this.forward("set", params)
+            .then((res) => {
+              newPeer.respond(id, res, true);
+              newPeer.send();
+            })
+            .catch((err) => {
+              newPeer.respond(id, err, false);
+              newPeer.send();
+            })
       );
-      newPeer.addListener("call", (_peer, id, params) =>
-        this.forward("call", params)
-          .then((res) => {
-            newPeer.respond(id, res, true);
-            newPeer.send();
-          })
-          .catch((err) => {
-            newPeer.respond(id, err, false);
-            newPeer.send();
-          })
+      newPeer.addListener(
+        "call",
+        (_peer: JsonRPC, id: string, params: PathParams) =>
+          this.forward("call", params)
+            .then((res) => {
+              newPeer.respond(id, res, true);
+              newPeer.send();
+            })
+            .catch((err) => {
+              newPeer.respond(id, err, false);
+              newPeer.send();
+            })
       );
     });
 

@@ -1,5 +1,5 @@
 "use strict";
-import { EventEmitter } from "events";
+import { EventEmitter } from "../../1_socket";
 import JsonRPC from "../../2_jsonrpc";
 import { ValueType } from "../types";
 

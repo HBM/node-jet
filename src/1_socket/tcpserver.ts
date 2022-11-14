@@ -1,6 +1,6 @@
 /* istanbul ignore file */
-import EventEmitter from "events";
 import { Server, createServer } from "net";
+import { EventEmitter } from ".";
 import MessageSocket from "./message-socket";
 import { Socket } from "./socket";
 

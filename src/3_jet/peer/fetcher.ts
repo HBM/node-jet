@@ -1,4 +1,4 @@
-import EventEmitter from "events";
+import { EventEmitter } from "../../1_socket";
 import { Subscription } from "../daemon/subscription";
 import { FetchOptions } from "../messages";
 import {
@@ -17,6 +17,7 @@ export class Fetcher extends EventEmitter {
     super();
     this.setMaxListeners(0);
   }
+
   path: pathFunction = (key: PathRule, value: string | string[]) => {
     this.message.path[key as string] = value;
     return this;
