@@ -1,60 +1,60 @@
 // import { Notification } from "./fetcher";
-import { InvalidArgument } from "../errors";
-import { FetchOptions } from "../messages";
-import { PathRule, pathRules } from "../types";
+import { InvalidArgument } from '../errors'
+import { FetchOptions } from '../messages'
+import { PathRule, pathRules } from '../types'
 
-const contains = (what: string) => (path: string) => path.indexOf(what) !== -1;
+const contains = (what: string) => (path: string) => path.indexOf(what) !== -1
 
 const containsAllOf = (whatArray: string[]) => {
   return (path: string) => {
-    let i;
+    let i
     for (i = 0; i < whatArray.length; i = i + 1) {
       if (path.indexOf(whatArray[i]) === -1) {
-        return false;
+        return false
       }
     }
-    return true;
-  };
-};
+    return true
+  }
+}
 
 const containsOneOf = (whatArray: string[]) => {
   return (path: string) => {
-    let i;
+    let i
     for (i = 0; i < whatArray.length; i = i + 1) {
       if (path.indexOf(whatArray[i]) !== -1) {
-        return true;
+        return true
       }
     }
-    return false;
-  };
-};
+    return false
+  }
+}
 
 const startsWith = (what: string) => (path: string) =>
-  path.substring(0, what.length) === what;
+  path.substring(0, what.length) === what
 
 const endsWith = (what: string) => (path: string) =>
-  path.lastIndexOf(what) === path.length - what.length;
+  path.lastIndexOf(what) === path.length - what.length
 
-const equals = (what: string) => (path: string) => path === what;
+const equals = (what: string) => (path: string) => path === what
 
 const equalsOneOf = (whatArray: string[]) => (path: string) => {
-  let i;
+  let i
   for (i = 0; i < whatArray.length; i = i + 1) {
     if (path === whatArray[i]) {
-      return true;
+      return true
     }
   }
-  return false;
-};
+  return false
+}
 
 const negate = (gen: any) => {
   return (...args: any) => {
-    const f = gen.apply(undefined, args);
+    const f = gen.apply(undefined, args)
     return () => {
-      return !f.apply(undefined, args);
-    };
-  };
-};
+      return !f.apply(undefined, args)
+    }
+  }
+}
 
 const generators: Record<PathRule, any> = {
   equals: equals,
@@ -68,45 +68,45 @@ const generators: Record<PathRule, any> = {
   endsWith: endsWith,
   endsNotWith: negate(endsWith),
   equalsOneOf: equalsOneOf,
-  equalsNotOneOf: negate(equalsOneOf),
-};
+  equalsNotOneOf: negate(equalsOneOf)
+}
 
 export const createPathMatcher = (options: FetchOptions) => {
   if (!options.path) {
-    return () => true;
+    return () => true
   }
-  const po = options.path;
+  const po = options.path
   Object.keys(po).forEach((key) => {
-    if (!(key in generators) && key !== "caseInsensitive")
-      throw new InvalidArgument("unknown rule " + key);
-  });
-  const predicates: ((path: string) => boolean)[] = [];
+    if (!(key in generators) && key !== 'caseInsensitive')
+      throw new InvalidArgument('unknown rule ' + key)
+  })
+  const predicates: ((path: string) => boolean)[] = []
   pathRules.forEach((name) => {
-    let gen;
-    let option = po[name];
+    let gen
+    let option = po[name]
     if (option) {
-      gen = generators[name];
+      gen = generators[name]
       if (po.caseInsensitive) {
         if (Array.isArray(option)) {
-          option = option.map((op) => op.toLowerCase());
+          option = option.map((op) => op.toLowerCase())
         } else {
-          option = option.toLowerCase();
+          option = option.toLowerCase()
         }
       }
-      predicates.push(gen(option));
+      predicates.push(gen(option))
     }
-  });
+  })
 
   const applyPredicates = (path: string) => {
     for (let i = 0; i < predicates.length; ++i) {
       if (!predicates[i](path)) {
-        return false;
+        return false
       }
     }
-    return true;
-  };
+    return true
+  }
 
   return predicates.length === 1
     ? (path: string) => predicates[0](path)
-    : (path: string) => applyPredicates(path);
-};
+    : (path: string) => applyPredicates(path)
+}

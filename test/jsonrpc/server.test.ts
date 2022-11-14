@@ -1,45 +1,45 @@
-import * as Sock from "../../src/1_socket/wsserver";
-import * as tcpSock from "../../src/1_socket/tcpserver";
-import { Logger, LogLevel } from "../../src/3_jet/log";
+import * as Sock from '../../src/1_socket/wsserver'
+import * as tcpSock from '../../src/1_socket/tcpserver'
+import { Logger, LogLevel } from '../../src/3_jet/log'
 import {
   HTTPServerMock,
   TCPServer,
-  WebsocketServer,
-} from "../mocks/socketServer";
-import { JsonRPCServer } from "../../src/2_jsonrpc/server";
-import { sockMock } from "../mocks/sock";
+  WebsocketServer
+} from '../mocks/socketServer'
+import { JsonRPCServer } from '../../src/2_jsonrpc/server'
+import { sockMock } from '../mocks/sock'
 
-describe("Testing JsonRpc Server", () => {
-  it("Should test wsServer functionality", () => {
-    const wsServer = WebsocketServer();
-    jest.spyOn(Sock, "WebsocketServer").mockImplementation(() => wsServer);
-    const server = new JsonRPCServer(new Logger(), { wsPort: 11235 });
-    server.listen();
-    const sock = sockMock();
-    wsServer.simulateConnection(sock);
-    wsServer.simulateDisconnect(sock);
-    server.close();
-  });
-  it("Should test wsServer external", () => {
-    const wsServer = WebsocketServer();
-    jest.spyOn(Sock, "WebsocketServer").mockImplementation(() => wsServer);
+describe('Testing JsonRpc Server', () => {
+  it('Should test wsServer functionality', () => {
+    const wsServer = WebsocketServer()
+    jest.spyOn(Sock, 'WebsocketServer').mockImplementation(() => wsServer)
+    const server = new JsonRPCServer(new Logger(), { wsPort: 11235 })
+    server.listen()
+    const sock = sockMock()
+    wsServer.simulateConnection(sock)
+    wsServer.simulateDisconnect(sock)
+    server.close()
+  })
+  it('Should test wsServer external', () => {
+    const wsServer = WebsocketServer()
+    jest.spyOn(Sock, 'WebsocketServer').mockImplementation(() => wsServer)
     const server = new JsonRPCServer(new Logger(), {
-      server: HTTPServerMock(),
-    });
-    server.listen();
-    const sock = sockMock();
-    wsServer.simulateConnection(sock);
-    wsServer.simulateDisconnect(sock);
-    server.close();
-  });
-  it("Should test tcpServer functionality", () => {
-    const tcpServer = TCPServer();
-    jest.spyOn(tcpSock, "TCPServer").mockImplementation(() => tcpServer);
-    const server = new JsonRPCServer(new Logger(), { tcpPort: 11234 });
-    server.listen();
-    const sock = sockMock();
-    tcpServer.simulateConnection(sock);
-    tcpServer.simulateDisconnect(sock);
-    server.close();
-  });
-});
+      server: HTTPServerMock()
+    })
+    server.listen()
+    const sock = sockMock()
+    wsServer.simulateConnection(sock)
+    wsServer.simulateDisconnect(sock)
+    server.close()
+  })
+  it('Should test tcpServer functionality', () => {
+    const tcpServer = TCPServer()
+    jest.spyOn(tcpSock, 'TCPServer').mockImplementation(() => tcpServer)
+    const server = new JsonRPCServer(new Logger(), { tcpPort: 11234 })
+    server.listen()
+    const sock = sockMock()
+    tcpServer.simulateConnection(sock)
+    tcpServer.simulateDisconnect(sock)
+    server.close()
+  })
+})

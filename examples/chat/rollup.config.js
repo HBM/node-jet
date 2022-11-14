@@ -1,6 +1,6 @@
-import { nodeResolve } from '@rollup/plugin-node-resolve';
-import commonjs from '@rollup/plugin-commonjs';
-import nodePolyfills from 'rollup-plugin-polyfill-node';
+import { nodeResolve } from '@rollup/plugin-node-resolve'
+import commonjs from '@rollup/plugin-commonjs'
+import nodePolyfills from 'rollup-plugin-polyfill-node'
 
 export default {
   input: 'chat-client.js',
@@ -11,9 +11,7 @@ export default {
   },
   plugins: [
     nodePolyfills(),
-    nodeResolve({ preferBuiltins:false, browser:true }),
-    commonjs(),
-    
-    
+    nodeResolve({ preferBuiltins: false, browser: true }),
+    commonjs()
   ]
-};
+}

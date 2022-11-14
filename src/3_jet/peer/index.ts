@@ -1,58 +1,58 @@
-"use strict";
+'use strict'
 
-import { InfoOptions } from "../daemon";
-import { AccessType, fetchSimpleId, PublishMessage, ValueType } from "../types";
+import { InfoOptions } from '../daemon'
+import { AccessType, fetchSimpleId, PublishMessage, ValueType } from '../types'
 
-import JsonRPC, { JsonRpcConfig } from "../../2_jsonrpc";
-import Method from "./method";
-import State from "./state";
-import Fetcher from "./fetcher";
-import { logger, Logger } from "../log";
-import { isMethod, isState } from "../utils";
-import { invalidMethod, NotFound } from "../errors";
-import { Socket } from "../../1_socket/socket";
-import { Subscription } from "../daemon/subscription";
-import { EventEmitter } from "../../1_socket";
-import { PathParams } from "../messages";
+import JsonRPC, { JsonRpcConfig } from '../../2_jsonrpc'
+import Method from './method'
+import State from './state'
+import Fetcher from './fetcher'
+import { logger, Logger } from '../log'
+import { isState } from '../utils'
+import { invalidMethod, NotFound } from '../errors'
+import { Socket } from '../../1_socket/socket'
+import { Subscription } from '../daemon/subscription'
+import { EventEmitter } from '../../1_socket'
+import { PathParams } from '../messages'
 
 const fallbackDaemonInfo: InfoOptions = {
-  name: "unknown-daemon",
-  version: "0.0.0",
-  protocolVersion: "1.0.0",
+  name: 'unknown-daemon',
+  version: '0.0.0',
+  protocolVersion: '1.0.0',
   features: {
-    fetch: "full",
+    fetch: 'full',
     batches: true,
-    asNotification: false,
-  },
-};
-export interface JsonParams<T = ValueType> {
-  method?: string;
-  path?: string | Record<string, string | string[]>;
-  args?: object;
-  timeout?: number;
-  user?: string;
-  password?: string;
-  value?: T;
-  valueAsResult?: boolean;
-  id?: string;
-  access?: AccessType;
+    asNotification: false
+  }
 }
-export type publishEvent = "Add" | "Remove" | "Change";
+export interface JsonParams<T = ValueType> {
+  method?: string
+  path?: string | Record<string, string | string[]>
+  args?: object
+  timeout?: number
+  user?: string
+  password?: string
+  value?: T
+  valueAsResult?: boolean
+  id?: string
+  access?: AccessType
+}
+export type publishEvent = 'Add' | 'Remove' | 'Change'
 export interface PublishParams<T = ValueType> {
-  event?: publishEvent;
-  path: string;
-  value?: T;
+  event?: publishEvent
+  path: string
+  value?: T
 }
 
 export interface PeerConfig extends JsonRpcConfig {
-  url?: string;
-  ip?: string;
-  port?: number;
-  name?: string;
-  user?: string;
-  password?: string;
-  log?: logger;
-  rejectUnauthorized?: boolean; // Defaults to true
+  url?: string
+  ip?: string
+  port?: number
+  name?: string
+  user?: string
+  password?: string
+  log?: logger
+  rejectUnauthorized?: boolean // Defaults to true
 }
 
 /**
@@ -81,158 +81,158 @@ export interface PeerConfig extends JsonRpcConfig {
  */
 
 export class Peer extends EventEmitter {
-  #fetchId = 1;
-  #config: PeerConfig;
-  #jsonrpc: JsonRPC;
-  #daemonInfo: InfoOptions = fallbackDaemonInfo;
-  #routes: Record<string, Method | State> = {};
-  #fetcher: Record<string, Fetcher> = {};
-  #log: Logger;
-  cache: Record<string, PublishMessage> = {};
+  #fetchId = 1
+  #config: PeerConfig
+  #jsonrpc: JsonRPC
+  #daemonInfo: InfoOptions = fallbackDaemonInfo
+  #routes: Record<string, Method | State> = {}
+  #fetcher: Record<string, Fetcher> = {}
+  #log: Logger
+  cache: Record<string, PublishMessage> = {}
   constructor(config?: PeerConfig, sock?: Socket) {
-    super();
-    this.#config = config || {};
-    this.#log = new Logger(this.#config.log);
-    this.#jsonrpc = new JsonRPC(this.#log, config, sock);
-    this.#jsonrpc.addListener("get", (_peer: JsonRPC, id: string, m: any) => {
+    super()
+    this.#config = config || {}
+    this.#log = new Logger(this.#config.log)
+    this.#jsonrpc = new JsonRPC(this.#log, config, sock)
+    this.#jsonrpc.addListener('get', (_peer: JsonRPC, id: string, m: any) => {
       if (m.path in this.#routes) {
-        const state = this.#routes[m.path] as State;
+        const state = this.#routes[m.path] as State
         if (!isState(state)) {
           const error = new invalidMethod(
             `Tried to get value of ${m.path} which is a method`
-          );
-          this.#log.error(error.toString());
-          this.#jsonrpc.respond(id, error, false);
+          )
+          this.#log.error(error.toString())
+          this.#jsonrpc.respond(id, error, false)
         } else {
-          this.#jsonrpc.respond(id, state.toJson(), true);
+          this.#jsonrpc.respond(id, state.toJson(), true)
         }
       } else {
-        this.#jsonrpc.respond(id, new NotFound(m.path), false);
+        this.#jsonrpc.respond(id, new NotFound(m.path), false)
       }
-    });
+    })
     this.#jsonrpc.addListener(
-      "set",
+      'set',
       (_peer: JsonRPC, id: string, m: PathParams) => {
         if (m.path in this.#routes) {
-          const state = this.#routes[m.path];
+          const state = this.#routes[m.path]
           if (!isState(state)) {
             const error = new invalidMethod(
               `Tried to set ${m.path} which is a method`
-            );
-            this.#log.error(error.toString());
-            this.#jsonrpc.respond(id, error, false);
-            return;
+            )
+            this.#log.error(error.toString())
+            this.#jsonrpc.respond(id, error, false)
+            return
           }
-          state.value(m.value);
-          state.emit("set", m.value);
-          this.#jsonrpc.respond(id, state.toJson(), true);
+          state.value(m.value)
+          state.emit('set', m.value)
+          this.#jsonrpc.respond(id, state.toJson(), true)
         } else {
-          const error = new NotFound(m.path);
-          this.#log.error(error.toString());
-          this.#jsonrpc.respond(id, error, false);
+          const error = new NotFound(m.path)
+          this.#log.error(error.toString())
+          this.#jsonrpc.respond(id, error, false)
         }
       }
-    );
-    this.#jsonrpc.addListener("call", (_peer: JsonRPC, id: string, m: any) => {
+    )
+    this.#jsonrpc.addListener('call', (_peer: JsonRPC, id: string, m: any) => {
       if (m.path in this.#routes) {
-        const method = this.#routes[m.path];
-        if (!isMethod(method)) {
+        const method = this.#routes[m.path]
+        if (isState(method)) {
           const error = new invalidMethod(
             `Tried to call ${m.path} which is a state`
-          );
-          this.#log.error(error.toString());
-          this.#jsonrpc.respond(id, error, false);
-          return;
+          )
+          this.#log.error(error.toString())
+          this.#jsonrpc.respond(id, error, false)
+          return
         }
-        method.call(m.args);
-        this.#jsonrpc.respond(id, {}, true);
+        method.call(m.args)
+        this.#jsonrpc.respond(id, {}, true)
       } else {
-        const error = new NotFound(m.path);
-        this.#log.error(error.toString());
-        this.#jsonrpc.respond(id, error, false);
+        const error = new NotFound(m.path)
+        this.#log.error(error.toString())
+        this.#jsonrpc.respond(id, error, false)
       }
-    });
+    })
     this.#jsonrpc.addListener(
       fetchSimpleId,
       (_peer: JsonRPC, _id: string, m: PublishMessage) => {
-        this.cache[m.path] = m;
+        this.cache[m.path] = m
         Object.values(this.#fetcher).forEach((fetcher) => {
           if (fetcher.matches(m.path, m.value)) {
-            fetcher.emit("data", m);
+            fetcher.emit('data', m)
           }
-        });
+        })
       }
-    );
+    )
   }
 
-  isConnected = () => this.#jsonrpc._isOpen;
+  isConnected = () => this.#jsonrpc._isOpen
 
   unfetch = (fetcher: Fetcher): Promise<any> => {
     const [id, _f] = Object.entries(this.#fetcher).find(
       ([_id, f]) => f === fetcher
-    ) || [null, null];
-    if (!id) return Promise.reject("Could not find fetcher");
+    ) || [null, null]
+    if (!id) return Promise.reject('Could not find fetcher')
     if (!this.fetchFull()) {
       if (Object.keys(this.#fetcher).length === 2) {
-        const param = { id: fetchSimpleId };
+        const param = { id: fetchSimpleId }
         return this.#jsonrpc
-          .sendRequest("unfetch", param)
+          .sendRequest('unfetch', param)
           .then(() => delete this.#fetcher[id])
-          .then(() => Promise.resolve());
+          .then(() => Promise.resolve())
       } else {
-        delete this.#fetcher[id];
-        return Promise.resolve({});
+        delete this.#fetcher[id]
+        return Promise.resolve({})
       }
     } else {
       return this.#jsonrpc
-        .sendRequest<object[]>("unfetch", { id })
+        .sendRequest<object[]>('unfetch', { id })
         .then((res) => {
-          delete this.#fetcher[id];
-          return Promise.resolve(res);
-        });
+          delete this.#fetcher[id]
+          return Promise.resolve(res)
+        })
     }
-  };
-  fetchFull = () => this.#daemonInfo.features?.fetch === "full";
+  }
+  fetchFull = () => this.#daemonInfo.features?.fetch === 'full'
 
   fetch = (fetcher: Fetcher): Promise<any> => {
     //check if daemon accespts path and value rules for fetching
     // otherwise rules must be applied on peer side
-    const fetchFull = this.fetchFull();
-    const fetcherId = `___f___${this.#fetchId}`;
-    this.#fetchId++;
-    this.#fetcher[fetcherId] = fetcher;
+    const fetchFull = this.fetchFull()
+    const fetcherId = `___f___${this.#fetchId}`
+    this.#fetchId++
+    this.#fetcher[fetcherId] = fetcher
 
     if (fetchFull) {
       const params = {
         ...fetcher.message,
-        id: fetcherId,
-      };
+        id: fetcherId
+      }
       this.#jsonrpc.addListener(
         fetcherId,
         (_peer: JsonRPC, _id: string, args: any) => {
           if (fetcherId in this.#fetcher)
-            this.#fetcher[fetcherId].emit("data", args);
+            this.#fetcher[fetcherId].emit('data', args)
         }
-      );
-      return this.#jsonrpc.sendRequest<object[]>("fetch", params);
+      )
+      return this.#jsonrpc.sendRequest<object[]>('fetch', params)
     }
-    const sub = new Subscription(fetcher.message);
+    const sub = new Subscription(fetcher.message)
     Object.values(this.cache)
       .filter(
         (entry) => sub.matchesPath(entry.path) && sub.matchesValue(entry.value)
       )
       .forEach((entry) => {
-        fetcher.emit("data", entry);
-      });
+        fetcher.emit('data', entry)
+      })
     if (!(fetchSimpleId in this.#fetcher)) {
       //create dummy fetcher to
-      this.#fetcher[fetchSimpleId] = new Fetcher();
-      const params = { id: fetchSimpleId, path: { startsWith: "" } };
-      return this.#jsonrpc.sendRequest<object[]>("fetch", params);
+      this.#fetcher[fetchSimpleId] = new Fetcher()
+      const params = { id: fetchSimpleId, path: { startsWith: '' } }
+      return this.#jsonrpc.sendRequest<object[]>('fetch', params)
     } else {
-      return Promise.resolve({});
+      return Promise.resolve({})
     }
-  };
+  }
 
   /**
    * Actually connect the peer to the Jet Daemon
@@ -266,13 +266,13 @@ export class Peer extends EventEmitter {
   connect = (controller: AbortController = new AbortController()) =>
     this.#jsonrpc
       .connect(controller)
-      .then(() => this.#info())
+      .then(() => this.info())
       .then((daemonInfo) => {
-        this.#daemonInfo = daemonInfo || fallbackDaemonInfo;
-        this.#jsonrpc.sendImmedeate =
-          !this.#daemonInfo.features?.batches || true;
-        return Promise.resolve();
-      });
+        this.#daemonInfo = daemonInfo || fallbackDaemonInfo
+        this.#jsonrpc.sendImmediate =
+          !this.#daemonInfo.features?.batches || true
+        return Promise.resolve()
+      })
 
   /**
    * Close the connection to the Daemon. All associated States and Methods are automatically
@@ -281,7 +281,7 @@ export class Peer extends EventEmitter {
    * @returns {external:Promise}
    *
    */
-  close = () => this.#jsonrpc.close();
+  close = () => this.#jsonrpc.close()
 
   /**
    * Batch operations wrapper. Issue multiple commands to the Daemon
@@ -292,12 +292,12 @@ export class Peer extends EventEmitter {
    */
   batch = (action: () => void) => {
     if (this.#daemonInfo.features?.batches) {
-      this.#jsonrpc.sendImmedeate = false;
+      this.#jsonrpc.sendImmediate = false
     }
-    action();
-    this.#jsonrpc.sendImmedeate = true;
-    return this.#jsonrpc.send();
-  };
+    action()
+    this.#jsonrpc.sendImmediate = true
+    return this.#jsonrpc.send()
+  }
 
   /**
    * Get {State}s and/or {Method}s defined by a Peer.
@@ -305,8 +305,7 @@ export class Peer extends EventEmitter {
    * @param {object} expression A Fetch expression to retrieve a snapshot of the currently matching data.
    * @returns {external:Promise}
    */
-  get = (expression: JsonParams) =>
-    this.#jsonrpc.sendRequest("get", expression);
+  get = (expression: JsonParams) => this.#jsonrpc.sendRequest('get', expression)
 
   /**
    * Adds a state or method to the Daemon.
@@ -316,18 +315,18 @@ export class Peer extends EventEmitter {
    */
   add = (stateOrMethod: Method | State) => {
     if (isState(stateOrMethod)) {
-      stateOrMethod.addListener("change", (newValue: ValueType) => {
-        this.#jsonrpc.sendRequest("change", {
+      stateOrMethod.addListener('change', (newValue: ValueType) => {
+        this.#jsonrpc.sendRequest('change', {
           path: stateOrMethod._path,
-          value: newValue,
-        });
-      });
+          value: newValue
+        })
+      })
     }
-    return this.#jsonrpc.sendRequest("add", stateOrMethod.toJson()).then(() => {
-      this.#routes[stateOrMethod._path] = stateOrMethod;
-      return Promise.resolve();
-    });
-  };
+    return this.#jsonrpc.sendRequest('add', stateOrMethod.toJson()).then(() => {
+      this.#routes[stateOrMethod._path] = stateOrMethod
+      return Promise.resolve()
+    })
+  }
 
   /**
    * Remove a state or method from the Daemon.
@@ -336,7 +335,7 @@ export class Peer extends EventEmitter {
    * @returns {external:Promise} Gets resolved as soon as the content has been removed from the Daemon.
    */
   remove = (stateOrMethod: Method | State) =>
-    this.#jsonrpc.sendRequest("remove", { path: stateOrMethod.path() });
+    this.#jsonrpc.sendRequest('remove', { path: stateOrMethod.path() })
 
   /**
    * Call a {Method} defined by another Peer.
@@ -352,17 +351,17 @@ export class Peer extends EventEmitter {
     callparams: Array<ValueType> | Record<string, ValueType>,
     options: { timeout?: number } = {}
   ): Promise<Object | null> => {
-    const params = { path: path } as JsonParams;
-    if (options.timeout) params.timeout = options.timeout;
-    if (callparams) params.args = callparams;
-    return this.#jsonrpc.sendRequest("call", params);
-  };
+    const params = { path: path } as JsonParams
+    if (options.timeout) params.timeout = options.timeout
+    if (callparams) params.args = callparams
+    return this.#jsonrpc.sendRequest('call', params)
+  }
 
   /**
    * Info
    * @private
    */
-  #info = () => this.#jsonrpc.sendRequest<InfoOptions>("info", {});
+  info = () => this.#jsonrpc.sendRequest<InfoOptions>('info', {})
 
   /**
    * Authenticate
@@ -379,7 +378,7 @@ export class Peer extends EventEmitter {
    * @private
    */
   configure = (params: JsonParams) =>
-    this.#jsonrpc.sendRequest("config", params);
+    this.#jsonrpc.sendRequest('config', params)
 
   /**
    * Set a {State} to another value.
@@ -391,7 +390,7 @@ export class Peer extends EventEmitter {
    *
    */
   set = (path: string, value: ValueType) =>
-    this.#jsonrpc.sendRequest("set", { path, value });
+    this.#jsonrpc.sendRequest('set', { path, value })
 }
 
-export default Peer;
+export default Peer

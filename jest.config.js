@@ -17,9 +17,7 @@ module.exports = {
   roots: ['<rootDir>/test'],
   testRegex: '/test/.*\\.(test|spec)?\\.(ts|tsx)$',
   transform: { '^.+\\.(js|ts|tsx)?$': 'ts-jest' },
-  "transformIgnorePatterns": [
-    "node_modules/(?!uuid)"
-  ],
+  transformIgnorePatterns: ['node_modules/(?!uuid)'],
   testEnvironment: 'jsdom',
   globals: {
     'ts-jest': {

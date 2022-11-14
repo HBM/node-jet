@@ -1,8 +1,8 @@
-"use strict";
+'use strict'
 
-import { AccessType, ValueType } from "../types";
-import { JsonParams } from ".";
-import { EventEmitter } from "../../1_socket";
+import { AccessType, ValueType } from '../types'
+import { JsonParams } from '.'
+import { EventEmitter } from '../../1_socket'
 
 /**
  * Create a Jet State instance
@@ -20,21 +20,21 @@ import { EventEmitter } from "../../1_socket";
  *
  */
 export class State<T = ValueType> extends EventEmitter {
-  _path: string;
-  _value: T;
-  _access: AccessType | null;
-  _readonly: boolean;
+  _path: string
+  _value: T
+  _access: AccessType | null
+  _readonly: boolean
   constructor(
     path: string,
     initialValue: T,
     readonly: boolean = false,
     access: AccessType | null = null
   ) {
-    super();
-    this._path = path;
-    this._value = initialValue;
-    this._access = access;
-    this._readonly = readonly;
+    super()
+    this._path = path
+    this._value = initialValue
+    this._access = access
+    this._readonly = readonly
   }
 
   /**
@@ -44,8 +44,8 @@ export class State<T = ValueType> extends EventEmitter {
    *
    */
   path = () => {
-    return this._path;
-  };
+    return this._path
+  }
 
   /**
    * Replies to a 'set' request. Either set `response.value` or `response.error`.
@@ -61,16 +61,16 @@ export class State<T = ValueType> extends EventEmitter {
 
   value = (newValue: T | undefined = undefined) => {
     if (newValue !== undefined && newValue !== this._value) {
-      this._value = newValue;
-      this.emit("change", newValue);
+      this._value = newValue
+      this.emit('change', newValue)
     }
-    return this._value;
-  };
+    return this._value
+  }
 
   toJson = (): JsonParams<T> => ({
     path: this._path,
-    value: this._value,
-  });
+    value: this._value
+  })
 }
 
-export default State;
+export default State

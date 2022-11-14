@@ -6,7 +6,7 @@ var jet = require('node-jet')
 var d3 = require('d3')
 var shared = require('./shared')
 
-var peer = new jet.Peer({port: 10225});
+var peer = new jet.Peer({ port: 10225 })
 
 var randomColor = function () {
   var hue = Math.abs(Math.random()) * 360
@@ -30,8 +30,7 @@ var renderBall = function (ball) {
       .style('fill', ball.value.color)
     circle.on('click', function () {
       peer.set(ball.path, {
-        color: randomColor(),
-
+        color: randomColor()
       })
     })
   } else if (ball.event === 'change') {
@@ -46,8 +45,7 @@ var renderBall = function (ball) {
       .style('fill', ball.value.color)
   } else {
     circle = balls[ball.path]
-    circle
-      .remove()
+    circle.remove()
     delete balls[ball.path]
   }
 }
@@ -77,20 +75,18 @@ var delayValue = new jet.Fetcher()
     d3.select('input[value="' + speed + '"]').attr('checked', true)
   })
 
+d3.selectAll('input[type="radio"]').on('change', function () {
+  console.log('changing')
+  var radio = d3.select('input[type="radio"]')
+  var delay = speedToDelay[radio.attr('value')]
+  peer.set('balls/delay', delay)
+})
 
-
-d3.selectAll('input[type="radio"]')
-  .on('change', function () {
-    console.log("changing")
-    var radio = d3.select('input[type="radio"]')
-    var delay = speedToDelay[radio.attr('value')]
-    peer.set('balls/delay', delay)
-  })
-
-var svgContainer = d3.select('svg')
+var svgContainer = d3
+  .select('svg')
   .attr('viewBox', '0 0 ' + shared.canvasSize + ' ' + shared.canvasSize)
   .on('click', function () {
-    console.log("clicking")
+    console.log('clicking')
     var pos = d3.mouse('svg')
     var dist = function (x, y) {
       var dx = x - pos[0]
@@ -116,19 +112,19 @@ var svgContainer = d3.select('svg')
     }
   })
 
-d3.select('#circle')
-  .on('click', function () {
-    peer.call('balls/circle', [])
-  })
+d3.select('#circle').on('click', function () {
+  peer.call('balls/circle', [])
+})
 
-d3.select('#square')
-  .on('click', function () {
-    peer.call('balls/square', [])
-  })
+d3.select('#square').on('click', function () {
+  peer.call('balls/square', [])
+})
 
-d3.select('#boom')
-  .on('click', function () {
-    peer.call('balls/boom', [])
-  })
+d3.select('#boom').on('click', function () {
+  peer.call('balls/boom', [])
+})
 
-  peer.connect().then(()=>peer.fetch(allBalls)).then(()=>peer.fetch(delayValue))
+peer
+  .connect()
+  .then(() => peer.fetch(allBalls))
+  .then(() => peer.fetch(delayValue))

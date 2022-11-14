@@ -9,7 +9,6 @@ module.exports = {
   ],
   plugins: ['@typescript-eslint', 'react', 'react-hooks'],
   ignorePatterns: ['**/app/c/libs/**/*.js', '!.prettierrc.js'],
-  // rules: { '@typescript-eslint/ban-ts-ignore': 0 },
   settings: {
     react: {
       version: 'detect'
