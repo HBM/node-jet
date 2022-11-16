@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: 3_jet/log.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: 3_jet/log.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>"use strict";
+var __createBinding = (this &amp;&amp; this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this &amp;&amp; this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this &amp;&amp; this.__importStar) || function (mod) {
+    if (mod &amp;&amp; mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" &amp;&amp; Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Logger = exports.LogLevel = void 0;
+const fs = __importStar(require("fs"));
+var LogLevel;
+(function (LogLevel) {
+    LogLevel[LogLevel["socket"] = 1] = "socket";
+    LogLevel[LogLevel["debug"] = 2] = "debug";
+    LogLevel[LogLevel["info"] = 3] = "info";
+    LogLevel[LogLevel["warn"] = 4] = "warn";
+    LogLevel[LogLevel["error"] = 5] = "error";
+    LogLevel[LogLevel["none"] = 6] = "none";
+})(LogLevel = exports.LogLevel || (exports.LogLevel = {}));
+/**
+ * Logger class used for logging. Logging can be done to a file to the console or to any callback
+ */
+class Logger {
+    logName;
+    logLevel;
+    callBacks;
+    stream;
+    /**
+     * Constructor to create a new Logger instance
+     * @param settings
+     */
+    constructor(settings = { logName: 'None' }) {
+        this.logName = settings.logName;
+        this.logLevel = settings.logLevel || LogLevel['none'];
+        this.callBacks = settings.logCallbacks;
+        if (settings.logFile) {
+            this.stream = fs.createWriteStream(settings.logFile);
+        }
+    }
+    /**
+     * Function that transforms a message into a string of the format "&lt;Date> &lt;Time> &lt;LogName> &lt;LogLevel> &lt;Message>"
+     * @param msg
+     * @param level
+     * @returns string
+     */
+    stringBuilder(msg, level) {
+        const date = new Date(Date.now());
+        return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}\t${this.logName}\t${LogLevel[level]}\t${msg}`;
+    }
+    /**
+     * Function called to log a message. Messages are only logged if the provided message log level is greater then the configured log level
+     * @param msg
+     * @param level
+     * @returns string
+     */
+    log(msg, level = LogLevel.debug) {
+        if (this.logLevel > level) {
+            return;
+        }
+        const logMessage = this.stringBuilder(msg, level);
+        if (this.stream) {
+            this.stream.write(logMessage);
+            this.stream.write('\n');
+        }
+        if (this.callBacks) {
+            this.callBacks.every((cb) => cb(logMessage));
+        }
+    }
+    /**
+     * Log a message on the socket level
+     * @param msg
+     */
+    sock(msg) {
+        this.log(msg, LogLevel.socket);
+    }
+    /**
+     * Log a message on the debug level
+     * @param msg
+     */
+    debug(msg) {
+        this.log(msg, LogLevel.debug);
+    }
+    /**
+     * Log a Info message
+     * @param msg
+     */
+    info(msg) {
+        this.log(msg, LogLevel.info);
+    }
+    /**
+     * Log a warn message
+     * @param msg
+     */
+    warn(msg) {
+        this.log(msg, LogLevel.warn);
+    }
+    /**
+     * Log an error message
+     * @param msg
+     */
+    error(msg) {
+        this.log(msg, LogLevel.error);
+    }
+    /**
+     * Function that can be called to wait until the stream has completed to write everything
+     */
+    flush() {
+        return new Promise((resolve) => {
+            if (this.stream) {
+                const interval = setInterval(() => {
+                    if (!this.stream || !this.stream.pending) {
+                        clearInterval(interval);
+                        resolve();
+                    }
+                });
+            }
+        });
+    }
+    /**
+     * Function to close the Logger and the fileStream in case any fileStream was used
+     */
+    close() {
+        if (this.stream) {
+            this.stream.end();
+        }
+    }
+}
+exports.Logger = Logger;
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="JsonRPC.html">JsonRPC</a></li><li><a href="Logger.html">Logger</a></li><li><a href="MessageSocket.html">MessageSocket</a></li><li><a href="Socket.html">Socket</a></li><li><a href="TCPServer.html">TCPServer</a></li><li><a href="WebsocketServer.html">WebsocketServer</a></li></ul><h3>Global</h3><ul><li><a href="global.html#encode">encode</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.0</a> on Tue Nov 15 2022 16:23:54 GMT+0100 (Central European Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

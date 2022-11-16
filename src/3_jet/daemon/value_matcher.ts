@@ -33,7 +33,7 @@ const createValuePredicates = (valueOptions: Record<string, ValueRule>) => {
   return predicates
 }
 
-export const create = (options: any) => {
+export const create = (options: { value?: Record<string, ValueRule> }) => {
   if (options.value) {
     const predicates = createValuePredicates(options.value)
     return (value: ValueType | undefined) => {

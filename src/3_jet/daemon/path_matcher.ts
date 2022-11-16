@@ -1,7 +1,11 @@
 // import { Notification } from "./fetcher";
 import { InvalidArgument } from '../errors'
-import { FetchOptions } from '../messages'
+import { FetchParams } from '../messages'
 import { PathRule, pathRules } from '../types'
+
+type functionGenerator =
+  | ((what: string) => (path: string) => boolean)
+  | ((what: string[]) => (path: string) => boolean)
 
 const contains = (what: string) => (path: string) => path.indexOf(what) !== -1
 
@@ -47,16 +51,11 @@ const equalsOneOf = (whatArray: string[]) => (path: string) => {
   return false
 }
 
-const negate = (gen: any) => {
-  return (...args: any) => {
-    const f = gen.apply(undefined, args)
-    return () => {
-      return !f.apply(undefined, args)
-    }
-  }
-}
+const negate = (gen: functionGenerator): functionGenerator =>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ((args: any) => () => !gen(args)) as functionGenerator
 
-const generators: Record<PathRule, any> = {
+const generators: Record<PathRule, functionGenerator> = {
   equals: equals,
   equalsNot: negate(equals),
   contains: contains,
@@ -71,7 +70,7 @@ const generators: Record<PathRule, any> = {
   equalsNotOneOf: negate(equalsOneOf)
 }
 
-export const createPathMatcher = (options: FetchOptions) => {
+export const createPathMatcher = (options: FetchParams) => {
   if (!options.path) {
     return () => true
   }
@@ -82,10 +81,9 @@ export const createPathMatcher = (options: FetchOptions) => {
   })
   const predicates: ((path: string) => boolean)[] = []
   pathRules.forEach((name) => {
-    let gen
     let option = po[name]
     if (option) {
-      gen = generators[name]
+      const gen = generators[name]
       if (po.caseInsensitive) {
         if (Array.isArray(option)) {
           option = option.map((op) => op.toLowerCase())
@@ -93,7 +91,8 @@ export const createPathMatcher = (options: FetchOptions) => {
           option = option.toLowerCase()
         }
       }
-      predicates.push(gen(option))
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      predicates.push(gen(option as any))
     }
   })
 

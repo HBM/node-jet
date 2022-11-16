@@ -1,6 +1,6 @@
 import { EventEmitter } from '../../1_socket'
 import { Subscription } from '../daemon/subscription'
-import { FetchOptions } from '../messages'
+import { FetchParams } from '../messages'
 import {
   PathRule,
   ValueType,
@@ -10,7 +10,7 @@ import {
 } from '../types'
 
 export class Fetcher extends EventEmitter {
-  message: FetchOptions = { path: {}, value: {}, sort: {}, id: '' }
+  message: FetchParams = { path: {}, value: {}, sort: {}, id: '' }
   valueRules: Record<string, ValueRule> = {}
 
   constructor() {
@@ -25,7 +25,7 @@ export class Fetcher extends EventEmitter {
   value = (
     operator: Operator,
     value: string | boolean | number,
-    field: string = ''
+    field = ''
   ) => {
     this.message.value[field] = {
       operator,
@@ -53,7 +53,7 @@ export class Fetcher extends EventEmitter {
     return this
   }
 
-  sortByValue = (key: string = '') => {
+  sortByValue = (key = '') => {
     this.message.sort.by = key ? `value.${key}` : 'value'
     return this
   }

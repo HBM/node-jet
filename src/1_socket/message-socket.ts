@@ -1,13 +1,15 @@
 /* istanbul ignore file */
 import { Socket, connect } from 'net'
 import { EventEmitter } from '.'
-import { NO_ERROR_CODE } from '../jet'
 
+/**
+ * Class Message socket
+ */
 export class MessageSocket extends EventEmitter {
   last = Buffer.alloc(0)
   len = -1
   socket: Socket
-  constructor(port: number | Socket, ip: string = '') {
+  constructor(port: number | Socket, ip = '') {
     super()
     if (port instanceof Socket) {
       this.socket = port
@@ -57,9 +59,8 @@ export class MessageSocket extends EventEmitter {
   }
   /**
    * Send.
-   * @private
    */
-  send = (msg: string) => {
+  send(msg: string) {
     const utf8Length = Buffer.byteLength(msg, 'utf8')
     const buf = Buffer.alloc(4 + utf8Length)
     buf.writeUInt32BE(utf8Length, 0)
@@ -71,9 +72,8 @@ export class MessageSocket extends EventEmitter {
   }
   /**
    * Close.
-   * @private
    */
-  close = () => {
+  close() {
     this.socket.end()
   }
   /**
@@ -84,107 +84,48 @@ export class MessageSocket extends EventEmitter {
    * See https://github.com/websockets/ws/blob/master/lib/WebSocket.js#L410
    * That way we can use node-jet with via browserify inside the browser.
    */
-  addEventListener = (
+  addEventListener(
     method: string | symbol,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     listener: { (...args: any[]): void; call?: any }
-  ) => {
-    const onMessage = (data: any, flags: { binary: any }) => {
-      listener.call(
-        this,
-        new MessageEvent(data, flags && flags.binary ? 'Binary' : 'Text', this)
-      )
+  ) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const onMessage = (data: any) => {
+      listener.call(this, new MessageEvent('data', { data: data }))
     }
 
-    const onClose = (code: number, message: any) => {
-      listener.call(this, new CloseEvent(code, message, this))
+    const onClose = (code: string, message: CloseEventInit) => {
+      listener.call(this, new CloseEvent(code, message))
     }
 
-    const onError = (event: any) => {
-      event.target = this
+    const onError = (event: Event) => {
       listener.call(this, event)
     }
 
     const onOpen = () => {
-      listener.call(this, new OpenEvent(this))
+      listener.call(this, new Event('open'))
     }
 
     if (typeof listener === 'function') {
-      if (method === 'message') {
-        // store a reference so we can return the original function from the
-        // addEventListener hook
-        onMessage._listener = listener
-        this.on(method, onMessage)
-      } else if (method === 'close') {
-        // store a reference so we can return the original function from the
-        // addEventListener hook
-        onClose._listener = listener
-        this.on(method, onClose)
-      } else if (method === 'error') {
-        // store a reference so we can return the original function from the
-        // addEventListener hook
-        onError._listener = listener
-        this.on(method, onError)
-      } else if (method === 'open') {
-        // store a reference so we can return the original function from the
-        // addEventListener hook
-        onOpen._listener = listener
-        this.on(method, onOpen)
-      } else {
-        this.on(method, listener)
+      let cb
+      switch (method) {
+        case 'message':
+          cb = onMessage
+          break
+        case 'close':
+          cb = onClose
+          break
+        case 'error':
+          cb = onError
+          break
+        case 'open':
+          cb = onOpen
+          break
+        default:
+          cb = listener
       }
+      this.on(method, cb)
     }
-  }
-}
-
-/**
- * W3C MessageEvent
- *
- * @see http://www.w3.org/TR/html5/comms.html
- * @constructor
- * @api private
- */
-class MessageEvent {
-  data: any
-  type: any
-  target: any
-  constructor(dataArg: any, typeArg: string, target: any) {
-    this.data = dataArg
-    this.type = typeArg
-    this.target = target
-  }
-}
-
-/**
- * W3C CloseEvent
- *
- * @see http://www.w3.org/TR/html5/comms.html
- * @constructor
- * @api private
- */
-class CloseEvent {
-  wasClean: boolean
-  code: number
-  reason: string
-  target: any
-  constructor(code: number, reason: string, target: any) {
-    this.wasClean = typeof code === 'undefined' || code === NO_ERROR_CODE
-    this.code = code
-    this.reason = reason
-    this.target = target
-  }
-}
-
-/**
- * W3C OpenEvent
- *
- * @see http://www.w3.org/TR/html5/comms.html
- * @constructor
- * @api private
- */
-class OpenEvent {
-  target: any
-  constructor(target: any) {
-    this.target = target
   }
 }
 

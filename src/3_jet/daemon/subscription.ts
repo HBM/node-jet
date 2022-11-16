@@ -1,20 +1,22 @@
 'use strict'
 
 import JsonRPC from '../../2_jsonrpc'
-import { FetchOptions } from '../messages'
+import { FetchParams, MethodParams } from '../messages'
 import { ValueType } from '../types'
 import { createPathMatcher } from './path_matcher'
 import { Route } from './route'
 import { create as createValueMatcher } from './value_matcher'
 
+/** A subscription corresponds to a fetch request.
+ * Each subscription contains all the routes that match the subscription  */
 export class Subscription {
   owner?: JsonRPC
   id: string
-  messages: any[] = []
+  messages: MethodParams[] = []
   routes: Route[] = []
   pathMatcher: (path: string) => boolean
   valueMatcher: (value: ValueType | undefined) => boolean
-  constructor(msg: FetchOptions, peer: JsonRPC | undefined = undefined) {
+  constructor(msg: FetchParams, peer: JsonRPC | undefined = undefined) {
     this.pathMatcher = createPathMatcher(msg)
     this.valueMatcher = createValueMatcher(msg)
     this.owner = peer
@@ -50,7 +52,7 @@ export class Subscription {
   matchesPath = (path: string) => this.pathMatcher(path)
   matchesValue = (value: ValueType | undefined) => this.valueMatcher(value)
 
-  enqueue = (msg: any) => {
+  enqueue = (msg: MethodParams) => {
     this.messages.push(msg)
   }
 

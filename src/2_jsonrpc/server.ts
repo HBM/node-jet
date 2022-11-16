@@ -4,7 +4,9 @@ import { Socket } from '../1_socket/socket'
 import { TCPServer, TCPServerConfig } from '../1_socket/tcpserver'
 import { WebServerConfig, WebsocketServer } from '../1_socket/wsserver'
 import { Logger } from '../3_jet/log'
-
+/**
+ * JSONRPCServer instance
+ */
 export class JsonRPCServer extends EventEmitter {
   config: TCPServerConfig & WebServerConfig
   tcpServer!: TCPServer
@@ -15,7 +17,7 @@ export class JsonRPCServer extends EventEmitter {
   constructor(
     log: Logger,
     config: TCPServerConfig & WebServerConfig,
-    batches: boolean = false
+    batches = false
   ) {
     super()
     this.config = config

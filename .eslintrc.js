@@ -6,7 +6,7 @@ module.exports = {
     'plugin:prettier/recommended'
   ],
   plugins: ['@typescript-eslint'],
-  ignorePatterns: ['!.prettierrc.js'],
+  ignorePatterns: ['!.prettierrc.js', 'examples/**/*', 'bench/**/*'],
   settings: {
     react: {
       version: 'detect'

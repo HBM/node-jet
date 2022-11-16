@@ -3,24 +3,22 @@
  */
 import { JsonParams } from '.'
 import { EventEmitter } from '../../1_socket'
-import { AccessType } from '../types'
+import { ValueType } from '../types'
 /**
- * Method
+ * A method is a path that can be called. The peer.call method can be used to call methods
  */
 export class Method extends EventEmitter {
   _path: string
-  _access: AccessType | null
-  constructor(path: string, access: AccessType | null = null) {
+  constructor(path: string) {
     super()
     this._path = path
-    this._access = access
   }
 
   path = () => {
     return this._path
   }
 
-  call = (args: any) => {
+  call = (args: ValueType[] | Record<string, ValueType> | undefined) => {
     this.emit('call', args)
   }
 
@@ -28,7 +26,6 @@ export class Method extends EventEmitter {
     const params: JsonParams = {
       path: this._path
     }
-    if (this._access) params.access = this._access
     return params
   }
 }

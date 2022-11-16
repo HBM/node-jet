@@ -1,7 +1,7 @@
 'use strict'
 
 import { Logger, logger } from '../log'
-import { FetchOptions, PathParams } from '../messages'
+import { FetchParams, PathParams } from '../messages'
 import { createPathMatcher } from './path_matcher'
 import { Subscription } from './subscription'
 import { Route } from './route'
@@ -54,70 +54,28 @@ class InfoObject implements InfoOptions {
   }
 }
 
+interface DaemonOptions {
+  log?: logger
+}
 /**
  * Creates a Daemon instance
  *
- * @classdesc
  * In most cases you need one Jet Daemon instance running.
  * All Peers connect to it as in typical master(Daemon) slave(Peer)
  * architectures.
  *
- * ```javascript
- * var jet = require('node-jet')
- * var daemon = new jet.Daemon()
- * ```
- *
- * If you want to use authentication / login, you must provide a user object.
- *
- * ```javascript
- * var daemon = new jet.Daemon({
- *   users: {
- *    john: {
- *      password: '12345',
- *      auth: {
- *        fetchGroups: ['users', 'public'],
- *        setGroups: ['users'],
- *        callGroups: ['users']
- *      }
- *    }
- *  },
- *  bob: {
- *    ...
- *  }
- * })
- * ```
- *
- * @class
- * @name Daemon
- * @param {Object} [options] Options for the daemon creation
- * @param {Object} [options.users] Access restrictions and passwords for each user
- * @returns {Daemon} The newly created Daemon instance.
- *
  */
-interface User {
-  password?: string
-  auth?: any
-}
-// interface ParamObject {
-//   value: object;
-// }
-
-interface DaemonOptions {
-  log?: logger
-  users?: Record<string, User>
-}
-
-const defaultOptions: DaemonOptions = {
-  users: {}
-}
-
 export class Daemon extends EventEmitter {
   infoObject: InfoObject
   log: Logger
   jsonRPCServer!: JsonRPCServer
   routes: Record<string, Route> = {}
   subscriber: Subscription[] = []
-  constructor(options: DaemonOptions & InfoOptions = defaultOptions) {
+  /**
+   * Constructor for creating the instance
+   * @param {DaemonOptions & InfoOptions} [options] Options for the daemon creation
+   */
+  constructor(options: DaemonOptions & InfoOptions = {}) {
     super()
     this.infoObject = new InfoObject(options)
     this.log = new Logger(options.log)
@@ -158,8 +116,8 @@ export class Daemon extends EventEmitter {
   change synchronous: First all Peers are informed about the new value then the message is acknowledged
   */
   change = (peer: JsonRPC, id: string, msg: PathParams) => {
-    if (msg.path in this.routes) {
-      this.routes[msg.path].updateValue(msg.value!)
+    if (msg.path in this.routes && msg.value) {
+      this.routes[msg.path].updateValue(msg.value)
       this.respond(peer, id)
     } else {
       peer.respond(id, new NotFound(), false)
@@ -170,7 +128,7 @@ export class Daemon extends EventEmitter {
   Fetch as Notification: The message is acknowledged,then the peer is informed of all the states matching the fetchrule
   Fetch synchronous: First the peer is informed of all the states matching the fetchrule then the message is acknowledged
   */
-  fetch = (peer: JsonRPC, id: string, msg: FetchOptions) => {
+  fetch = (peer: JsonRPC, id: string, msg: FetchParams) => {
     if (
       this.simpleFetch() &&
       this.subscriber.find((sub) => sub.owner === peer)
@@ -207,7 +165,7 @@ export class Daemon extends EventEmitter {
   /*
   Unfetch synchronous: Unfetch fires and no more updates are send with the given fetch_id. Message is acknowledged
   */
-  unfetch = (peer: JsonRPC, id: string, params: any) => {
+  unfetch = (peer: JsonRPC, id: string, params: FetchParams) => {
     const subIdx = this.subscriber.findIndex((fetch) => fetch.id === params.id)
     if (subIdx < 0) {
       peer.respond(
@@ -233,7 +191,7 @@ export class Daemon extends EventEmitter {
   /*
   Get synchronous: Only synchronous implementation-> all the values are added to an array and send as response
   */
-  get = (peer: JsonRPC, id: string, params: any) => {
+  get = (peer: JsonRPC, id: string, params: FetchParams) => {
     const matcher = createPathMatcher(params)
     const resp = Object.keys(this.routes)
       .filter((route) => matcher(route))
@@ -246,7 +204,7 @@ export class Daemon extends EventEmitter {
   /*
   remove synchronous: Only synchronous implementation-> state is removed then message is acknowledged
   */
-  remove = (peer: JsonRPC, id: string, params: any) => {
+  remove = (peer: JsonRPC, id: string, params: PathParams) => {
     const route = params.path
     if (!(route in this.routes)) {
       peer.respond(id, new NotFound(route), false)
@@ -269,71 +227,23 @@ export class Daemon extends EventEmitter {
   /*
   Info requests: Info requests are always synchronous
   */
-  info = (peer: JsonRPC, id: string, _params: any) => {
+  info = (peer: JsonRPC, id: string) => {
     peer.respond(id, this.infoObject, true)
   }
 
-  configure = (peer: JsonRPC, id: string, _params: any) => {
+  configure = (peer: JsonRPC, id: string) => {
     peer.respond(id, {}, true)
   }
 
-  /**
-   * Connection event.
-   *
-   * @event Daemon#connection
-   * @type {Peer} The new connected Peer
-   *
-   */
-
-  /**
-   * Starts listening on the specified ports (on all interfaces). options must be an object.
-   *
-   * `options.wsPort` and `options.server` must not be used simultaneously. `options.tcpPort` and `options.wsPort` /
-   * `options.server` can both be defined to support the "trivial" and the websocket protocol at the same time.
-   * Browser Peers can only connect via Websocket.
-   *
-   * This shows how to use custom ports:
-   * ```javascript
-   * var jet = require('node-jet')
-   * var daemon = new jet.Daemon()
-   * daemon.listen({
-   *   tcpPort: 1234,
-   *   wsPort: 4321
-   * })
-   *
-   * ```
-   *
-   * This shows how to attach to an http webserver:
-   * ```javascript
-   * var http = require('http')
-   * var jet = require('node-jet')
-   *
-   * var httpServer = http.createServer(function(req, res) {
-   *   // serve your stuff
-   * })
-   * httpServer.listen(80)
-   *
-   * var daemon = new jet.Daemon()
-   * daemon.listen({
-   *   server: httpServer
-   * })
-   * ```
-   *
-   * @function listen
-   * @memberof Daemon
-   * @param [options] The listen options
-   * @param [options.tcpPort=11122] The port for the "trivial" tcp protocol
-   * @param [options.wsPort=11123] The port for the Websocket protocol
-   * @param [options.server] An existing http or https server to hook onto providing Websocket protocol.
-   * @fires Daemon#connection
-   * @fires Daemon#disconnect
-   *
-   */
   filterRoutesByPeer = (peer: JsonRPC): string[] =>
     Object.entries(this.routes)
-      .filter(([_path, route]) => route.owner === peer)
+      .filter(([, route]) => route.owner === peer)
       .map((el) => el[0])
 
+  /**
+   * This function starts to listen on the specified port
+   * @param listenOptions
+   */
   listen = (
     listenOptions: TCPServerConfig & WebServerConfig = defaultListenOptions
   ) => {
@@ -383,7 +293,6 @@ export class Daemon extends EventEmitter {
             })
       )
     })
-
     this.jsonRPCServer.addListener('disconnect', (peer: JsonRPC) => {
       this.filterRoutesByPeer(peer).forEach((route) => {
         this.log.warn('Removing route that was owned by peer')

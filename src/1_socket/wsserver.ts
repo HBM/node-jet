@@ -8,10 +8,12 @@ export interface WebServerConfig {
   url?: string
   wsPort?: number
   server?: HTTPServer
-  wsGetAuthentication?: any
   wsPingInterval?: number
 }
 
+/**
+ * Class implementation of a WS server. This implementation only runs in a node.js environment
+ */
 export class WebsocketServer extends EventEmitter {
   config: WebServerConfig
   wsServer!: WsServer
@@ -20,20 +22,13 @@ export class WebsocketServer extends EventEmitter {
     super()
     this.config = config
   }
-  listen = () => {
+  /**
+   * method to start listening on incoming websocket connections. Incoming websocket connections are validated if they accept jet protocol
+   */
+  listen() {
     this.wsServer = new WsServer({
       port: this.config.wsPort,
       server: this.config.server,
-      verifyClient: this.config.wsGetAuthentication
-        ? (info: { req: any }) => {
-            const auth = this.config.wsGetAuthentication(info)
-            if (typeof auth === 'object') {
-              info.req._jetAuth = auth
-              return true
-            }
-            return false
-          }
-        : undefined,
       handleProtocols: (protocols: Set<string>) => {
         if (protocols.has('jet')) {
           return 'jet'
@@ -42,9 +37,8 @@ export class WebsocketServer extends EventEmitter {
         }
       }
     })
-    this.wsServer.on('connection', (ws: WebSocket, _req: any) => {
-      const sock = new Socket()
-      sock.addNativeSocket(ws)
+    this.wsServer.on('connection', (ws: WebSocket) => {
+      const sock = new Socket(ws)
       sock.id = `ws_${this.connectionId}`
       this.connectionId++
       const pingMs = this.config.wsPingInterval || 5000
@@ -67,7 +61,8 @@ export class WebsocketServer extends EventEmitter {
       this.emit('connection', sock)
     })
   }
-  close = () => {
+  /** Method to stop Websocket server */
+  close() {
     this.wsServer.close()
   }
 }

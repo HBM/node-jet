@@ -7,5 +7,3 @@ export const isBrowser = typeof window !== 'undefined'
 export const WebSocketImpl = isNodeJs ? ws : WebSocket
 
 export const EventEmitter = ee
-
-export type socketEvents = 'open' | 'close' | 'error' | 'message'

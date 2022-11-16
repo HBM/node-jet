@@ -1,8 +1,9 @@
 import { State } from './peer/state'
 import { Method } from './peer/method'
-import { JSONRPCError } from './errors'
-import { ValueType } from './types'
+import { JsonRPCError, JSONRPCError } from './errors'
+import { ErrorType, ValueType } from './types'
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const getValue = (o: any, field: string) => {
   if (field === '') return o
   const keys = field.split('.')
@@ -16,20 +17,25 @@ export const getValue = (o: any, field: string) => {
   }
   return o
 }
-export const errorObject = (err: any) => {
+const isJsonRPCError = (
+  err: JsonRPCError | string | ErrorType
+): err is JsonRPCError =>
+  typeof err === 'object' && 'code' in err && 'message' in err
+
+export const errorObject = (err: JSONRPCError | ErrorType | string) => {
   let data
-  if (typeof err === 'object' && err.code && err.message) {
+  if (isJsonRPCError(err)) {
     return err as JSONRPCError
   } else {
-    data = {} as any
-    if (typeof err === 'object') {
+    data = {} as ErrorType
+    if (typeof err === 'string') {
+      data.message = err
+      data.stack = 'no stack available'
+    } else {
       data.message = err.message
       data.stack = err.stack
       data.lineNumber = err.lineNumber
       data.fileName = err.fileName
-    } else {
-      data.message = err
-      data.stack = 'no stack available'
     }
     return {
       code: -32603,

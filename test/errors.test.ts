@@ -12,7 +12,6 @@ import {
   ParseError,
   PeerTimeout
 } from '../src/3_jet/errors'
-import { fullFetcherPeer } from './mocks/peer'
 describe('Testing errors', () => {
   it('PeerTimeoutError', () => {
     const err = new PeerTimeout()

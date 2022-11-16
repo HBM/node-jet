@@ -1,6 +1,6 @@
 'use strict'
 
-import { AccessType, ValueType } from '../types'
+import { ValueType } from '../types'
 import { JsonParams } from '.'
 import { EventEmitter } from '../../1_socket'
 
@@ -22,18 +22,11 @@ import { EventEmitter } from '../../1_socket'
 export class State<T = ValueType> extends EventEmitter {
   _path: string
   _value: T
-  _access: AccessType | null
   _readonly: boolean
-  constructor(
-    path: string,
-    initialValue: T,
-    readonly: boolean = false,
-    access: AccessType | null = null
-  ) {
+  constructor(path: string, initialValue: T, readonly = false) {
     super()
     this._path = path
     this._value = initialValue
-    this._access = access
     this._readonly = readonly
   }
 
@@ -43,9 +36,7 @@ export class State<T = ValueType> extends EventEmitter {
    * @returns {string} The state's path.
    *
    */
-  path = () => {
-    return this._path
-  }
+  path = () => this._path
 
   /**
    * Replies to a 'set' request. Either set `response.value` or `response.error`.

@@ -2,7 +2,11 @@
 import { EventEmitter } from '../../1_socket'
 import JsonRPC from '../../2_jsonrpc'
 import { ValueType } from '../types'
-
+/**
+ * A Route is a path and corresponds to a state.
+ * The daemon keeps a local cache of all registered routes and all momentary values.
+ * The corresponding owner of a route is also remembered
+ */
 export class Route extends EventEmitter {
   owner: JsonRPC
   value?: ValueType

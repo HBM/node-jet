@@ -1,6 +1,31 @@
 import { InvalidArgument, invalidRequest, JSONRPCError } from './errors'
 import { EventType, OperatorType, ValueType } from './types'
 
+export interface MethodParams {
+  path: string
+  event: string
+  value?: ValueType
+}
+
+export interface UnfetchParams {
+  id: string
+}
+export interface FetchParams {
+  path: Record<string, string | string[]>
+  value: Record<
+    string,
+    { operator: OperatorType; value: number | boolean | string }
+  >
+  id: string
+  sort: {
+    asArray?: boolean
+    descending?: boolean
+    by?: string
+    from?: number
+    to?: number
+  }
+}
+export type MessageParams = MethodParams | FetchParams | UnfetchParams
 export interface Message {
   id?: string
 }
@@ -48,17 +73,19 @@ export interface ErrorMessage extends Message {
 export interface MethodRequest extends Message {
   id: string
   method: string
-  params?: object
+  params?: MessageParams
 }
-export interface InfoRequest extends MethodRequest {}
-export interface ConfigureRequest extends MethodRequest {}
 
-export interface PathRequest extends MethodRequest {
+export interface PathRequest extends Message {
+  id: string
+  method: string
   params: {
     path: string
   }
 }
-export interface UpdateRequest extends MethodRequest {
+export interface UpdateRequest extends Message {
+  id: string
+  method: string
   params: {
     path: string
     value: ValueType
@@ -68,34 +95,17 @@ export interface UpdateRequest extends MethodRequest {
 export interface PathParams {
   path: string
   value?: ValueType
+  args?: ValueType[] | Record<string, ValueType>
 }
 export interface AddRequest extends PathRequest {
   params: PathParams
 }
-export interface SetRequest extends PathRequest {}
-export interface CallRequest extends PathRequest {}
-export interface RemoveRequest extends PathRequest {}
 
-export interface FetchOptions {
-  path: Record<string, string | string[]>
-  value: Record<
-    string,
-    { operator: OperatorType; value: number | boolean | string }
-  >
-  id: string
-  sort: {
-    asArray?: boolean
-    descending?: boolean
-    by?: string
-    from?: number
-    to?: number
-  }
-}
 export interface GetRequest extends MethodRequest {
-  params: FetchOptions
+  params: FetchParams
 }
 export interface FetchRequest extends MethodRequest {
-  params: FetchOptions
+  params: FetchParams
 }
 export interface UnFetchRequest extends MethodRequest {
   params: { id: string }

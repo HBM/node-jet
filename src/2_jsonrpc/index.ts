@@ -9,12 +9,14 @@ import {
   castMessage,
   ErrorMessage,
   Message,
+  MessageParams,
   MethodRequest,
   ResultMessage
 } from '../3_jet/messages'
 import { logger, Logger } from '../3_jet/log'
 import { Socket } from '../1_socket/socket'
 import { EventEmitter } from '../1_socket'
+import { ValueType } from '../3_jet/types'
 /**
  * Helper shorthands.
  */
@@ -22,7 +24,7 @@ const encode = JSON.stringify
 const decode = JSON.parse
 
 export type resultCallback =
-  | ((_success: boolean, _result?: any) => void)
+  | ((_success: boolean, _result?: object) => void)
   | undefined
 
 const isResultMessage = (msg: Message): msg is ResultMessage => {
@@ -39,23 +41,31 @@ export interface JsonRpcConfig {
   log?: logger
 }
 /**
- * JsonRPC constructor.
- * @private
+ * JsonRPC Instance
+ * class used to interpret jsonrpc messages. This class can parse incoming socket messages to jsonrpc messages and fires events
  */
+
 export class JsonRPC extends EventEmitter {
   sock!: Socket
   config: JsonRpcConfig
   messages: Array<Message> = []
-  fakeContext: any
   messageId = 1
   _isOpen = false
-  openRequests: Record<string, { resolve: Function; reject: Function }> = {}
-  batchPromises: Promise<object>[] = []
-  requestId: string = ''
+  openRequests: Record<
+    string,
+    {
+      resolve: (value: ValueType | PromiseLike<ValueType>) => void
+      reject: (value: JsonRPCError | PromiseLike<JsonRPCError>) => void
+    }
+  > = {}
+  batchPromises: Promise<ValueType>[] = []
+  requestId = ''
   resolveDisconnect!: (value: void | PromiseLike<void>) => void
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   rejectDisconnect!: (reason?: any) => void
   disconnectPromise!: Promise<void>
   resolveConnect!: (value: void | PromiseLike<void>) => void
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   rejectConnect!: (reason?: any) => void
   connectPromise!: Promise<void>
   logger: Logger
@@ -74,19 +84,27 @@ export class JsonRPC extends EventEmitter {
       this.subscribeToSocketEvents()
     }
   }
-
+  /**
+   * Method called before disconnecting from the device to initialize Promise, that is only resolved when disconnected
+   */
   createDisconnectPromise = () => {
     this.disconnectPromise = new Promise<void>((resolve, reject) => {
       this.resolveDisconnect = resolve
       this.rejectDisconnect = reject
     })
   }
+  /**
+   * Method called before connecting to the device to initialize Promise, that is only resolved when a connection is established
+   */
   createConnectPromise = () => {
     this.connectPromise = new Promise<void>((resolve, reject) => {
       this.resolveConnect = resolve
       this.rejectConnect = reject
     })
   }
+  /**
+   * Method called to subscribe to all relevant socket events
+   */
   subscribeToSocketEvents = () => {
     this.sock.addEventListener('error', this._handleError)
     this.sock.addEventListener('message', this._handleMessage)
@@ -107,7 +125,10 @@ export class JsonRPC extends EventEmitter {
       this.createConnectPromise()
     })
   }
-
+  /**
+   * Method to connect to a Server instance. Either TCP Server or Webserver
+   * @params controller: an AbortController that can be used to abort the connection
+   */
   connect = (
     controller: AbortController = new AbortController()
   ): Promise<void> => {
@@ -134,10 +155,10 @@ export class JsonRPC extends EventEmitter {
     return this.disconnectPromise
   }
 
-  _handleError = (err: { message: any }) => {
-    this.logger.error(`Error in socket connection: ${err.message}`)
+  _handleError = (err: Event) => {
+    this.logger.error(`Error in socket connection: ${err}`)
     if (!this._isOpen) {
-      this.rejectConnect(err.message)
+      this.rejectConnect(err)
     }
   }
   /**
@@ -145,23 +166,29 @@ export class JsonRPC extends EventEmitter {
    *
    * @api private
    */
-  _handleMessage = (event: { data: any }) => {
+  _handleMessage = (event: MessageEvent) => {
     const message = event.data
     this.logger.sock(`Received message: ${message}`)
+    let decoded
     try {
-      const decoded = decode(message)
+      decoded = decode(message)
       if (Array.isArray(decoded)) {
-        decoded.forEach((singleMessage) => {
-          this._dispatchSingleMessage(singleMessage)
-        })
+        for (let i = 0; i < decoded.length; i++) {
+          this._dispatchSingleMessage(decoded[i])
+        }
       } else {
         this._dispatchSingleMessage(decoded)
       }
       this.send().catch((err) => {
         this.logger.error(err)
       })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
-      this.respond('', new ParseError(message), false)
+      this.respond(
+        (decoded && decoded.id) || '',
+        new ParseError(message),
+        false
+      )
       this.logger.error(err)
     }
   }
@@ -189,7 +216,7 @@ export class JsonRPC extends EventEmitter {
   _dispatchResponse = (message: ResultMessage | ErrorMessage) => {
     const mid = message.id
     if (isResultMessage(message)) {
-      this.successCb(mid, message.result as any)
+      this.successCb(mid, message.result)
     }
     if (isErrorMessage(message)) {
       this.errorCb(mid, message.error)
@@ -214,14 +241,14 @@ export class JsonRPC extends EventEmitter {
   /**
    * Queue.
    */
-  queue = <T extends Message>(message: T, id = '') => {
+  queue = <T extends MessageParams | Message>(message: T, id = '') => {
     if (!this._isOpen) {
       return Promise.reject(new ConnectionClosed())
     }
     if (id) {
       this.messages.push({ method: id, params: message } as Message)
     } else {
-      this.messages.push(message)
+      this.messages.push(message as Message)
     }
     if (this.sendImmediate) {
       this.send()
@@ -254,11 +281,17 @@ export class JsonRPC extends EventEmitter {
       })
   }
 
-  respond = (id: string, params: object, success: boolean) => {
-    this.queue({ id: id, [success ? 'result' : 'error']: params })
+  /**
+   * Responding a request
+   * @param id the request id to respond to
+   * @param params the result of the request
+   * @param success if the request was fulfilled
+   */
+  respond = (id: string, params: ValueType, success: boolean) => {
+    this.queue({ id, [success ? 'result' : 'error']: params })
   }
 
-  successCb = (id: string, result: any) => {
+  successCb = (id: string, result: ValueType) => {
     if (id in this.openRequests) {
       this.openRequests[id].resolve(result)
       delete this.openRequests[id]
@@ -271,26 +304,25 @@ export class JsonRPC extends EventEmitter {
     }
   }
   /**
-   * Service.
+   * Method to send a request to a JSONRPC Server.
    */
-  sendRequest = <T extends object>(
+  sendRequest = <T extends ValueType>(
     method: string,
     params: JsonParams,
     immediate: boolean | undefined = undefined
   ): Promise<T> => {
-    const promise = new Promise<T>((resolve, reject) => {
+    const promise = new Promise<ValueType>((resolve, reject) => {
       if (!this._isOpen) {
         reject(new ConnectionClosed())
       } else {
         const rpcId = this.messageId.toString()
         this.messageId++
         this.openRequests[rpcId] = { resolve, reject }
-        const message: MethodRequest = {
+        this.queue({
           id: rpcId.toString(),
-          method: method,
-          params: params
-        }
-        this.queue(message)
+          method,
+          params
+        })
         if (immediate) {
           this.send()
         }
@@ -301,7 +333,7 @@ export class JsonRPC extends EventEmitter {
       return promise.catch((err) => {
         this.logger.error(JSON.stringify(err))
         return Promise.reject(err)
-      })
+      }) as Promise<T>
     else {
       return Promise.resolve({} as T)
     }

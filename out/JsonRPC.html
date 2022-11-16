@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Class: JsonRPC</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Class: JsonRPC</h1>
+
+    
+
+
+
+
+<section>
+
+<header>
+    
+        <h2><span class="attribs"><span class="type-signature"></span></span>JsonRPC<span class="signature">()</span><span class="type-signature"></span></h2>
+        
+            <div class="class-description">JsonRPC Instance
+class used to interpret jsonrpc messages. This class can parse incoming socket messages to jsonrpc messages and fires events</div>
+        
+    
+</header>
+
+<article>
+    <div class="container-overview">
+    
+        
+
+    
+    <h2>Constructor</h2>
+    
+
+    
+    <h4 class="name" id="JsonRPC"><span class="type-signature"></span>new JsonRPC<span class="signature">()</span><span class="type-signature"></span></h4>
+    
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="2_jsonrpc_index.js.html">2_jsonrpc/index.js</a>, <a href="2_jsonrpc_index.js.html#line23">line 23</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+    </div>
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <h3 class="subsection-title">Members</h3>
+
+        
+            
+<h4 class="name" id="_dispatchRequest"><span class="type-signature"></span>_dispatchRequest<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    _dispatchRequest.
+Handles both method calls and fetchers (notifications)
+</div>
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="2_jsonrpc_index.js.html">2_jsonrpc/index.js</a>, <a href="2_jsonrpc_index.js.html#line191">line 191</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="_dispatchResponse"><span class="type-signature"></span>_dispatchResponse<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    _dispatchResponse
+</div>
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="2_jsonrpc_index.js.html">2_jsonrpc/index.js</a>, <a href="2_jsonrpc_index.js.html#line176">line 176</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="_dispatchSingleMessage"><span class="type-signature"></span>_dispatchSingleMessage<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    _dispatchSingleMessage
+</div>
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="2_jsonrpc_index.js.html">2_jsonrpc/index.js</a>, <a href="2_jsonrpc_index.js.html#line163">line 163</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="_handleMessage"><span class="type-signature"></span>_handleMessage<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    _dispatchMessage
+</div>
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="2_jsonrpc_index.js.html">2_jsonrpc/index.js</a>, <a href="2_jsonrpc_index.js.html#line135">line 135</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="close"><span class="type-signature"></span>close<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    Close.
+</div>
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="2_jsonrpc_index.js.html">2_jsonrpc/index.js</a>, <a href="2_jsonrpc_index.js.html#line116">line 116</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="connect"><span class="type-signature"></span>connect<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    Method to connect to a Server instance. Either TCP Server or Webserver
+</div>
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="2_jsonrpc_index.js.html">2_jsonrpc/index.js</a>, <a href="2_jsonrpc_index.js.html#line102">line 102</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="createConnectPromise"><span class="type-signature"></span>createConnectPromise<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    Method called before connecting to the device to initialize Promise, that is only resolved when a connection is established
+</div>
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="2_jsonrpc_index.js.html">2_jsonrpc/index.js</a>, <a href="2_jsonrpc_index.js.html#line68">line 68</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="createDisconnectPromise"><span class="type-signature"></span>createDisconnectPromise<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    Method called before disconnecting from the device to initialize Promise, that is only resolved when disconnected
+</div>
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="2_jsonrpc_index.js.html">2_jsonrpc/index.js</a>, <a href="2_jsonrpc_index.js.html#line59">line 59</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="queue"><span class="type-signature"></span>queue<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    Queue.
+</div>
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="2_jsonrpc_index.js.html">2_jsonrpc/index.js</a>, <a href="2_jsonrpc_index.js.html#line203">line 203</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="respond"><span class="type-signature"></span>respond<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    Responding a request
+</div>
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="2_jsonrpc_index.js.html">2_jsonrpc/index.js</a>, <a href="2_jsonrpc_index.js.html#line247">line 247</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="send"><span class="type-signature"></span>send<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    Send.
+</div>
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="2_jsonrpc_index.js.html">2_jsonrpc/index.js</a>, <a href="2_jsonrpc_index.js.html#line220">line 220</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="sendRequest"><span class="type-signature"></span>sendRequest<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    Method to send a request to a JSONRPC Server.
+</div>
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="2_jsonrpc_index.js.html">2_jsonrpc/index.js</a>, <a href="2_jsonrpc_index.js.html#line265">line 265</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="subscribeToSocketEvents"><span class="type-signature"></span>subscribeToSocketEvents<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    Method called to subscribe to all relevant socket events
+</div>
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="2_jsonrpc_index.js.html">2_jsonrpc/index.js</a>, <a href="2_jsonrpc_index.js.html#line77">line 77</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+    
+
+    
+
+    
+
+    
+</article>
+
+</section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="JsonRPC.html">JsonRPC</a></li><li><a href="Logger.html">Logger</a></li><li><a href="MessageSocket.html">MessageSocket</a></li><li><a href="Socket.html">Socket</a></li><li><a href="TCPServer.html">TCPServer</a></li><li><a href="WebsocketServer.html">WebsocketServer</a></li></ul><h3>Global</h3><ul><li><a href="global.html#encode">encode</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.0</a> on Tue Nov 15 2022 16:23:54 GMT+0100 (Central European Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

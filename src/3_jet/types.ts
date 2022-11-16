@@ -78,4 +78,11 @@ export interface AccessType {
 }
 export type ValueType = string | number | object | boolean
 
+export type ErrorType = {
+  message: string
+  stack: string
+  lineNumber: number
+  fileName: string
+}
+
 export const fetchSimpleId = 'fetch_all'
