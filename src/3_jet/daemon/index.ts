@@ -192,13 +192,17 @@ export class Daemon extends EventEmitter {
   Get synchronous: Only synchronous implementation-> all the values are added to an array and send as response
   */
   get = (peer: JsonRPC, id: string, params: FetchParams) => {
-    const matcher = createPathMatcher(params)
-    const resp = Object.keys(this.routes)
-      .filter((route) => matcher(route))
-      .map((route: string) => {
-        return { path: route, value: this.routes[route].value }
-      })
-    peer.respond(id, resp, true)
+    try {
+      const matcher = createPathMatcher(params)
+      const resp = Object.keys(this.routes)
+        .filter((route) => matcher(route))
+        .map((route: string) => {
+          return { path: route, value: this.routes[route].value }
+        })
+      peer.respond(id, resp, true)
+    } catch (ex: any) {
+      peer.respond(id, ex, false)
+    }
   }
 
   /*

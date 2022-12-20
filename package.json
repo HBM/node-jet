@@ -50,7 +50,8 @@
     "np": "^7.6.2",
     "prettier": "^2.7.1",
     "ts-jest": "^29.0.3",
-    "typescript": "^4.8.4",
+    "tsc": "^2.0.4",
+    "typescript": "^4.9.4",
     "wait-for-expect": "^3.0.2"
   },
   "main": "./lib/index.js",
@@ -66,7 +67,8 @@
   "scripts": {
     "test": "jest",
     "release": "npx np",
-    "build": "npx tsc",
+    "build": "tsc",
+    "server": "node examples/server",
     "prettier": "prettier --write \"./**/*.{js,jsx,ts,tsx,json,html}\"",
     "eslint": "eslint --max-warnings 0 \"{src, test}/**/*.{js,jsx,ts,tsx,json,html}\"",
     "start": "./bin/jetd.js"

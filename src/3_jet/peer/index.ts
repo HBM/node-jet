@@ -179,12 +179,12 @@ export class Peer extends EventEmitter {
           .then(() => Promise.resolve([]))
       } else {
         delete this.#fetcher[id]
-        return Promise.resolve([])
+        return Promise.resolve()
       }
     } else {
-      return this.#jsonrpc.sendRequest('unfetch', { id }).then((res) => {
+      return this.#jsonrpc.sendRequest('unfetch', { id }).then(() => {
         delete this.#fetcher[id]
-        return Promise.resolve(res)
+        return Promise.resolve()
       })
     }
   }
@@ -210,7 +210,9 @@ export class Peer extends EventEmitter {
             this.#fetcher[fetcherId].emit('data', args)
         }
       )
-      return this.#jsonrpc.sendRequest('fetch', params)
+      return this.#jsonrpc
+        .sendRequest('fetch', params)
+        .then(() => Promise.resolve())
     }
     const sub = new Subscription(fetcher.message)
     Object.values(this.cache)
@@ -224,9 +226,11 @@ export class Peer extends EventEmitter {
       //create dummy fetcher to
       this.#fetcher[fetchSimpleId] = new Fetcher()
       const params = { id: fetchSimpleId, path: { startsWith: '' } }
-      return this.#jsonrpc.sendRequest('fetch', params)
+      return this.#jsonrpc
+        .sendRequest('fetch', params)
+        .then(() => Promise.resolve())
     } else {
-      return Promise.resolve([])
+      return Promise.resolve()
     }
   }
 
@@ -329,7 +333,9 @@ export class Peer extends EventEmitter {
    * @returns {external:Promise} Gets resolved as soon as the content has been removed from the Daemon.
    */
   remove = (stateOrMethod: Method | State) =>
-    this.#jsonrpc.sendRequest('remove', { path: stateOrMethod.path() })
+    this.#jsonrpc
+      .sendRequest('remove', { path: stateOrMethod.path() })
+      .then(() => Promise.resolve())
 
   /**
    * Call a {Method} defined by another Peer.
