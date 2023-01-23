@@ -85,12 +85,10 @@ var todoStates = {}
 // Provide a "todo/add" method to create new todos
 var jetState = new jet.State('todo/value', { test: 4 })
 jetState.on('set', (value) => {
-  console.log('Changed value', value)
   jetState.value(12345)
 })
 var addTodo = new jet.Method('todo/add')
 addTodo.on('call', (args) => {
-  // console.log("Called add",args)
   var title = args[0]
   var todo = new Todo(title)
 
@@ -127,7 +125,6 @@ clearCompletedTodos.on('call', function (test) {
 // Provide a "todo/remove" method to delete a certain todo
 var setCompleted = new jet.Method('todo/setCompleted')
 setCompleted.on('call', function (args) {
-  // console.log("Received set completed", test)
   Object.keys(todoStates).forEach(function (id) {
     var todo = todoStates[id]
     var current = todo.value()
@@ -139,25 +136,16 @@ setCompleted.on('call', function (args) {
 })
 var todos = new jet.Fetcher()
   .path('containsOneOf', ['todo/#0', 'todo/#2', 'todo/#4'])
-  // .sortByKey('id', 'number')
   .value('greaterThan', 0, 'id')
   .range(1, 30)
   .ascending()
   .sortByValue()
   .on('data', function (todos) {
-    console.log('fetch 1', todos.event, todos.path, todos.value)
-    // renderTodos(todos)
+    renderTodos(todos)
   })
 
-var f2 = new jet.Fetcher()
-  .path('startsWith', 'test')
-  .on('data', function (todos) {
-    console.log('fetch 2', todos.event, todos.path, todos.value)
-    // renderTodos(todos)
-  })
 const stateTest = new jet.State('test', 0)
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
-// console.log("Adding 1st peer")
 peer
   .connect()
   .then(() =>
@@ -170,38 +158,6 @@ peer
       peer.add(stateTest)
     })
   )
-  .then(() => console.log('Fetching'))
-  .then(() => peer.fetch(f2))
-  .then(() => delay(100))
-  .then(() => peer.unfetch(f2))
-  .then(() => console.log('Fetching again'))
-  .then(() => peer.fetch(f2))
-  // // .then(()=>peer.add(stateTest))
-  // .then(()=>peer.remove(stateTest))
-  // .then(()=>peer.remove(stateTest))
-  // .then(()=>stateTest.value(4))
-  // .then(()=>peer.set("test",5))
-  // // .then(()=>peer.get({path:{"startsWith":"test"}}))
-  // .then(()=>peer.set("test",8))
-  // // .then(()=>peer.get({path:{"startsWith":"test"}}))
-  // // .then(()=>peer.fetch(f2))
-  // .then(()=>delay(100))
-  // .then(()=>peer.unfetch(f2))
-  // .then(()=>peer.call('todo/add',["another one"]))
-  // .then(()=>peer2.connect())
-  // .then(()=>peer.batch(()=>{
-  //   peer.call('todo/add',["first"])
-  //   peer.call('todo/add',["second"])
-  // }))
-  // .then(()=>peer.fetch(todos))
-  // .then(()=>peer.add(new jet.State("test2",4)))
-  // .then(()=>peer.add(new jet.State("test3",4)))
-  // .then(()=>stateTest.value(2))
-  // .then(()=>stateTest.value(0))
-  // .then(()=>peer.set('todo/value',2))
-  // .then(()=>peer.get({path:{"equals":'todo/value'}}))
-  // .then(()=>peer.call('todo/add',["third"]))
-  // .then(()=>peer.call('todo/add',["four"]))
-  // .then(()=>peer.set('todo/#0', {id: 4}))
-  // .then(()=>peer.set('todo/#2', {completed: true}))
-  .catch((ex) => console.log('Caught it', ex))
+  .then(() => peer.fetch(todos))
+
+  .catch((ex) => console.log('Caught exception', ex))

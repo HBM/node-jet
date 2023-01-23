@@ -17,7 +17,7 @@ describe('Testing Method', () => {
   it('Should create json from Method', () => {
     let method = new Method('foo')
     expect(method.toJson()).toEqual({ path: 'foo' })
-    method = new Method('foo', { id: 'usr' })
-    expect(method.toJson()).toEqual({ path: 'foo', access: { id: 'usr' } })
+    method = new Method('foo')
+    expect(method.toJson()).toEqual({ path: 'foo' })
   })
 })

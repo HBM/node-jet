@@ -23,34 +23,28 @@
     {
       "name": "Fahri Sönmez",
       "email": "fahri.soenmez@hbmworld.com"
-    },
-    {
-      "name": "Florian Schopp",
-      "email": "florian_schopp@hotmail.com"
     }
   ],
   "dependencies": {
     "events": "^3.3.0",
     "jsdoc": "^4.0.0",
     "net": "^1.0.2",
-    "ws": "^8.11.0"
+    "ws": "^8.12.0"
   },
   "devDependencies": {
-    "@types/jest": "^29.2.2",
-    "@types/prettier": "^2.7.1",
-    "@types/uuid": "^8.3.4",
-    "@types/ws": "^8.5.3",
-    "@typescript-eslint/eslint-plugin": "^5.42.1",
-    "eslint": "^8.27.0",
-    "eslint-config-prettier": "^8.5.0",
+    "@types/jest": "^29.2.6",
+    "@types/prettier": "^2.7.2",
+    "@types/uuid": "^9.0.0",
+    "@types/ws": "^8.5.4",
+    "@typescript-eslint/eslint-plugin": "^5.48.2",
+    "eslint": "^8.32.0",
+    "eslint-config-prettier": "^8.6.0",
     "eslint-plugin-prettier": "^4.2.1",
     "jest": "^29.3.1",
     "jest-environment-jsdom": "^29.3.1",
     "lodash": "^4.17.21",
-    "np": "^7.6.2",
-    "prettier": "^2.7.1",
-    "ts-jest": "^29.0.3",
-    "tsc": "^2.0.4",
+    "prettier": "^2.8.3",
+    "ts-jest": "^29.0.5",
     "typescript": "^4.9.4",
     "wait-for-expect": "^3.0.2"
   },
@@ -66,7 +60,6 @@
   "license": "MIT",
   "scripts": {
     "test": "jest",
-    "release": "npx np",
     "build": "tsc",
     "server": "node examples/server",
     "prettier": "prettier --write \"./**/*.{js,jsx,ts,tsx,json,html}\"",

@@ -2,9 +2,7 @@
 
 var jet = require('../../lib/jet')
 
-
 var port = parseInt(process.argv[2]) || 8080
-
 
 // // Create Jet Daemon
 var daemon = new jet.Daemon({

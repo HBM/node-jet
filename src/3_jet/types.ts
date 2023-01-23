@@ -15,7 +15,7 @@ export const events = [
   'get',
   'set'
 ] as const
-export type EventType = typeof events[number]
+export type EventType = (typeof events)[number]
 
 export const pathRules = [
   'equals',
@@ -31,7 +31,7 @@ export const pathRules = [
   'equalsOneOf',
   'equalsNotOneOf'
 ] as const
-export type PathRule = typeof pathRules[number]
+export type PathRule = (typeof pathRules)[number]
 export type sortable = 'boolean' | 'number' | 'string'
 
 export type pathFunction = {
@@ -72,7 +72,7 @@ export const operators = [
   'equalsNot',
   'isType'
 ] as const
-export type OperatorType = typeof operators[number]
+export type OperatorType = (typeof operators)[number]
 export interface AccessType {
   id?: string
 }

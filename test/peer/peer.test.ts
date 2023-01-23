@@ -5,7 +5,7 @@ import State from '../../src/3_jet/peer/state'
 import { ValueType, EventType } from '../../src/3_jet/types'
 import { Fetcher, invalidMethod, NotFound } from '../../src/jet'
 import { fullFetcherPeer, simpleFecherPeer } from '../mocks/peer'
-import { fetchSimpleId } from '../../lib/3_jet/types'
+import { fetchSimpleId } from '../../src/3_jet/types'
 import waitForExpect from 'wait-for-expect'
 describe('Testing Peer', () => {
   describe('Should handle daemon messages', () => {
@@ -355,11 +355,10 @@ describe('Testing Peer', () => {
       const jsonrpc = { ...fullFetcherPeer(), sendRequest: sendSpy }
       jest.spyOn(JsonRPC, 'default').mockImplementation(() => jsonrpc)
       const peer = new Peer()
-      peer.call('Foo', [5], { timeout: 5 }).catch((ex) => {
+      peer.call('Foo', [5]).catch((ex) => {
         expect(sendSpy).toBeCalledWith('call', {
           path: 'Foo',
-          args: [5],
-          timeout: 5
+          args: [5]
         })
         expect(ex).toBe('invalid path')
         done()
@@ -386,11 +385,10 @@ describe('Testing Peer', () => {
       const jsonrpc = { ...fullFetcherPeer(), sendRequest: sendSpy }
       jest.spyOn(JsonRPC, 'default').mockImplementation(() => jsonrpc)
       const peer = new Peer()
-      peer.call('Foo', [5], { timeout: 5 }).catch((ex) => {
+      peer.call('Foo', [5]).catch((ex) => {
         expect(sendSpy).toBeCalledWith('call', {
           path: 'Foo',
-          args: [5],
-          timeout: 5
+          args: [5]
         })
         expect(ex).toBe('invalid path')
         done()

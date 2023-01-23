@@ -76,7 +76,6 @@ var delayValue = new jet.Fetcher()
   })
 
 d3.selectAll('input[type="radio"]').on('change', function () {
-  console.log('changing')
   var radio = d3.select('input[type="radio"]')
   var delay = speedToDelay[radio.attr('value')]
   peer.set('balls/delay', delay)
@@ -86,7 +85,6 @@ var svgContainer = d3
   .select('svg')
   .attr('viewBox', '0 0 ' + shared.canvasSize + ' ' + shared.canvasSize)
   .on('click', function () {
-    console.log('clicking')
     var pos = d3.mouse('svg')
     var dist = function (x, y) {
       var dx = x - pos[0]

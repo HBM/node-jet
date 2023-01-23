@@ -9,7 +9,7 @@ import {
   INVALID_PARAMS_CODE,
   methodNotFoundError
 } from '../../src/jet'
-import { NotFound } from '../../lib/jet'
+import { NotFound } from '../../src/jet'
 describe('Testing JsonRpc', () => {
   it('Should test basic functionality', (done) => {
     const sock = sockMock()

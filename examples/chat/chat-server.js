@@ -49,7 +49,6 @@ var messages = new jet.State('chat/messages', [])
 
 var append = new jet.Method('chat/append')
 append.on('call', (args) => {
-  console.log('appending message', args)
   // get last messages
   var msgs = messages.value()
   // append new one

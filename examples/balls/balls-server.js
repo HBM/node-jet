@@ -110,7 +110,6 @@ var balls = []
 var id = 0
 
 var createBall = function () {
-  console.log('creating ball')
   var pos = circlePos()
   var color = randomColor()
   var ball = new jet.State('balls/#' + id++, {
@@ -180,7 +179,6 @@ boom.on('call', function (args) {
 
 peer
   .connect()
-  .then(() => console.log('connected'))
   .then(
     () =>
       Promise.all([
