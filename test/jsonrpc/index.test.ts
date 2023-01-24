@@ -172,13 +172,34 @@ describe('Testing JsonRpc', () => {
       .then(done())
     sock.emit('open')
   })
+  it('Should fail processing batch notify', (done) => {
+    const sock = sockMock()
+    jest.spyOn(Sock, 'Socket').mockImplementation(() => sock)
+    jest.spyOn(sock, 'send').mockImplementation((msg) => {
+      expect(
+        '{"id":1,"error":{"code":-32600,"message":"Message could not be parsed","data":{"name":"jet.ParseError","url":"https://github.com/lipp/node-jet/blob/master/doc/peer.markdown#jetparseerror","details":"{\\"id\\":1}"},"name":"jet.ParseError"}}'
+      ).toEqual(msg)
+    })
+    const jsonrpc = new JsonRPC(new Logger())
+    jsonrpc
+      .connect(new AbortController())
+      .then(() => {
+        sock.emit('message', {
+          data: JSON.stringify({ id: 1 })
+        })
+      })
+
+      .then(() => waitForExpect(() => expect(sock.send).toBeCalledTimes(1)))
+      .then(() => done())
+    sock.emit('open')
+  })
 
   it('Should test invalid request', (done) => {
     const sock = sockMock()
     jest.spyOn(Sock, 'Socket').mockImplementation(() => sock)
     const logger = new Logger({
-      logname: 'Mock',
-      loglevel: LogLevel.error,
+      logName: 'Mock',
+      logLevel: LogLevel.error,
       logCallbacks: [
         (msg) => {
           console.log(msg)
@@ -194,17 +215,18 @@ describe('Testing JsonRpc', () => {
     })
     sock.emit('open')
   })
+
   it('Should log socket errors', (done) => {
     const sock = sockMock()
     jest.spyOn(Sock, 'Socket').mockImplementation(() => sock)
     const logger = new Logger({
-      logname: 'Mock',
-      loglevel: LogLevel.error,
+      logName: 'Mock',
+      logLevel: LogLevel.error,
       logCallbacks: [
         (msg) => {
           console.log(msg)
           expect(msg).toContain(
-            'Mock	error	Error in socket connection: undefined'
+            'Mock	error	Error in socket connection: sock error'
           )
           done()
         }
@@ -220,12 +242,12 @@ describe('Testing JsonRpc', () => {
     const sock = sockMock()
     jest.spyOn(Sock, 'Socket').mockImplementation(() => sock)
     const logger = new Logger({
-      logname: 'Mock',
-      loglevel: LogLevel.error,
+      logName: 'Mock',
+      logLevel: LogLevel.error,
       logCallbacks: [
         (msg) => {
           console.log(msg)
-          expect(msg).toContain('Error in socket connection: undefined')
+          expect(msg).toContain('Error in socket connection: sock error')
         }
       ]
     })

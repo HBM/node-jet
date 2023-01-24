@@ -363,8 +363,6 @@ describe('Testing Daemon 2 (Notifications)', () => {
     jest.spyOn(Server, 'JsonRPCServer').mockImplementation(() => mockServer)
     const daemon = new Daemon(fullDaemon)
     daemon.listen({})
-    const fetchId = '__f__1'
-    const newValue = 6
     const peer = simpleFecherPeer()
     peer.queue = jest.fn()
 
@@ -389,6 +387,11 @@ describe('Testing Daemon 2 (Notifications)', () => {
       .then((res) => {
         expect(res.success).toEqual(true)
         expect(res.message).toEqual([{ path: 'bar', value: 0 }])
+      })
+      .then(() => mockServer.message(peer, getRequest({ typo: 'bar' })))
+      .then((res) => {
+        expect(res.success).toEqual(false)
+        expect(res.message).toEqual(new InvalidArgument(''))
       })
 
       .then(() => mockServer.simulateDisconnect(peer))

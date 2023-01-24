@@ -37,8 +37,8 @@ describe('Testing Logging', () => {
     it('Should create sock logger', () => {
       const logSpy = jest.fn()
       const logger = new Logger({
-        loglevel: LogLevel.socket,
-        logname: 'Foo',
+        logLevel: LogLevel.socket,
+        logName: 'Foo',
         logCallbacks: [logSpy]
       })
       log(logger)
@@ -47,8 +47,8 @@ describe('Testing Logging', () => {
     it('Should create debug logger', () => {
       const logSpy = jest.fn()
       const logger = new Logger({
-        loglevel: LogLevel.debug,
-        logname: 'Foo',
+        logLevel: LogLevel.debug,
+        logName: 'Foo',
         logCallbacks: [logSpy]
       })
       log(logger)
@@ -57,8 +57,8 @@ describe('Testing Logging', () => {
     it('Should create info logger', () => {
       const logSpy = jest.fn()
       const logger = new Logger({
-        loglevel: LogLevel.info,
-        logname: 'Foo',
+        logLevel: LogLevel.info,
+        logName: 'Foo',
         logCallbacks: [logSpy]
       })
       log(logger)
@@ -67,8 +67,8 @@ describe('Testing Logging', () => {
     it('Should create warn logger', () => {
       const logSpy = jest.fn()
       const logger = new Logger({
-        loglevel: LogLevel.warn,
-        logname: 'Foo',
+        logLevel: LogLevel.warn,
+        logName: 'Foo',
         logCallbacks: [logSpy]
       })
       log(logger)
@@ -77,8 +77,8 @@ describe('Testing Logging', () => {
     it('Should create error logger', () => {
       const logSpy = jest.fn()
       const logger = new Logger({
-        loglevel: LogLevel.error,
-        logname: 'Foo',
+        logLevel: LogLevel.error,
+        logName: 'Foo',
         logCallbacks: [logSpy]
       })
       log(logger)
@@ -87,66 +87,66 @@ describe('Testing Logging', () => {
   })
   describe('Should test file', () => {
     it('Should create sock logger', async () => {
-      const logfile = `${tmpDir}/sock.txt`
+      const logFile = `${tmpDir}/sock.txt`
       const logger = new Logger({
-        loglevel: LogLevel.socket,
-        logname: 'Foo',
-        logfile
+        logLevel: LogLevel.socket,
+        logName: 'Foo',
+        logFile
       })
       await log(logger).then(() => {
-        const content = readFileSync(logfile).toString().split('\n')
+        const content = readFileSync(logFile).toString().split('\n')
         expect(content).toHaveLength(12)
         expect(content[0]).toContain('Foo	socket	Bar')
       })
     })
     it('Should create debug logger', async () => {
-      const logfile = `${tmpDir}/debug.txt`
+      const logFile = `${tmpDir}/debug.txt`
       const logger = new Logger({
-        loglevel: LogLevel.debug,
-        logname: 'Foo',
-        logfile
+        logLevel: LogLevel.debug,
+        logName: 'Foo',
+        logFile
       })
       await log(logger).then(() => {
-        const content = readFileSync(logfile).toString().split('\n')
+        const content = readFileSync(logFile).toString().split('\n')
         expect(content).toHaveLength(10)
         expect(content[0]).toContain('Foo	debug	Bar')
       })
     })
     it('Should create info logger', async () => {
-      const logfile = `${tmpDir}/info.txt`
+      const logFile = `${tmpDir}/info.txt`
       const logger = new Logger({
-        loglevel: LogLevel.info,
-        logname: 'Foo',
-        logfile
+        logLevel: LogLevel.info,
+        logName: 'Foo',
+        logFile
       })
       await log(logger).then(() => {
-        const content = readFileSync(logfile).toString().split('\n')
+        const content = readFileSync(logFile).toString().split('\n')
         expect(content).toHaveLength(7)
         expect(content[0]).toContain('Foo	info	Bar')
       })
     })
     it('Should create warn logger', async () => {
-      const logfile = `${tmpDir}/warn.txt'`
+      const logFile = `${tmpDir}/warn.txt'`
       const logger = new Logger({
-        loglevel: LogLevel.warn,
-        logname: 'Foo',
-        logfile
+        logLevel: LogLevel.warn,
+        logName: 'Foo',
+        logFile
       })
       await log(logger).then(() => {
-        const content = readFileSync(logfile).toString().split('\n')
+        const content = readFileSync(logFile).toString().split('\n')
         expect(content).toHaveLength(5)
         expect(content[0]).toContain('Foo	warn	Bar')
       })
     })
     it('Should create error logger', async () => {
-      const logfile = `${tmpDir}/error.txt'`
+      const logFile = `${tmpDir}/error.txt'`
       const logger = new Logger({
-        loglevel: LogLevel.error,
-        logname: 'Foo',
-        logfile
+        logLevel: LogLevel.error,
+        logName: 'Foo',
+        logFile
       })
       await log(logger).then(() => {
-        const content = readFileSync(logfile).toString().split('\n')
+        const content = readFileSync(logFile).toString().split('\n')
         expect(content).toHaveLength(3)
         expect(content[0]).toContain('Foo	error	Bar')
       })

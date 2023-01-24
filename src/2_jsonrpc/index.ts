@@ -184,11 +184,8 @@ export class JsonRPC extends EventEmitter {
       })
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
-      this.respond(
-        (decoded && decoded.id) || '',
-        new ParseError(message),
-        false
-      )
+      const decodedId = (decoded && decoded.id) || ''
+      this.respond(decodedId, new ParseError(message), false)
       this.logger.error(err)
     }
   }

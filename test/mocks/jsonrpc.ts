@@ -6,7 +6,7 @@ import { Peer } from '../../src/jet'
 export const jsonRPCServer = (): server.JsonRPCServer & {
   simulateConnection: (peer: Peer) => Promise<void>
   simulateDisconnect: (peer: any) => void
-  message: (peer: any, msg: MethodRequest) => any
+  message: (peer: any, msg: any) => any
 } => {
   let cbs: Function[] = []
   const mock = {
@@ -15,9 +15,9 @@ export const jsonRPCServer = (): server.JsonRPCServer & {
     ) as server.JsonRPCServer),
     listen: () => {},
     callbacks: {},
-    simulateConnection: (_peer: any) => Promise.resolve(),
-    simulateDisconnect: (_peer: any) => Promise.resolve(),
-    message: (_peer: any, _msg: MethodRequest) => {},
+    simulateConnection: () => Promise.resolve(),
+    simulateDisconnect: () => Promise.resolve(),
+    message: () => {},
     close: () => {}
   }
 

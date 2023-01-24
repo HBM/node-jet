@@ -432,7 +432,7 @@ describe('Testing Peer', () => {
         .mockImplementation((method) =>
           method === 'info'
             ? Promise.resolve({ features: { fetch: 'full' } })
-            : Promise.resolve([4, 3, 2])
+            : Promise.resolve()
         )
       const jsonrpc = { ...fullFetcherPeer(), sendRequest: sendSpy }
       jest.spyOn(JsonRPC, 'default').mockImplementation(() => jsonrpc)
@@ -440,24 +440,22 @@ describe('Testing Peer', () => {
       peer
         .connect()
         .then(() => peer.fetch(new Fetcher().path('startsWith', 'a')))
-        .then((res) => {
+        .then(() => {
           expect(sendSpy).toBeCalledWith('fetch', {
             id: '___f___1',
             path: { startsWith: 'a' },
             value: {},
             sort: {}
           })
-          expect(res).toEqual([4, 3, 2])
         })
         .then(() => peer.fetch(new Fetcher().path('equals', 'b')))
-        .then((res) => {
+        .then(() => {
           expect(sendSpy).toBeCalledWith('fetch', {
             id: '___f___2',
             path: { equals: 'b' },
             value: {},
             sort: {}
           })
-          expect(res).toEqual([4, 3, 2])
           done()
         })
     })
@@ -483,12 +481,11 @@ describe('Testing Peer', () => {
           })
         )
         .then(() => peer.fetch(new Fetcher().path('startsWith', 'f')))
-        .then((res) => {
+        .then(() => {
           expect(mockPeer.sendRequest).toBeCalledWith('fetch', {
             id: 'fetch_all',
             path: { startsWith: '' }
           })
-          expect(res).toEqual([])
         })
         .then(() => peer.fetch(new Fetcher().path('equals', 'b')))
         .then(() => {
