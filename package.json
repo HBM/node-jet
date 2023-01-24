@@ -12,8 +12,8 @@
     "json"
   ],
   "author": {
-    "name": "Gerhard Preuss",
-    "email": "gelipp@gmail.com"
+    "name": "Florian Schopp",
+    "email": "florian_schopp@hotmail.com"
   },
   "contributors": [
     {
@@ -25,54 +25,64 @@
       "email": "fahri.soenmez@hbmworld.com"
     }
   ],
-  "devDependencies": {
-    "chai": "4.2.0",
-    "coveralls": "3.1.0",
-    "istanbul": "0.4.5",
-    "mocha": "^8.2.1",
-    "np": "*",
-    "sinon": "9.2.3",
-    "standard": "^16.0.3",
-    "uglify-js": "3.12.4"
-  },
   "dependencies": {
-    "uuid": "^8.3.2",
-    "ws": "^7.4.2",
-    "yargs": "^16.2.0"
+    "events": "^3.3.0",
+    "jsdoc": "^4.0.0",
+    "net": "^1.0.2",
+    "ws": "^8.12.0"
   },
-  "main": "./lib/jet.js",
-  "bin": {
-    "jetd.js": "bin/jetd.js",
-    "fetch.js": "bin/fetch.js"
+  "devDependencies": {
+    "@types/jest": "^29.2.6",
+    "@types/prettier": "^2.7.2",
+    "@types/uuid": "^9.0.0",
+    "@types/ws": "^8.5.4",
+    "@typescript-eslint/eslint-plugin": "^5.48.2",
+    "eslint": "^8.32.0",
+    "eslint-config-prettier": "^8.6.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "jest": "^29.3.1",
+    "jest-environment-jsdom": "^29.3.1",
+    "lodash": "^4.17.21",
+    "prettier": "^2.8.3",
+    "ts-jest": "^29.0.5",
+    "typescript": "^4.9.4",
+    "wait-for-expect": "^3.0.2"
   },
-  "version": "2.1.1",
+  "main": "./lib/index.js",
+  "files": [
+    "lib"
+  ],
+  "version": "3.0.0-beta-7",
   "repository": {
     "type": "git",
-    "url": "https://github.com/lipp/node-jet"
+    "url": "https://github.com/HBM/node-jet"
   },
   "license": "MIT",
   "scripts": {
-    "test": "standard && istanbul cover node_modules/mocha/bin/_mocha -- --exit --recursive test",
-    "test_nocover": "npx mocha --exit test",
-    "release": "npx np",
+    "test": "jest",
+    "build": "tsc",
+    "server": "node examples/server",
+    "prettier": "prettier --write \"./**/*.{js,jsx,ts,tsx,json,html}\"",
+    "eslint": "eslint --max-warnings 0 \"{src, test}/**/*.{js,jsx,ts,tsx,json,html}\"",
     "start": "./bin/jetd.js"
   },
   "engines": {
     "node": ">0.8.0"
   },
-  "homepage": "http://jetbus.io",
   "bugs": {
-    "url": "http://github.com/lipp/node-jet/issues",
-    "email": "gelipp@gmail.com"
+    "url": "https://github.com/HBM/node-jet/issues",
+    "email": "florian_schopp@hotmail.com"
   },
   "browser": {
     "ws": false,
-    "node-jet": "./lib/browser.js"
+    "fs": false,
+    "events": false
   },
   "standard": {
     "ignore": [
       "build/",
-      "examples/"
+      "examples/",
+      "src/"
     ]
   },
   "publishConfig": {

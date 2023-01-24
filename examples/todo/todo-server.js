@@ -1,30 +1,46 @@
 #!/usr/bin/env node
 
-var jet = require('node-jet')
+var jet = require('../../lib/jet')
+
+// var jet = require("node-jet")
 var finalhandler = require('finalhandler')
 var http = require('http')
 var serveStatic = require('serve-static')
+const { State } = require('../../lib/jet')
 
-var port = parseInt(process.argv[2]) || 80
+var port = parseInt(process.argv[2]) || 8080
 var internalPort = 11128
 
 // Serve this dir as static content
-var serve = serveStatic('./')
+// var serve = serveStatic('./')
 
 // Create Webserver
-var httpServer = http.createServer(function (req, res) {
-  var done = finalhandler(req, res)
-  serve(req, res, done)
+// var httpServer = http.createServer(function (req, res) {
+//   var done = finalhandler(req, res)
+//   // serve(req, res, done)
+// })
+
+// httpServer.listen(port)
+
+// // Create Jet Daemon
+var daemon = new jet.Daemon({
+  log: {
+    logCallbacks: [console.log],
+    logname: 'Daemon',
+    loglevel: jet.LogLevel.info
+  },
+  features: {
+    fetch: 'full',
+    batches: true,
+    asNotification: true
+  }
 })
 
-httpServer.listen(port)
-
-// Create Jet Daemon
-var daemon = new jet.Daemon()
 daemon.listen({
-  server: httpServer, // embed jet websocket upgrade handler
-  tcpPort: internalPort // nodejitsu prevents internal websocket connections
+  wsPort: port
 })
+console.log('todo-server ready')
+console.log('listening on port', port)
 
 // Declare Todo Class
 var todoId = 0
@@ -38,7 +54,7 @@ var Todo = function (title) {
   this.completed = false
 }
 
-Todo.prototype.merge = function (other) {
+Todo.prototype.merge = (other) => {
   if (other.completed !== undefined) {
     this.completed = other.completed
   }
@@ -50,24 +66,36 @@ Todo.prototype.merge = function (other) {
 
 // Create Jet Peer
 var peer = new jet.Peer({
-  port: internalPort
+  url: `ws://localhost:8080/`,
+  // url: `ws://172.19.191.155:8081/`,
+  // url: `ws://172.19.211.59:11123/api/jet/`,
+  log: {
+    logCallbacks: [console.log],
+    logname: 'Peer 1',
+    loglevel: jet.LogLevel.socket
+  }
 })
+// const peer2 = new jet.Peer({
+//   port: internalPort,log:{logCallbacks:[console.log],logname:"Peer 2",loglevel:jet.LogLevel.debug}
+
+// })
 
 var todoStates = {}
 
 // Provide a "todo/add" method to create new todos
+var jetState = new jet.State('todo/value', { test: 4 })
+jetState.on('set', (value) => {
+  jetState.value(12345)
+})
 var addTodo = new jet.Method('todo/add')
-addTodo.on('call', function (args) {
+addTodo.on('call', (args) => {
   var title = args[0]
   var todo = new Todo(title)
 
   // create a new todo state and store ref.
   var todoState = new jet.State('todo/#' + todo.id, todo)
-  todoState.on('set', function (requestedTodo) {
+  todoState.on('set', (requestedTodo) => {
     todo.merge(requestedTodo)
-    return {
-      value: todo
-    }
   })
   todoStates[todo.id] = todoState
   peer.add(todoState)
@@ -75,18 +103,17 @@ addTodo.on('call', function (args) {
 
 // Provide a "todo/remove" method to delete a certain todo
 var removeTodo = new jet.Method('todo/remove')
-removeTodo.on('call', function (ids) {
-  ids.forEach(function (id) {
-    if (todoStates[id]) {
-      todoStates[id].remove()
-      delete todoStates[id]
-    }
-  })
+removeTodo.on('call', (id) => {
+  if (id in todoStates) {
+    peer.remove(todoStates[id])
+    delete todoStates[id]
+  }
 })
 
 // Provide a "todo/remove" method to delete a certain todo
 var clearCompletedTodos = new jet.Method('todo/clearCompleted')
-clearCompletedTodos.on('call', function () {
+clearCompletedTodos.on('call', function (test) {
+  // console.log("Received clear completed", test)
   Object.keys(todoStates).forEach(function (id) {
     if (todoStates[id].value().completed) {
       todoStates[id].remove()
@@ -107,15 +134,30 @@ setCompleted.on('call', function (args) {
     }
   })
 })
+var todos = new jet.Fetcher()
+  .path('containsOneOf', ['todo/#0', 'todo/#2', 'todo/#4'])
+  .value('greaterThan', 0, 'id')
+  .range(1, 30)
+  .ascending()
+  .sortByValue()
+  .on('data', function (todos) {
+    renderTodos(todos)
+  })
 
-// connect peer and register methods
-Promise.all([
-  peer.connect(),
-  peer.add(addTodo),
-  peer.add(removeTodo),
-  peer.add(setCompleted),
-  peer.add(clearCompletedTodos)
-]).then(function () {
-  console.log('todo-server ready')
-  console.log('listening on port', port)
-})
+const stateTest = new jet.State('test', 0)
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+peer
+  .connect()
+  .then(() =>
+    peer.batch(() => {
+      peer.add(jetState)
+      peer.add(addTodo)
+      peer.add(removeTodo)
+      peer.add(setCompleted)
+      peer.add(clearCompletedTodos)
+      peer.add(stateTest)
+    })
+  )
+  .then(() => peer.fetch(todos))
+
+  .catch((ex) => console.log('Caught exception', ex))

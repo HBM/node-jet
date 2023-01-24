@@ -6,7 +6,8 @@ var http = require('http')
 var serveStatic = require('serve-static')
 var shared = require('./shared')
 
-var port = parseInt(process.argv[2]) || 80
+var port = parseInt(process.argv[2]) || 8080
+var internalPort = 10225
 var numBalls = 150
 
 // Serve this dir as static content
@@ -21,14 +22,25 @@ var httpServer = http.createServer(function (req, res) {
 httpServer.listen(port)
 
 // Create Jet Daemon
-var daemon = new jet.Daemon()
+var daemon = new jet.Daemon({
+  log: {
+    logCallbacks: [console.log],
+    logname: 'Daemon',
+    loglevel: jet.LogLevel.socket
+  },
+  features: {
+    fetch: 'full',
+    asNotification: false
+  }
+})
 daemon.listen({
-  server: httpServer // embed jet websocket upgrade handler
+  tcpPort: internalPort,
+  wsPort: 11123
 })
 
 // Create Jet Peer
 var peer = new jet.Peer({
-  url: 'ws://localhost:' + port
+  port: internalPort
 })
 
 var randomPos = function () {
@@ -119,12 +131,8 @@ var createBall = function () {
   })
 }
 
-for (var i = 0; i < numBalls; ++i) {
-  createBall()
-}
-
 var delay = new jet.State('balls/delay', 3)
-delay.on('set', jet.State.acceptAny)
+delay.on('set', () => console.log('set delay'))
 
 var repositionBalls = function (calcPos, delay, sizeX) {
   balls.forEach(function (ball, index) {
@@ -154,25 +162,38 @@ square.on('call', function (args) {
 var boom = new jet.Method('balls/boom')
 boom.on('call', function (args) {
   var center = shared.canvasSize / 2
-  repositionBalls(function () {
-    return {
-      x: center,
-      y: center
-    }
-  }, 0.1, 1)
+  repositionBalls(
+    function () {
+      return {
+        x: center,
+        y: center
+      }
+    },
+    0.1,
+    1
+  )
   setTimeout(function () {
     repositionBalls(randomPos, 0.1, 8)
   }, 1000)
 })
 
-// connect peer and register methods
-Promise.all([
-  peer.connect(),
-  peer.add(circle),
-  peer.add(square),
-  peer.add(boom),
-  peer.add(delay)
-]).then(function () {
-  console.log('balls-server ready')
-  console.log('listening on port', port)
-})
+peer
+  .connect()
+  .then(
+    () =>
+      Promise.all([
+        peer.add(circle),
+        peer.add(square),
+        peer.add(boom),
+        peer.add(delay)
+      ]).then(() => {
+        for (var i = 0; i < numBalls; ++i) {
+          createBall()
+        }
+      })
+    // connect peer and register methods
+  )
+  .then(function () {
+    console.log('balls-server ready')
+    console.log('listening on port', port)
+  })

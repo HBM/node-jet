@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "commonjs",
+    "allowJs": true,
+    "checkJs": true,
+    "jsx": "react",
+    "declaration": true,
+    "outDir": "lib",
+    "noEmit": false,
+    "strict": true,
+    "noImplicitAny": true,
+
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true
+  },
+  "include": ["src/**/*"]
+}

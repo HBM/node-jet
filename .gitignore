@@ -1,20 +1,8 @@
 node_modules
 coverage
-#*
-*#*
-.#*
-*/#*
-*/*/#*
-.DS_Store
-*~
-npm-debug.log
-*.swp
-*.swo
-bundle*
-bundle.*
+lib
+out
+.cache
+.vscode
 
-examples/todo/bundle.js
-
-examples/chat/bundle.js
-
-examples/ants/bundle.js
+examples/*/public/bundle.js
