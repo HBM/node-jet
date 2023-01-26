@@ -102,7 +102,7 @@ export class Daemon extends EventEmitter {
       return
     }
     this.routes[path] = new Route(peer, path, params.value)
-    if (params.value) {
+    if (typeof params.value !== 'undefined') {
       this.subscriber.forEach((fetchRule) => {
         if (this.simpleFetch() || fetchRule.matchesPath(path)) {
           fetchRule.addRoute(this.routes[path])
@@ -116,7 +116,7 @@ export class Daemon extends EventEmitter {
   change synchronous: First all Peers are informed about the new value then the message is acknowledged
   */
   change = (peer: JsonRPC, id: string, msg: PathParams) => {
-    if (msg.path in this.routes && msg.value) {
+    if (msg.path in this.routes && typeof msg.value !== 'undefined') {
       this.routes[msg.path].updateValue(msg.value)
       this.respond(peer, id)
     } else {
