@@ -1,6 +1,6 @@
 import * as Sock from '../../src/1_socket/wsserver'
 import * as tcpSock from '../../src/1_socket/tcpserver'
-import { Logger, LogLevel } from '../../src/3_jet/log'
+import { Logger } from '../../src/3_jet/log'
 import {
   HTTPServerMock,
   TCPServer,

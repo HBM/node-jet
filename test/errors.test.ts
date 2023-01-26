@@ -1,5 +1,3 @@
-import { Peer } from '../src'
-import * as JsonRPC from '../src/2_jsonrpc'
 import {
   ConnectionClosed,
   ConnectionInUse,

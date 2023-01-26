@@ -37,6 +37,7 @@
     "@types/uuid": "^9.0.0",
     "@types/ws": "^8.5.4",
     "@typescript-eslint/eslint-plugin": "^5.48.2",
+    "cross-var": "^1.1.0",
     "eslint": "^8.32.0",
     "eslint-config-prettier": "^8.6.0",
     "eslint-plugin-prettier": "^4.2.1",
@@ -65,11 +66,11 @@
     "test": "jest",
     "build": "tsc",
     "server": "node examples/server",
-    "ci:eslint": "eslint --max-warnings 0 --ignore-path .prettierignore $npm_package_config_files",
-    "ci:prettier": "prettier --check $npm_package_config_files ",
+    "ci:eslint": "npm run eslint",
+    "ci:prettier": "cross-var prettier --check $npm_package_config_files ",
     "ci:type-check": "tsc --noEmit --skipLibCheck",
-    "prettier": "prettier --write $npm_package_config_files",
-    "eslint": "eslint --max-warnings 0 $npm_package_config_files",
+    "prettier": "cross-var prettier --write $npm_package_config_files",
+    "eslint": "cross-var eslint --max-warnings 0 --ignore-path .prettierignore $npm_package_config_files",
     "start": "./bin/jetd.js"
   },
   "engines": {

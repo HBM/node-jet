@@ -1,27 +1,37 @@
 import * as server from '../../src/2_jsonrpc/server'
 import { MethodRequest } from '../../src/3_jet/messages'
-import { EventType } from '../../src/3_jet/types'
 import { Peer } from '../../src/jet'
 
 export const jsonRPCServer = (): server.JsonRPCServer & {
   simulateConnection: (peer: Peer) => Promise<void>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   simulateDisconnect: (peer: any) => void
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   message: (peer: any, msg: any) => any
 } => {
-  let cbs: Function[] = []
+  let cbs: { ({ id, message, success }): void }[] = []
   const mock = {
     ...(jest.createMockFromModule(
       '../../src/2_jsonrpc/server'
     ) as server.JsonRPCServer),
-    listen: () => {},
+    listen: () => {
+      //do nothing
+    },
     callbacks: {},
-    simulateConnection: () => Promise.resolve(),
-    simulateDisconnect: () => Promise.resolve(),
-    message: () => {},
-    close: () => {}
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
+    simulateConnection: (_peer: any) => Promise.resolve(),
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
+    simulateDisconnect: (_peer: any) => Promise.resolve(),
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
+    message: (_peer: any, msg: MethodRequest) => {
+      //do nothing
+    },
+    close: () => {
+      //do nothing
+    }
   }
 
-  mock.addListener = (evt: string, cb: Function) => {
+  mock.addListener = (evt: string, cb) => {
     if (!(evt in mock.callbacks)) mock.callbacks[evt] = []
     mock.callbacks[evt].push(cb)
     return mock
@@ -47,9 +57,11 @@ export const jsonRPCServer = (): server.JsonRPCServer & {
     })
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   mock.simulateDisconnect = (peer: any) => {
     mock.callbacks['disconnect'].forEach((cb) => cb(peer))
     return Promise.resolve()
   }
-  return mock
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return mock as any
 }

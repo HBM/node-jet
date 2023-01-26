@@ -1,4 +1,3 @@
-import { MethodRequest } from '../../src/3_jet/messages'
 import { ValueType } from '../../src/3_jet/types'
 
 export const info = () => ({

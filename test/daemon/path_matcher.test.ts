@@ -1,12 +1,5 @@
-import { Peer } from '../../src/3_jet/peer'
-import * as JsonRPC from '../../src/2_jsonrpc/index'
-import Method from '../../src/3_jet/peer/method'
-import State from '../../src/3_jet/peer/state'
-import { ValueType } from '../../src/3_jet/types'
-import { Fetcher } from '../../src/jet'
-import { fullFetcherPeer, simpleFecherPeer } from '../mocks/jsonrpc'
 import { createPathMatcher } from '../../src/3_jet/daemon/path_matcher'
-import { FetchOptions } from '../../src/3_jet/messages'
+import { FetchParams } from '../../src/3_jet/messages'
 describe('Testing Path matcher', () => {
   it('Should match path', () => {
     const params = {
@@ -14,7 +7,7 @@ describe('Testing Path matcher', () => {
       sort: {},
       id: '',
       value: {}
-    } as FetchOptions
+    } as FetchParams
     const matcher = createPathMatcher(params)
     expect(['a', 'b', 'ab', 'abc'].filter((el) => matcher(el))).toEqual([
       'a',
@@ -29,7 +22,7 @@ describe('Testing Path matcher', () => {
       sort: {},
       id: '',
       value: {}
-    } as FetchOptions
+    } as FetchParams
     const matcher = createPathMatcher(params)
     expect(['a', 'b', 'ab', 'abc'].filter((el) => matcher(el))).toEqual(['ab'])
   })
@@ -39,7 +32,7 @@ describe('Testing Path matcher', () => {
       sort: {},
       id: '',
       value: {}
-    } as FetchOptions
+    } as FetchParams
     const matcher = createPathMatcher(params)
     expect(['a', 'b', 'ab', 'abc'].filter((el) => matcher(el))).toEqual([])
   })
@@ -49,7 +42,7 @@ describe('Testing Path matcher', () => {
       sort: {},
       id: '',
       value: {}
-    } as FetchOptions
+    } as FetchParams
     const matcher = createPathMatcher(params)
     expect(['a', 'b', 'ab', 'abc'].filter((el) => matcher(el))).toEqual([
       'a',
@@ -63,7 +56,7 @@ describe('Testing Path matcher', () => {
       sort: {},
       id: '',
       value: {}
-    } as FetchOptions
+    } as FetchParams
     const matcher = createPathMatcher(params)
     expect(['a', 'b', 'ab', 'abc'].filter((el) => matcher(el))).toEqual(['a'])
   })
@@ -73,7 +66,7 @@ describe('Testing Path matcher', () => {
       sort: {},
       id: '',
       value: {}
-    } as FetchOptions
+    } as FetchParams
     const matcher = createPathMatcher(params)
     expect(['a', 'b', 'ab', 'abc'].filter((el) => matcher(el))).toEqual([
       'b',
@@ -87,7 +80,7 @@ describe('Testing Path matcher', () => {
       sort: {},
       id: '',
       value: {}
-    } as FetchOptions
+    } as FetchParams
     const matcher = createPathMatcher(params)
     expect(['a', 'b', 'ab', 'abc'].filter((el) => matcher(el))).toEqual([])
   })
@@ -98,7 +91,7 @@ describe('Testing Path matcher', () => {
       sort: {},
       id: '',
       value: {}
-    } as FetchOptions
+    } as FetchParams
     const matcher = createPathMatcher(params)
     expect(['a', 'b', 'ab', 'abc'].filter((el) => matcher(el))).toEqual(['abc'])
   })
@@ -108,7 +101,7 @@ describe('Testing Path matcher', () => {
       sort: {},
       id: '',
       value: {}
-    } as FetchOptions
+    } as FetchParams
     const matcher = createPathMatcher(params)
     expect(['a', 'b', 'ab', 'abc'].filter((el) => matcher(el))).toEqual([
       'ab',
@@ -121,7 +114,7 @@ describe('Testing Path matcher', () => {
       path: { startsWith: 'A', caseInsensitive: 'true' },
       sort: {},
       id: ''
-    } as FetchOptions
+    } as FetchParams
     const matcher = createPathMatcher(params)
     expect(['a', 'b', 'aB', 'aBc', 'ab'].filter((el) => matcher(el))).toEqual([
       'a',
@@ -136,7 +129,7 @@ describe('Testing Path matcher', () => {
       path: { containsOneOf: ['A', 'a'], caseInsensitive: 'true' },
       sort: {},
       id: ''
-    } as FetchOptions
+    } as FetchParams
     const matcher = createPathMatcher(params)
     expect(['a', 'b', 'aB', 'aBc', 'ab'].filter((el) => matcher(el))).toEqual([
       'a',
@@ -146,7 +139,7 @@ describe('Testing Path matcher', () => {
     ])
   })
   it('No path rules', () => {
-    const params = { sort: {}, id: '' } as FetchOptions
+    const params = { sort: {}, id: '' } as FetchParams
     const matcher = createPathMatcher(params)
     expect(['a', 'b', 'ab', 'abc'].filter((el) => matcher(el))).toEqual([
       'a',

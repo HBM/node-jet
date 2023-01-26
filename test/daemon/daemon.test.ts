@@ -1,13 +1,7 @@
-import { Peer } from '../../src/3_jet/peer'
 import * as Server from '../../src/2_jsonrpc/server'
-import Method from '../../src/3_jet/peer/method'
-import State from '../../src/3_jet/peer/state'
-import { ValueType } from '../../src/3_jet/types'
-import waitForExpect from 'wait-for-expect'
 import {
   ConnectionInUse,
   Daemon,
-  Fetcher,
   InfoOptions,
   InvalidArgument,
   notAllowed,
@@ -15,7 +9,6 @@ import {
   Occupied
 } from '../../src/jet'
 import { jsonRPCServer } from '../mocks/jsonrpc'
-import { AddRequest, MethodRequest } from '../../src/3_jet/messages'
 import { fullFetcherPeer, simpleFecherPeer } from '../mocks/peer'
 import {
   AddMethod,
