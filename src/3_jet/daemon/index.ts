@@ -102,7 +102,7 @@ export class Daemon extends EventEmitter {
       return
     }
     this.routes[path] = new Route(peer, path, params.value)
-    if (params.value) {
+    if (typeof params.value !== 'undefined') {
       this.subscriber.forEach((fetchRule) => {
         if (this.simpleFetch() || fetchRule.matchesPath(path)) {
           fetchRule.addRoute(this.routes[path])
