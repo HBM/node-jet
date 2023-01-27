@@ -1,16 +1,8 @@
 {
   "name": "node-jet",
+  "version": "3.0.2",
   "description": "Jet Realtime Message Bus for the Web. Daemon and Peer implementation.",
   "url": "https://github.com/hbm/node-jet",
-  "keywords": [
-    "ipc",
-    "push",
-    "message",
-    "realtime",
-    "rpc",
-    "jet",
-    "json"
-  ],
   "author": {
     "name": "Florian Schopp",
     "email": "florian_schopp@hotmail.com"
@@ -25,6 +17,31 @@
       "email": "fahri.soenmez@hbmworld.com"
     }
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/HBM/node-jet"
+  },
+  "license": "MIT",
+  "keywords": [
+    "ipc",
+    "push",
+    "message",
+    "realtime",
+    "rpc",
+    "jet",
+    "json"
+  ],
+  "scripts": {
+    "test": "jest",
+    "build": "tsc",
+    "server": "node examples/server",
+    "ci:eslint": "npm run eslint",
+    "ci:prettier": "node scripts/cross-var prettier --check $npm_package_config_files ",
+    "ci:type-check": "tsc --noEmit --skipLibCheck",
+    "prettier": "node scripts/cross-var prettier --write $npm_package_config_files",
+    "eslint": "node scripts/cross-var eslint --max-warnings 0 --ignore-path .prettierignore $npm_package_config_files",
+    "start": "./bin/jetd.js"
+  },
   "dependencies": {
     "events": "^3.3.0",
     "jsdoc": "^4.0.0",
@@ -52,25 +69,8 @@
   "files": [
     "lib"
   ],
-  "version": "3.0.1",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/HBM/node-jet"
-  },
-  "license": "MIT",
   "config": {
     "files": "**/*.{js,jsx,ts,tsx,json,html,yml}"
-  },
-  "scripts": {
-    "test": "jest",
-    "build": "tsc",
-    "server": "node examples/server",
-    "ci:eslint": "npm run eslint",
-    "ci:prettier": "node scripts/cross-var prettier --check $npm_package_config_files ",
-    "ci:type-check": "tsc --noEmit --skipLibCheck",
-    "prettier": "node scripts/cross-var prettier --write $npm_package_config_files",
-    "eslint": "node scripts/cross-var eslint --max-warnings 0 --ignore-path .prettierignore $npm_package_config_files",
-    "start": "./bin/jetd.js"
   },
   "engines": {
     "node": ">0.8.0"
