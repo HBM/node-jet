@@ -73,7 +73,7 @@
     "files": "**/*.{js,jsx,ts,tsx,json,html,yml}"
   },
   "engines": {
-    "node": ">0.8.0"
+    "node": ">6.14.18"
   },
   "bugs": {
     "url": "https://github.com/HBM/node-jet/issues",
