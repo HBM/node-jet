@@ -1,5 +1,6 @@
 .cache
 coverage
 lib
+scripts
 node_modules
 bench
