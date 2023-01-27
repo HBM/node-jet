@@ -2,7 +2,7 @@ import { Peer } from '../../src/3_jet/peer'
 import * as JsonRPC from '../../src/2_jsonrpc/index'
 import Method from '../../src/3_jet/peer/method'
 import State from '../../src/3_jet/peer/state'
-import { ValueType, EventType } from '../../src/3_jet/types'
+import { ValueType } from '../../src/3_jet/types'
 import { Fetcher, invalidMethod, NotFound } from '../../src/jet'
 import { fullFetcherPeer, simpleFecherPeer } from '../mocks/peer'
 import { fetchSimpleId } from '../../src/3_jet/types'
@@ -10,7 +10,7 @@ import waitForExpect from 'wait-for-expect'
 describe('Testing Peer', () => {
   describe('Should handle daemon messages', () => {
     describe('Should send different messages full fetch', () => {
-      let cbs = {}
+      const cbs = {}
       let jsonRpc
       let peer
       beforeEach(async () => {
@@ -57,12 +57,6 @@ describe('Testing Peer', () => {
       })
       it('should test set', (done) => {
         const s = new State<ValueType>('foo', 5)
-        const setMock = jest
-          .spyOn(s, 'value')
-          .mockImplementation((newValue) => {
-            expect(newValue).toEqual(5)
-            return 5
-          })
         peer.add(s).then(() => {
           const par = { path: 'foo', value: 5 }
           cbs['set'](undefined, 'fooId', par)
@@ -144,7 +138,7 @@ describe('Testing Peer', () => {
       })
     })
     describe('Should send different messages simple fetch', () => {
-      let cbs = {}
+      const cbs = {}
       let jsonRpc
       let peer
       beforeEach(async () => {
@@ -261,7 +255,7 @@ describe('Testing Peer', () => {
       const jsonrpc = { ...fullFetcherPeer(), sendRequest: sendSpy }
       jest.spyOn(JsonRPC, 'default').mockImplementation(() => jsonrpc)
       const peer = new Peer()
-      peer.batch(() => {})
+      peer.batch(() => jest.fn())
     })
     it('Should send configure', (done) => {
       const sendSpy = jest.fn().mockReturnValue(Promise.resolve({}))
@@ -470,7 +464,6 @@ describe('Testing Peer', () => {
         })
       jest.spyOn(JsonRPC, 'default').mockImplementation(() => mockPeer)
       const peer = new Peer()
-      const state = new State<ValueType>('bc', 5)
       peer
         .connect()
         .then(() =>

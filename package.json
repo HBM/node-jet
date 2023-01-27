@@ -65,11 +65,11 @@
     "test": "jest",
     "build": "tsc",
     "server": "node examples/server",
-    "ci:eslint": "eslint --max-warnings 0 --ignore-path .prettierignore $npm_package_config_files",
-    "ci:prettier": "prettier --check $npm_package_config_files ",
+    "ci:eslint": "npm run eslint",
+    "ci:prettier": "node scripts/cross-var prettier --check $npm_package_config_files ",
     "ci:type-check": "tsc --noEmit --skipLibCheck",
-    "prettier": "prettier --write $npm_package_config_files",
-    "eslint": "eslint --max-warnings 0 $npm_package_config_files",
+    "prettier": "node scripts/cross-var prettier --write $npm_package_config_files",
+    "eslint": "node scripts/cross-var eslint --max-warnings 0 --ignore-path .prettierignore $npm_package_config_files",
     "start": "./bin/jetd.js"
   },
   "engines": {

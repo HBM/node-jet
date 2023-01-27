@@ -1,7 +1,6 @@
 import * as JsonRPC from '../../src/2_jsonrpc'
-import * as server from '../../src/2_jsonrpc/server'
-import { Logger } from '../../src/3_jet/log'
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const fullFetcherPeer = (): any => {
   const peer = {
     ...(jest.createMockFromModule('../../src/2_jsonrpc') as JsonRPC.JsonRPC),
@@ -20,7 +19,7 @@ export const fullFetcherPeer = (): any => {
           : Promise.resolve([])
       )
   }
-  peer.addListener = (evt: string, cb: Function) => {
+  peer.addListener = (evt: string, cb) => {
     if (!(evt in peer.callbacks)) peer.callbacks[evt] = []
     peer.callbacks[evt].push(cb)
     return peer
@@ -28,6 +27,7 @@ export const fullFetcherPeer = (): any => {
   return peer
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const simpleFecherPeer = (): any => {
   const peer = {
     ...(jest.createMockFromModule('../../src/2_jsonrpc') as JsonRPC.JsonRPC),
@@ -45,7 +45,7 @@ export const simpleFecherPeer = (): any => {
           : Promise.resolve([])
       )
   }
-  peer.addListener = (evt: string, cb: Function) => {
+  peer.addListener = (evt: string, cb) => {
     if (!(evt in peer.callbacks)) peer.callbacks[evt] = []
     peer.callbacks[evt].push(cb)
     return peer

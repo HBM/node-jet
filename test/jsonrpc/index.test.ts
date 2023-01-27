@@ -44,6 +44,7 @@ describe('Testing JsonRpc', () => {
       jsonrpc.sendRequest('add', { path: 'foo', value: 3 })
     ).rejects.toEqual(new ConnectionClosed())
     expect(() =>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       jsonrpc.queue({ event: 'Add', path: 'foo', value: 1 } as any, '__f__')
     ).rejects.toEqual(new ConnectionClosed())
 
@@ -82,7 +83,7 @@ describe('Testing JsonRpc', () => {
     })
     const jsonrpc = new JsonRPC(new Logger(), { batches: true })
     jsonrpc.connect().then(() => {
-      jsonrpc.sendImmedeate = false
+      jsonrpc.sendImmediate = false
       jsonrpc.sendRequest('add', { path: 'foo', value: 3 })
       jsonrpc.sendRequest('add', { path: 'foo1', value: 4 })
       jsonrpc.sendRequest('add', { path: 'foo2', value: 5 })
@@ -105,11 +106,10 @@ describe('Testing JsonRpc', () => {
       done()
     })
     const jsonrpc = new JsonRPC(new Logger())
-    jsonrpc
-      .connect()
-      .then(() =>
-        jsonrpc.queue({ event: 'Add', path: 'foo', value: 1 } as any, '_f')
-      )
+    jsonrpc.connect().then(() =>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      jsonrpc.queue({ event: 'Add', path: 'foo', value: 1 } as any, '_f')
+    )
     sock.emit('open')
   })
   it('Should test batch notify', (done) => {
@@ -137,9 +137,12 @@ describe('Testing JsonRpc', () => {
     jsonrpc
       .connect(new AbortController())
       .then(() => {
-        jsonrpc.sendImmedeate = false
+        jsonrpc.sendImmediate = false
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         jsonrpc.queue({ event: 'Add', path: 'foo', value: 1 } as any, '_f')
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         jsonrpc.queue({ event: 'Add', path: 'foo', value: 2 } as any, '_f')
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         jsonrpc.queue({ event: 'Add', path: 'foo', value: 3 } as any, '_f')
         jsonrpc.send()
       })
@@ -165,6 +168,7 @@ describe('Testing JsonRpc', () => {
     jsonrpc
       .connect(new AbortController())
       .then(() => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         jsonrpc.queue({ event: 'Add', path: 'foo', value: 1 } as any, '_f')
       })
 
@@ -456,7 +460,7 @@ describe('Testing JsonRpc', () => {
     })
     const jsonrpc = new JsonRPC(new Logger(), { batches: true })
     jsonrpc.connect().then(async () => {
-      jsonrpc.sendImmedeate = false
+      jsonrpc.sendImmediate = false
       jsonrpc.sendRequest('add', { path: 'foo', value: 3 })
       jsonrpc.sendRequest('add', { path: 'foo1', value: 4 })
       await waitForExpect(() =>

@@ -5,29 +5,48 @@ import { EventType } from '../../src/3_jet/types'
 import { Peer } from '../../src/jet'
 import { Server as HTTPServer } from 'http'
 
-export const WebsocketServer = (): wsserver.WebsocketServer & {
+type wbServer = wsserver.WebsocketServer & {
   simulateConnection: (peer: Peer) => void
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   simulateDisconnect: (peer: any) => void
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   simulateMessage: (peer: any, method: EventType, msg: MethodRequest) => any
-} => {
-  let cbs: Function[] = []
+}
+
+export const WebsocketServer = (): wbServer => {
+  let cbs: { ({ id, message, success }): void }[] = []
   const mock = {
     ...(jest.createMockFromModule(
       '../../src/1_socket/wsserver'
     ) as wsserver.WebsocketServer),
-    listen: () => {},
+    listen: () => {
+      //do nothing
+    },
     callbacks: {},
-    simulateConnection: (_peer: any) => {},
-    simulateDisconnect: (_peer: any) => {},
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
+    simulateConnection: (_peer: any) => {
+      //do nothing
+    },
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
+    simulateDisconnect: (_peer: any) => {
+      //do nothing
+    },
     simulateMessage: (
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
       _peer: any,
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
       _method: EventType,
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
       _msg: MethodRequest
-    ) => {},
-    close: () => {}
+    ) => {
+      //do nothing
+    },
+    close: () => {
+      //do nothing
+    }
   }
 
-  mock.addListener = (evt: string, cb: Function) => {
+  mock.addListener = (evt: string, cb) => {
     if (!(evt in mock.callbacks)) mock.callbacks[evt] = []
     mock.callbacks[evt].push(cb)
     return mock
@@ -35,7 +54,7 @@ export const WebsocketServer = (): wsserver.WebsocketServer & {
   mock.simulateConnection = (peer) => {
     mock.callbacks['connection'].forEach((cb) => cb(peer))
     jest.spyOn(peer, 'respond').mockImplementation((id, message, success) => {
-      cbs.forEach((cb) => cb({ id: id, message: message, success: success }))
+      cbs.forEach((cb) => cb({ id, message, success }))
     })
   }
 
@@ -52,36 +71,56 @@ export const WebsocketServer = (): wsserver.WebsocketServer & {
     })
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   mock.simulateDisconnect = (peer: any) => {
     mock.callbacks['disconnect'].forEach((cb) => cb(peer))
   }
-  return mock
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return mock as any
 }
 export const HTTPServerMock = () =>
   jest.createMockFromModule<HTTPServer>('http')
 export const TCPServer = (): server.TCPServer & {
   simulateConnection: (peer: Peer) => void
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   simulateDisconnect: (peer: any) => void
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   simulateMessage: (peer: any, method: EventType, msg: MethodRequest) => any
 } => {
-  let cbs: Function[] = []
+  let cbs: { ({ id, message, success }): void }[] = []
   const mock = {
     ...(jest.createMockFromModule(
       '../../src/1_socket/tcpserver'
     ) as tcpserver.TCPServer),
-    listen: () => {},
+    listen: () => {
+      //do nothing
+    },
     callbacks: {},
-    simulateConnection: (_peer: any) => {},
-    simulateDisconnect: (_peer: any) => {},
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
+    simulateConnection: (_peer: any) => {
+      //do nothing
+    },
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
+    simulateDisconnect: (_peer: any) => {
+      //do nothing
+    },
     simulateMessage: (
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
       _peer: any,
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
       _method: EventType,
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
       _msg: MethodRequest
-    ) => {},
-    close: () => {}
+    ) => {
+      //do nothing
+    },
+    close: () => {
+      //do nothing
+    }
   }
 
-  mock.addListener = (evt: string, cb: Function) => {
+  mock.addListener = (evt: string, cb) => {
     if (!(evt in mock.callbacks)) mock.callbacks[evt] = []
     mock.callbacks[evt].push(cb)
     return mock
@@ -106,7 +145,7 @@ export const TCPServer = (): server.TCPServer & {
     })
   }
 
-  mock.simulateDisconnect = (peer: any) => {
+  mock.simulateDisconnect = (peer) => {
     mock.callbacks['disconnect'].forEach((cb) => cb(peer))
   }
   return mock

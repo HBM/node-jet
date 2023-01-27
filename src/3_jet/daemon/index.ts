@@ -200,6 +200,7 @@ export class Daemon extends EventEmitter {
           return { path: route, value: this.routes[route].value }
         })
       peer.respond(id, resp, true)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (ex: any) {
       peer.respond(id, ex, false)
     }

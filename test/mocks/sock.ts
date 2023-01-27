@@ -1,6 +1,8 @@
 import * as socket from '../../src/1_socket/socket'
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const sockMock = (): any => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mock: any = {
     ...(jest.createMockFromModule('../../src/1_socket') as socket.Socket),
     connect: () => Promise.resolve(),
