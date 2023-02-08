@@ -7,6 +7,7 @@ import { Socket } from './socket'
 export interface WebServerConfig {
   url?: string
   wsPort?: number
+  wsPath?: string
   server?: HTTPServer
   wsPingInterval?: number
 }
@@ -29,6 +30,7 @@ export class WebsocketServer extends EventEmitter {
     this.wsServer = new WsServer({
       port: this.config.wsPort,
       server: this.config.server,
+      path: this.config.wsPath,
       handleProtocols: (protocols: Set<string>) => {
         if (protocols.has('jet')) {
           return 'jet'

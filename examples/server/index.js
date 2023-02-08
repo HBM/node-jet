@@ -2,7 +2,7 @@
 
 var jet = require('../../lib/jet')
 
-var port = parseInt(process.argv[2]) || 8080
+var port = parseInt(process.argv[2]) || 11123
 
 // // Create Jet Daemon
 var daemon = new jet.Daemon({
@@ -19,7 +19,8 @@ var daemon = new jet.Daemon({
 })
 
 daemon.listen({
-  wsPort: port
+  wsPort: 11123,
+  path: '/api/jet/'
 })
 console.log('todo-server ready')
 console.log('listening on port', port)

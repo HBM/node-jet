@@ -38,7 +38,7 @@ export class JsonRPCServer extends EventEmitter {
       })
       this.tcpServer.listen()
     }
-    if (this.config.wsPort || this.config.server) {
+    if (this.config.wsPort || this.config.server || this.config.url) {
       this.wsServer = new WebsocketServer(this.config)
       this.wsServer.addListener('connection', (sock: Socket) => {
         const jsonRpc = new JsonRPC(this.log, { batches: this.batches }, sock)
