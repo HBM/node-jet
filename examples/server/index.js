@@ -20,7 +20,7 @@ var daemon = new jet.Daemon({
 
 daemon.listen({
   wsPort: 11123,
-  path: '/api/jet/'
+  wsPath: '/api/jet/'
 })
 console.log('todo-server ready')
 console.log('listening on port', port)
