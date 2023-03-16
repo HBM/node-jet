@@ -50,7 +50,7 @@ export class ParseError extends JSONRPCError {
     )
   }
 }
-class InvalidParamError extends JSONRPCError {
+export class InvalidParamError extends JSONRPCError {
   constructor(name: string, message: string, details = '') {
     super(INVALID_PARAMS_CODE, name, message, details)
   }
