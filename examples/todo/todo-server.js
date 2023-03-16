@@ -160,7 +160,7 @@ peer
     })
   )
   .then(() => peer.fetch(todos))
-  .then(() => peer.set("test",2))
-  .catch((ex) => {console.log('Caught exception', ex)
+  .then(() => peer.set('test', 2))
+  .catch((ex) => {
+    console.log('Caught exception', ex)
   })
-  
