@@ -7,7 +7,7 @@ import { Fetcher, invalidMethod, NotFound } from '../../src/jet'
 import { fullFetcherPeer, simpleFecherPeer } from '../mocks/peer'
 import { fetchSimpleId } from '../../src/3_jet/types'
 import waitForExpect from 'wait-for-expect'
-import { InvalidParamError } from '../../lib/jet'
+import { InvalidParamError } from '../../src/jet'
 describe('Testing Peer', () => {
   describe('Should handle daemon messages', () => {
     describe('Should send different messages full fetch', () => {
