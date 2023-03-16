@@ -7,6 +7,7 @@ var finalhandler = require('finalhandler')
 var http = require('http')
 var serveStatic = require('serve-static')
 const { State } = require('../../lib/jet')
+const assert = require('assert')
 
 var port = parseInt(process.argv[2]) || 8080
 var internalPort = 11128
@@ -145,6 +146,11 @@ var todos = new jet.Fetcher()
   })
 
 const stateTest = new jet.State('test', 0)
+
+stateTest.on("set",(val)=>{
+console.log("On set called", val)
+assert(1==val,"Out of range")
+})
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 peer
   .connect()
@@ -159,5 +165,9 @@ peer
     })
   )
   .then(() => peer.fetch(todos))
+  .then(() => peer.set("test",2))
 
-  .catch((ex) => console.log('Caught exception', ex))
+  .catch((ex) => {console.log('Caught exception', ex)
+  console.log(stateTest._value)
+  })
+  

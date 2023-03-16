@@ -9,7 +9,7 @@ import State from './state'
 import Fetcher from './fetcher'
 import { logger, Logger } from '../log'
 import { isState } from '../utils'
-import { invalidMethod, NotFound } from '../errors'
+import { invalidMethod, InvalidParamError, NotFound } from '../errors'
 import { Socket } from '../../1_socket/socket'
 import { Subscription } from '../daemon/subscription'
 import { EventEmitter } from '../../1_socket'
@@ -118,9 +118,21 @@ export class Peer extends EventEmitter {
             this.#jsonrpc.respond(id, error, false)
             return
           }
-          state.value(m.value)
-          state.emit('set', m.value)
-          this.#jsonrpc.respond(id, state.toJson(), true)
+          try {
+            state.emit('set', m.value)
+            state.value(m.value)
+            this.#jsonrpc.respond(id, state.toJson(), true)
+          } catch (err) {
+            this.#jsonrpc.respond(
+              id,
+              new InvalidParamError(
+                'InvalidParam',
+                'Failed to set value',
+                err && typeof err == 'object' ? err.toString() : undefined
+              ),
+              false
+            )
+          }
         } else {
           const error = new NotFound(m.path)
           this.#log.error(error.toString())

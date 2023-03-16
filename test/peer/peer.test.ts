@@ -7,6 +7,7 @@ import { Fetcher, invalidMethod, NotFound } from '../../src/jet'
 import { fullFetcherPeer, simpleFecherPeer } from '../mocks/peer'
 import { fetchSimpleId } from '../../src/3_jet/types'
 import waitForExpect from 'wait-for-expect'
+import { InvalidParamError } from '../../lib/jet'
 describe('Testing Peer', () => {
   describe('Should handle daemon messages', () => {
     describe('Should send different messages full fetch', () => {
@@ -65,7 +66,40 @@ describe('Testing Peer', () => {
           done()
         })
       })
-
+      it('should fail set with thrown string', (done) => {
+        const s = new State<ValueType>('foo', 5)
+        s.on('set', () => {
+          throw 'test'
+        })
+        peer.add(s).then(() => {
+          const par = { path: 'foo', value: 5 }
+          cbs['set'](undefined, 'fooId', par)
+          expect(s._value).toEqual(5)
+          expect(jsonRpc.respond).toBeCalledWith(
+            'fooId',
+            new InvalidParamError('InvalidParam', 'Failed to set value'),
+            false
+          )
+          done()
+        })
+      })
+      it('should fail set with error', (done) => {
+        const s = new State<ValueType>('foo', 5)
+        s.on('set', () => {
+          throw Error()
+        })
+        peer.add(s).then(() => {
+          const par = { path: 'foo', value: 5 }
+          cbs['set'](undefined, 'fooId', par)
+          expect(s._value).toEqual(5)
+          expect(jsonRpc.respond).toBeCalledWith(
+            'fooId',
+            new InvalidParamError('InvalidParam', 'Failed to set value'),
+            false
+          )
+          done()
+        })
+      })
       it('should fail set', () => {
         cbs['set'](undefined, 'fooId', { path: 'foo' })
         expect(jsonRpc.respond).toBeCalledWith('fooId', new NotFound(), false)
