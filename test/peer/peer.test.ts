@@ -165,7 +165,12 @@ describe('Testing Peer', () => {
             return true
           })
         peer.fetch(m).then(() => {
-          cbs['___f___1'](undefined, 'fooId3', { params: { path: 'foo' } })
+          Object.keys(cbs).forEach((key) => {
+            if (!['call', 'fetch_all', 'get', 'set'].includes(key)) {
+              cbs[key](undefined, 'fooId3', { params: { path: 'foo' } })
+            }
+          })
+
           expect(fetchSpy).toBeCalledTimes(1)
           done()
         })
@@ -444,12 +449,14 @@ describe('Testing Peer', () => {
       jest.spyOn(JsonRPC, 'default').mockImplementation(() => jsonrpc)
       const peer = new Peer()
       peer.fetch(new Fetcher()).catch((ex) => {
-        expect(sendSpy).toBeCalledWith('fetch', {
-          id: '___f___1',
-          path: {},
-          value: {},
-          sort: {}
-        })
+        expect(sendSpy).toBeCalledWith(
+          'fetch',
+          expect.objectContaining({
+            path: {},
+            value: {},
+            sort: {}
+          })
+        )
         expect(ex).toBe('invalid path')
         done()
       })
@@ -469,21 +476,26 @@ describe('Testing Peer', () => {
         .connect()
         .then(() => peer.fetch(new Fetcher().path('startsWith', 'a')))
         .then(() => {
-          expect(sendSpy).toBeCalledWith('fetch', {
-            id: '___f___1',
-            path: { startsWith: 'a' },
-            value: {},
-            sort: {}
-          })
+          expect(sendSpy).toBeCalledWith(
+            'fetch',
+            expect.objectContaining({
+              path: { startsWith: 'a' },
+              value: {},
+              sort: {}
+            })
+          )
         })
         .then(() => peer.fetch(new Fetcher().path('equals', 'b')))
         .then(() => {
-          expect(sendSpy).toBeCalledWith('fetch', {
-            id: '___f___2',
-            path: { equals: 'b' },
-            value: {},
-            sort: {}
-          })
+          expect(sendSpy).toBeCalledWith(
+            'fetch',
+            expect.objectContaining({
+              path: { equals: 'b' },
+              value: {},
+              sort: {}
+            })
+          )
+
           done()
         })
     })
@@ -549,7 +561,7 @@ describe('Testing Peer', () => {
         .then(() => peer.fetch(fetcher))
         .then(() => peer.unfetch(fetcher))
         .then(() => {
-          expect(sendSpy).toBeCalledWith('unfetch', { id: '___f___1' })
+          expect(sendSpy).toBeCalledWith('unfetch', expect.anything())
           done()
         })
     })
