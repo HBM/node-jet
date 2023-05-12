@@ -14,6 +14,7 @@ import { Socket } from '../../1_socket/socket'
 import { Subscription } from '../daemon/subscription'
 import { EventEmitter } from '../../1_socket'
 import { PathParams } from '../messages'
+import { nanoid } from 'nanoid'
 
 const fallbackDaemonInfo: InfoOptions = {
   name: 'unknown-daemon',
@@ -73,7 +74,6 @@ export interface PeerConfig extends JsonRpcConfig {
  */
 
 export class Peer extends EventEmitter {
-  #fetchId = 1
   #config: PeerConfig
   #jsonrpc: JsonRPC
   #daemonInfo: InfoOptions = fallbackDaemonInfo
@@ -206,8 +206,7 @@ export class Peer extends EventEmitter {
     //check if daemon accepts path and value rules for fetching
     // otherwise rules must be applied on peer side
     const fetchFull = this.fetchFull()
-    const fetcherId = `___f___${this.#fetchId}`
-    this.#fetchId++
+    const fetcherId = `f_${nanoid(5)}`
     this.#fetcher[fetcherId] = fetcher
 
     if (fetchFull) {
