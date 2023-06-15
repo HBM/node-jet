@@ -30,7 +30,7 @@ export class State<T = ValueType> extends EventEmitter {
     this._value = initialValue
     this._readonly = readonly
     if (typeof path === 'undefined') {
-      throw new invalidState(`undefined is not allowed in path ${path}`)
+      throw new invalidState(`${path} is not allowed in path`)
     }
   }
 
