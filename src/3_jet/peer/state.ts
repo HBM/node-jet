@@ -3,6 +3,7 @@
 import { ValueType } from '../types'
 import { JsonParams } from '.'
 import { EventEmitter } from '../../1_socket'
+import { invalidState } from '../errors'
 
 /**
  * Create a Jet State instance
@@ -28,6 +29,9 @@ export class State<T = ValueType> extends EventEmitter {
     this._path = path
     this._value = initialValue
     this._readonly = readonly
+    if (typeof path === 'undefined') {
+      throw new invalidState(`undefined is not allowed in path ${path}`)
+    }
   }
 
   /**
