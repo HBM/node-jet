@@ -1,5 +1,6 @@
 import State from '../../src/3_jet/peer/state'
 import { ValueType } from '../../src/3_jet/types'
+import { invalidState } from '../../src/jet'
 describe('Testing Method', () => {
   it('Should create Method', (done) => {
     const state = new State('foo', 5)
@@ -20,5 +21,9 @@ describe('Testing Method', () => {
       // access: { id: "usr" },
       value: 5
     })
+  })
+  it('State path error', () => {
+    const path = undefined as unknown as string
+    expect(() => new State<ValueType>(path, {})).toThrow(invalidState)
   })
 })

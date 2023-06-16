@@ -7,6 +7,7 @@ export const INVALID_REQUEST = -32600
 export const METHOD_NOT_FOUND = -32601
 export const INVALID_PARAMS_CODE = -32602
 export const INTERNAL_ERROR_CODE = -32603
+export const INVALID_PATH = -32604
 export const RESPONSE_TIMEOUT_CODE = -32001
 export const CONNECTION_ERROR_CODE = -32002
 
@@ -101,6 +102,11 @@ export class invalidMethod extends JSONRPCError {
     )
   }
 }
+export class invalidState extends JSONRPCError {
+  constructor(details?: string) {
+    super(INVALID_PATH, 'invalidState', 'The path is not supported', details)
+  }
+}
 export class invalidRequest extends JSONRPCError {
   constructor(
     name = 'invalidRequest',
@@ -115,11 +121,6 @@ export class notAllowed extends invalidRequest {
     super('NotAllowed', 'Not allowed', details)
   }
 }
-// export const responseTimeout = (data: ErrorData) => ({
-//   message: "Response Timeout",
-//   code: RESPONSE_TIMEOUT_CODE,
-//   data: data,
-// });
 
 export class ConnectionClosed extends JSONRPCError {
   constructor(details?: string) {

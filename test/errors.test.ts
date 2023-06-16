@@ -5,6 +5,7 @@ import {
   InvalidArgument,
   invalidMethod,
   invalidRequest,
+  invalidState,
   JSONRPCError,
   methodNotFoundError,
   ParseError,
@@ -74,6 +75,13 @@ describe('Testing errors', () => {
     expect(err).toBeInstanceOf(invalidMethod)
     expect(err.code).toEqual(-32600)
     expect(err.name).toEqual('jet.invalidMethod')
+  })
+  it('InvalidState', () => {
+    const err = new invalidState()
+    expect(err).toBeInstanceOf(JSONRPCError)
+    expect(err).toBeInstanceOf(invalidState)
+    expect(err.code).toEqual(-32604)
+    expect(err.name).toEqual('jet.invalidState')
   })
 
   it('FetchOnly', () => {
