@@ -10,7 +10,7 @@ import {
 } from '../types'
 
 export class Fetcher extends EventEmitter {
-  message: FetchParams = { path: {}, value: {}, sort: {}, id: '' }
+  message: FetchParams = { id: '' }
   valueRules: Record<string, ValueRule> = {}
 
   constructor() {
@@ -19,6 +19,9 @@ export class Fetcher extends EventEmitter {
   }
 
   path: pathFunction = (key: PathRule, value: string | string[]) => {
+    if (!this.message.path) {
+      this.message.path = {}
+    }
     this.message.path[key as string] = value
     return this
   }
@@ -27,6 +30,9 @@ export class Fetcher extends EventEmitter {
     value: string | boolean | number,
     field = ''
   ) => {
+    if (!this.message.value) {
+      this.message.value = {}
+    }
     this.message.value[field] = {
       operator,
       value
@@ -39,30 +45,48 @@ export class Fetcher extends EventEmitter {
   }
 
   differential = () => {
+    if (!this.message.sort) {
+      this.message.sort = {}
+    }
     this.message.sort.asArray = false
     return this
   }
 
   ascending = () => {
+    if (!this.message.sort) {
+      this.message.sort = {}
+    }
     this.message.sort.descending = false
     return this
   }
 
   descending = () => {
+    if (!this.message.sort) {
+      this.message.sort = {}
+    }
     this.message.sort.descending = true
     return this
   }
 
   sortByValue = (key = '') => {
+    if (!this.message.sort) {
+      this.message.sort = {}
+    }
     this.message.sort.by = key ? `value.${key}` : 'value'
     return this
   }
   sortByPath = () => {
+    if (!this.message.sort) {
+      this.message.sort = {}
+    }
     this.message.sort.by = 'path'
     return this
   }
 
   range = (_from: number, _to: number) => {
+    if (!this.message.sort) {
+      this.message.sort = {}
+    }
     this.message.sort.from = _from
     this.message.sort.to = _to
     return this
