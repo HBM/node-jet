@@ -11,13 +11,13 @@ export interface UnfetchParams {
   id: string
 }
 export interface FetchParams {
-  path: Record<string, string | string[]>
-  value: Record<
+  path?: Record<string, string | string[]>
+  value?: Record<
     string,
     { operator: OperatorType; value: number | boolean | string }
   >
   id: string
-  sort: {
+  sort?: {
     asArray?: boolean
     descending?: boolean
     by?: string
