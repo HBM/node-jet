@@ -161,33 +161,41 @@ export class JsonRPC extends EventEmitter {
       this.rejectConnect(err)
     }
   }
+
+  _convertMessage = (message: Blob | string): Promise<string> => {
+    if (message instanceof Blob) {
+      return message.arrayBuffer().then((buf) => new TextDecoder().decode(buf))
+    }
+    return Promise.resolve(message)
+  }
   /**
    * _dispatchMessage
    *
    * @api private
    */
   _handleMessage = (event: MessageEvent) => {
-    const message = event.data
-    this.logger.sock(`Received message: ${message}`)
-    let decoded
-    try {
-      decoded = decode(message)
-      if (Array.isArray(decoded)) {
-        for (let i = 0; i < decoded.length; i++) {
-          this._dispatchSingleMessage(decoded[i])
+    this._convertMessage(event.data).then((message) => {
+      this.logger.sock(`Received message: ${message}`)
+      let decoded
+      try {
+        decoded = decode(message)
+        if (Array.isArray(decoded)) {
+          for (let i = 0; i < decoded.length; i++) {
+            this._dispatchSingleMessage(decoded[i])
+          }
+        } else {
+          this._dispatchSingleMessage(decoded)
         }
-      } else {
-        this._dispatchSingleMessage(decoded)
-      }
-      this.send().catch((err) => {
+        this.send().catch((err) => {
+          this.logger.error(err)
+        })
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } catch (err: any) {
+        const decodedId = (decoded && decoded.id) || ''
+        this.respond(decodedId, new ParseError(message), false)
         this.logger.error(err)
-      })
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (err: any) {
-      const decodedId = (decoded && decoded.id) || ''
-      this.respond(decodedId, new ParseError(message), false)
-      this.logger.error(err)
-    }
+      }
+    })
   }
 
   /**
@@ -248,7 +256,9 @@ export class JsonRPC extends EventEmitter {
       this.messages.push(message as Message)
     }
     if (this.sendImmediate) {
-      this.send()
+      return this.send()
+    } else {
+      return Promise.resolve()
     }
   }
 
