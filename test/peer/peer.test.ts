@@ -449,14 +449,7 @@ describe('Testing Peer', () => {
       jest.spyOn(JsonRPC, 'default').mockImplementation(() => jsonrpc)
       const peer = new Peer()
       peer.fetch(new Fetcher()).catch((ex) => {
-        expect(sendSpy).toBeCalledWith(
-          'fetch',
-          expect.objectContaining({
-            path: {},
-            value: {},
-            sort: {}
-          })
-        )
+        expect(sendSpy).toBeCalledWith('fetch', expect.objectContaining({}))
         expect(ex).toBe('invalid path')
         done()
       })
@@ -479,9 +472,7 @@ describe('Testing Peer', () => {
           expect(sendSpy).toBeCalledWith(
             'fetch',
             expect.objectContaining({
-              path: { startsWith: 'a' },
-              value: {},
-              sort: {}
+              path: { startsWith: 'a' }
             })
           )
         })
@@ -490,9 +481,7 @@ describe('Testing Peer', () => {
           expect(sendSpy).toBeCalledWith(
             'fetch',
             expect.objectContaining({
-              path: { equals: 'b' },
-              value: {},
-              sort: {}
+              path: { equals: 'b' }
             })
           )
 

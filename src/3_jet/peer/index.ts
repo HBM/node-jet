@@ -188,7 +188,7 @@ export class Peer extends EventEmitter {
         return this.#jsonrpc
           .sendRequest('unfetch', param)
           .then(() => delete this.#fetcher[id])
-          .then(() => Promise.resolve([]))
+          .then(() => Promise.resolve())
       } else {
         delete this.#fetcher[id]
         return Promise.resolve()

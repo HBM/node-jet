@@ -186,9 +186,7 @@ export class JsonRPC extends EventEmitter {
         } else {
           this._dispatchSingleMessage(decoded)
         }
-        this.send().catch((err) => {
-          this.logger.error(err)
-        })
+        this.send()
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (err: any) {
         const decodedId = (decoded && decoded.id) || ''
