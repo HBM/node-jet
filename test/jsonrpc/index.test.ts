@@ -339,6 +339,7 @@ describe('Testing JsonRpc', () => {
         type: 'text/plain'
       })
       blob.arrayBuffer = () => Promise.resolve(new ArrayBuffer(10))
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       global.TextDecoder = MockDecoder as any
       sock.emit('message', { data: blob })
     })
