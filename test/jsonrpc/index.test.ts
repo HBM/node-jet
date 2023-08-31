@@ -9,7 +9,7 @@ import {
   INVALID_PARAMS_CODE,
   methodNotFoundError
 } from '../../src/jet'
-import { NotFound } from '../../src/jet'
+
 describe('Testing JsonRpc', () => {
   it('Should test basic functionality', (done) => {
     const sock = sockMock()
@@ -316,6 +316,35 @@ describe('Testing JsonRpc', () => {
       .then(() => done())
     sock.emit('open')
   })
+  class MockDecoder {
+    decode = () =>
+      JSON.stringify({
+        id: '1',
+        method: 'add',
+        params: { event: 'Add', path: 'foo', value: 1 }
+      })
+  }
+  it('Should test incoming blob request', (done) => {
+    const sock = sockMock()
+    jest.spyOn(Sock, 'Socket').mockImplementation(() => sock)
+
+    const jsonrpc = new JsonRPC(new Logger())
+    jsonrpc.connect(new AbortController()).then(() => {
+      jsonrpc.addListener('add', (_peer, id, msg) => {
+        expect(id).toEqual('1')
+        expect(msg).toEqual({ event: 'Add', path: 'foo', value: 1 })
+        done()
+      })
+      const blob = new Blob([], {
+        type: 'text/plain'
+      })
+      blob.arrayBuffer = () => Promise.resolve(new ArrayBuffer(10))
+      global.TextDecoder = MockDecoder as any
+      sock.emit('message', { data: blob })
+    })
+    sock.emit('open')
+  })
+
   it('Should test incoming request', (done) => {
     const sock = sockMock()
     jest.spyOn(Sock, 'Socket').mockImplementation(() => sock)
@@ -427,7 +456,12 @@ describe('Testing JsonRpc', () => {
     jsonrpc.connect().then(() => {
       sock.emit('message', { data: json })
       expect(jsonrpc.sendRequest('add', { path: 'foo' }, true)).rejects.toEqual(
-        new NotFound()
+        {
+          code: -32602,
+          data: {
+            pathNotExists: 'Foo'
+          }
+        }
       )
       done()
     })
@@ -449,7 +483,6 @@ describe('Testing JsonRpc', () => {
     ])
     jest.spyOn(Sock, 'Socket').mockImplementation(() => sock)
     jest.spyOn(sock, 'send').mockImplementationOnce((msg) => {
-      console.log('Triggered send')
       expect(msg).toEqual(
         JSON.stringify([
           { id: '1', method: 'add', params: { path: 'foo', value: 3 } },
@@ -470,6 +503,35 @@ describe('Testing JsonRpc', () => {
         })
       )
       done()
+    })
+
+    sock.emit('open')
+  })
+
+  it('Should test batch invalid method', (done) => {
+    const sock = sockMock()
+    jest.spyOn(Sock, 'Socket').mockImplementation(() => sock)
+
+    const msgMock = jest.fn().mockImplementation((msg) => {
+      expect(msg).toEqual(
+        JSON.stringify({
+          id: '1',
+          error: new methodNotFoundError('foo')
+        })
+      )
+      done()
+    })
+    sock.send = msgMock
+    const message = [
+      {
+        id: '1',
+        method: 'foo',
+        params: { event: 'Add', path: 'foo', value: 1 }
+      }
+    ]
+    const jsonrpc = new JsonRPC(new Logger(), { batches: true })
+    jsonrpc.connect(new AbortController()).then(() => {
+      sock.emit('message', { data: JSON.stringify(message) })
     })
 
     sock.emit('open')
