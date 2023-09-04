@@ -1,7 +1,7 @@
 /*
  * Jet client-server communications:
  */
-import { Peer, Fetcher } from 'node-jet'
+import { Peer, Fetcher } from '../../lib'
 const protocol = window.location.protocol === 'http:' ? 'ws://' : 'wss://'
 const todoList = {}
 var peer = new Peer({ port: 11123 })
@@ -124,6 +124,10 @@ document.getElementById('todo-form').addEventListener('submit', (event) => {
   event.preventDefault()
 })
 
-peer.connect().then(() => {
-  peer.fetch(todos)
-})
+peer
+  .connect()
+  .then(() => peer.authenticate('test', 'test'))
+  .then(() => {
+    peer.fetch(todos)
+  })
+  .catch((ex) => console.log(ex))

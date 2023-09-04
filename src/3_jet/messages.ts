@@ -37,6 +37,12 @@ export const castMessage = <T extends MethodRequest>(msg: MethodRequest): T => {
   switch (method) {
     case 'info':
       return msg as T
+    case 'authenticate':
+      if (!params || !('user' in params) || !('password' in params))
+        throw new InvalidArgument(
+          'Only params.user & params.password supported'
+        )
+      return msg as T
     case 'configure':
       if (!params || !('name' in params))
         throw new InvalidArgument('Only params.name supported')
@@ -96,6 +102,14 @@ export interface PathParams {
   path: string
   value?: ValueType
   args?: ValueType[] | Record<string, ValueType>
+}
+export interface AuthParams {
+  user: string
+  password: string
+}
+
+export interface AuthRequest {
+  params: AuthParams
 }
 export interface AddRequest extends PathRequest {
   params: PathParams

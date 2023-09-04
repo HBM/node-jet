@@ -32,6 +32,8 @@ export interface JsonParams<T = ValueType> {
   args?: object
   timeout?: number
   value?: T
+  user?: string
+  password?: string
   id?: string
 }
 export type publishEvent = 'Add' | 'Remove' | 'Change'
@@ -272,6 +274,9 @@ export class Peer extends EventEmitter {
    *   console.log('connect failed', err)
    * })
    */
+  authenticate = (user: string, password: string) => {
+    return this.#jsonrpc.sendRequest('authenticate', { user, password })
+  }
   connect = (controller: AbortController = new AbortController()) =>
     this.#jsonrpc
       .connect(controller)

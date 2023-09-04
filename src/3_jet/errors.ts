@@ -62,6 +62,19 @@ export class NotFound extends InvalidParamError {
     super('NotFound', 'No State/Method matching the specified path', details)
   }
 }
+
+export class InvvalidCredentials extends InvalidParamError {
+  constructor(details?: string) {
+    super('invalid params', 'invalid credentials', details)
+  }
+}
+
+export class NotAuthorized extends InvalidParamError {
+  constructor(details?: string) {
+    super('invalid params', 'Missing authorization', details)
+  }
+}
+
 export class InvalidArgument extends InvalidParamError {
   constructor(details?: string) {
     super(

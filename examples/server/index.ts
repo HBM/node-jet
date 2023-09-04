@@ -1,15 +1,13 @@
-#!/usr/bin/env node
-
-var jet = require('../../lib/jet')
+import { Daemon, LogLevel } from '../../src'
 
 var port = parseInt(process.argv[2]) || 11123
 
 // // Create Jet Daemon
-var daemon = new jet.Daemon({
+var daemon = new Daemon({
   log: {
     logCallbacks: [console.log],
-    logname: 'Daemon',
-    loglevel: jet.LogLevel.info
+    logName: 'Daemon',
+    logLevel: LogLevel.info
   },
   features: {
     fetch: 'full',
