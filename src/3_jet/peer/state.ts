@@ -20,15 +20,17 @@ import { invalidState } from '../errors'
  * @param {object} [access] Access rights for this state. Per default unrestricted access to all Peers.
  *
  */
-export class State<T = ValueType> extends EventEmitter {
+export class State<T extends ValueType> extends EventEmitter {
   _path: string
   _value: T
-  _readonly: boolean
-  constructor(path: string, initialValue: T, readonly = false) {
+  _readGroup: string
+  _writeGroup: string
+  constructor(path: string, initialValue: T, readgroup="all",writeGroup="all") {
     super()
     this._path = path
     this._value = initialValue
-    this._readonly = readonly
+    this._readGroup = readgroup
+    this._writeGroup = writeGroup
     if (typeof path === 'undefined') {
       throw new invalidState(`${path} is not allowed in path`)
     }
@@ -64,7 +66,8 @@ export class State<T = ValueType> extends EventEmitter {
 
   toJson = (): JsonParams<T> => ({
     path: this._path,
-    value: this._value
+    value: this._value,
+    access: {read:this._readGroup,write:this._writeGroup}
   })
 }
 

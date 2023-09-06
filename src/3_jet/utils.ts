@@ -44,8 +44,8 @@ export const errorObject = (err: JSONRPCError | ErrorType | string) => {
     }
   }
 }
-export const isState = (
-  stateOrMethod: State<ValueType> | Method
-): stateOrMethod is State<ValueType> => {
+export const isState = <T extends ValueType>(
+  stateOrMethod: State<T> | Method
+): stateOrMethod is State<T> => {
   return '_value' in stateOrMethod
 }

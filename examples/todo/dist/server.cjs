@@ -99,10 +99,10 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   pathRules: () => (/* reexport safe */ _3_jet_types__WEBPACK_IMPORTED_MODULE_6__.pathRules)
 /* harmony export */ });
 /* harmony import */ var _3_jet_daemon__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(3);
-/* harmony import */ var _3_jet_peer__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(45);
-/* harmony import */ var _3_jet_peer_state__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(49);
-/* harmony import */ var _3_jet_peer_method__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(50);
-/* harmony import */ var _3_jet_peer_fetcher__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(46);
+/* harmony import */ var _3_jet_peer__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(46);
+/* harmony import */ var _3_jet_peer_state__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(50);
+/* harmony import */ var _3_jet_peer_method__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(51);
+/* harmony import */ var _3_jet_peer_fetcher__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(47);
 /* harmony import */ var _3_jet_errors__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(7);
 /* harmony import */ var _3_jet_types__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(8);
 /* harmony import */ var _3_jet_log__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(4);
@@ -134,6 +134,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _errors__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(7);
 /* harmony import */ var _2_jsonrpc_server__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(38);
 /* harmony import */ var _1_socket__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(13);
+/* harmony import */ var _authenticator__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(45);
+
 
 
 
@@ -152,18 +154,16 @@ class InfoObject {
     version;
     protocolVersion;
     features;
-    constructor(options) {
+    constructor(options, authenticate = false) {
         this.name = options.name || 'node-jet';
         this.version = version;
         this.protocolVersion = '1.1.0';
         this.features = {
             batches: options.features?.batches || false,
             fetch: options.features?.fetch || 'full',
-            asNotification: options.features?.asNotification || false
+            asNotification: options.features?.asNotification || false,
+            authenticate: authenticate
         };
-        if (options.features?.authenticate) {
-            this.features.authenticate = true;
-        }
     }
 }
 /**
@@ -180,25 +180,15 @@ class Daemon extends _1_socket__WEBPACK_IMPORTED_MODULE_6__.EventEmitter {
     jsonRPCServer;
     routes = {};
     subscriber = [];
-    user = undefined;
-    authenticated = false;
+    authenticator;
     /**
      * Constructor for creating the instance
      * @param {DaemonOptions & InfoOptions} [options] Options for the daemon creation
      */
     constructor(options = {}) {
         super();
-        if (options.username && options.password) {
-            if (!options.features) {
-                options.features = {};
-            }
-            options.features.authenticate = true;
-            this.user = { password: options.password, user: options.username };
-        }
-        else {
-            this.authenticated = true;
-        }
-        this.infoObject = new InfoObject(options);
+        this.authenticator = new _authenticator__WEBPACK_IMPORTED_MODULE_7__.Authenticator(options.username, options.password);
+        this.infoObject = new InfoObject(options, this.authenticator.enabled);
         this.log = new _log__WEBPACK_IMPORTED_MODULE_0__.Logger(options.log);
     }
     asNotification = () => this.infoObject.features.asNotification;
@@ -214,18 +204,11 @@ class Daemon extends _1_socket__WEBPACK_IMPORTED_MODULE_6__.EventEmitter {
         }
     };
     authenticate = (peer, id, params) => {
-        console.log(id, params, this.user);
-        if (!this.user) {
-            peer.respond(id, {}, true);
-            return;
-        }
-        if (params.user === this.user.user &&
-            params.password === this.user.password) {
-            this.authenticated = true;
+        if (this.authenticator.login(params.user, params.password)) {
+            peer.user = params.user;
             peer.respond(id, {}, true);
         }
         else {
-            this.authenticated = false;
             peer.respond(id, new _errors__WEBPACK_IMPORTED_MODULE_4__.InvvalidCredentials(params.user), false);
         }
     };
@@ -234,15 +217,12 @@ class Daemon extends _1_socket__WEBPACK_IMPORTED_MODULE_6__.EventEmitter {
     Add synchronous: First all Peers are informed about the new value then message is acknowledged
     */
     add = (peer, id, params) => {
-        if (!this.authenticated) {
-            peer.respond(id, new _errors__WEBPACK_IMPORTED_MODULE_4__.NotAuthorized(), false);
-        }
         const path = params.path;
         if (path in this.routes) {
             peer.respond(id, new _errors__WEBPACK_IMPORTED_MODULE_4__.Occupied(path), false);
             return;
         }
-        this.routes[path] = new _route__WEBPACK_IMPORTED_MODULE_3__.Route(peer, path, params.value);
+        this.routes[path] = new _route__WEBPACK_IMPORTED_MODULE_3__.Route(peer, path, params.value, params.access);
         if (typeof params.value !== 'undefined') {
             this.subscriber.forEach((fetchRule) => {
                 if (this.simpleFetch() || fetchRule.matchesPath(path)) {
@@ -316,8 +296,9 @@ class Daemon extends _1_socket__WEBPACK_IMPORTED_MODULE_6__.EventEmitter {
         try {
             const matcher = (0,_path_matcher__WEBPACK_IMPORTED_MODULE_1__.createPathMatcher)(params);
             const resp = Object.keys(this.routes)
-                .filter((route) => matcher(route))
+                .filter((route) => matcher(route) && this.authenticator.isAllowed("get", peer.user, this.routes[route].access))
                 .map((route) => {
+                console.log(route);
                 return { path: route, value: this.routes[route].value };
             });
             peer.respond(id, resp, true);
@@ -1049,11 +1030,13 @@ class Route extends _1_socket__WEBPACK_IMPORTED_MODULE_0__.EventEmitter {
     owner;
     value;
     path;
-    constructor(owner, path, value = undefined) {
+    access;
+    constructor(owner, path, value = undefined, access) {
         super();
         this.owner = owner;
         this.value = value;
         this.path = path;
+        this.access = access;
     }
     updateValue = (newValue) => {
         if (newValue === this.value)
@@ -5871,6 +5854,7 @@ class JsonRPC extends _1_socket__WEBPACK_IMPORTED_MODULE_3__.EventEmitter {
     config;
     messages = [];
     messageId = 1;
+    user = "";
     _isOpen = false;
     openRequests = {};
     batchPromises = [];
@@ -5986,7 +5970,6 @@ class JsonRPC extends _1_socket__WEBPACK_IMPORTED_MODULE_3__.EventEmitter {
      */
     _handleMessage = (event) => {
         this._convertMessage(event.data).then((message) => {
-            console.log('handling message', message);
             this.logger.sock(`Received message: ${message}`);
             let decoded;
             try {
@@ -6563,18 +6546,69 @@ class WebsocketServer extends ___WEBPACK_IMPORTED_MODULE_0__.EventEmitter {
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   Authenticator: () => (/* binding */ Authenticator)
+/* harmony export */ });
+/* harmony import */ var _errors__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(7);
+
+class Authenticator {
+    users;
+    groups;
+    enabled;
+    constructor(adminUser, password) {
+        if (adminUser && password) {
+            this.enabled = true;
+            this.users = { [adminUser]: password };
+            this.groups = { "admin": [adminUser] };
+        }
+        else {
+            this.users = {};
+            this.groups = {};
+            this.enabled = false;
+        }
+    }
+    addUser = (requestUser, newUser, password, groups) => {
+        if (!(requestUser in this.groups["admin"])) {
+            throw new _errors__WEBPACK_IMPORTED_MODULE_0__.NotAuthorized("Only admin users can create User");
+        }
+        if (newUser in Object.keys(this.users)) {
+            throw new _errors__WEBPACK_IMPORTED_MODULE_0__.NotAuthorized("User already exists");
+        }
+        this.users[newUser] = password;
+        groups.forEach((group) => {
+            if (!(group in Object.keys(this.groups))) {
+                this.groups[group] = [];
+            }
+            this.groups[group].push(newUser);
+        });
+    };
+    login = (user, password) => user in this.users && password === this.users[user];
+    isAllowed = (method, user, access) => {
+        console.log(method, user, access);
+        if (!access)
+            return true;
+        return user in this.groups[method === "get" ? access.readgroup : access.writegroup];
+    };
+}
+
+
+/***/ }),
+/* 46 */
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   Peer: () => (/* binding */ Peer),
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
 /* harmony import */ var _types__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(8);
 /* harmony import */ var _2_jsonrpc__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(39);
-/* harmony import */ var _fetcher__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(46);
+/* harmony import */ var _fetcher__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(47);
 /* harmony import */ var _log__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(4);
 /* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(11);
 /* harmony import */ var _errors__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(7);
 /* harmony import */ var _daemon_subscription__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(9);
 /* harmony import */ var _1_socket__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(13);
-/* harmony import */ var nanoid__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(47);
+/* harmony import */ var nanoid__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(48);
 
 
 
@@ -6909,7 +6943,7 @@ class Peer extends _1_socket__WEBPACK_IMPORTED_MODULE_7__.EventEmitter {
 
 
 /***/ }),
-/* 46 */
+/* 47 */
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
@@ -6997,7 +7031,7 @@ class Fetcher extends _1_socket__WEBPACK_IMPORTED_MODULE_0__.EventEmitter {
 
 
 /***/ }),
-/* 47 */
+/* 48 */
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
@@ -7009,7 +7043,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   urlAlphabet: () => (/* reexport safe */ _url_alphabet_index_js__WEBPACK_IMPORTED_MODULE_1__.urlAlphabet)
 /* harmony export */ });
 /* harmony import */ var crypto__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(28);
-/* harmony import */ var _url_alphabet_index_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(48);
+/* harmony import */ var _url_alphabet_index_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(49);
 
 
 
@@ -7058,7 +7092,7 @@ let nanoid = (size = 21) => {
 
 
 /***/ }),
-/* 48 */
+/* 49 */
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
@@ -7070,7 +7104,7 @@ const urlAlphabet =
 
 
 /***/ }),
-/* 49 */
+/* 50 */
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
@@ -7101,12 +7135,14 @@ __webpack_require__.r(__webpack_exports__);
 class State extends _1_socket__WEBPACK_IMPORTED_MODULE_0__.EventEmitter {
     _path;
     _value;
-    _readonly;
-    constructor(path, initialValue, readonly = false) {
+    _readGroup;
+    _writeGroup;
+    constructor(path, initialValue, readgroup = "all", writeGroup = "all") {
         super();
         this._path = path;
         this._value = initialValue;
-        this._readonly = readonly;
+        this._readGroup = readgroup;
+        this._writeGroup = writeGroup;
         if (typeof path === 'undefined') {
             throw new _errors__WEBPACK_IMPORTED_MODULE_1__.invalidState(`${path} is not allowed in path`);
         }
@@ -7138,14 +7174,15 @@ class State extends _1_socket__WEBPACK_IMPORTED_MODULE_0__.EventEmitter {
     };
     toJson = () => ({
         path: this._path,
-        value: this._value
+        value: this._value,
+        access: { read: this._readGroup, write: this._writeGroup }
     });
 }
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (State);
 
 
 /***/ }),
-/* 50 */
+/* 51 */
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
@@ -7178,6 +7215,31 @@ class Method extends _1_socket__WEBPACK_IMPORTED_MODULE_0__.EventEmitter {
     };
 }
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (Method);
+
+
+/***/ }),
+/* 52 */
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   Todo: () => (/* binding */ Todo)
+/* harmony export */ });
+class Todo {
+    title;
+    id;
+    completed = false;
+    constructor(title) {
+        this.title = this.id = title;
+    }
+    merge = (toMerge) => {
+        if (toMerge.completed)
+            this.completed = true;
+        if (toMerge.title) {
+            this.title = toMerge.title;
+        }
+    };
+}
 
 
 /***/ })
@@ -7254,15 +7316,12 @@ var __webpack_exports__ = {};
 (() => {
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _src__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
+/* harmony import */ var _Todo__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(52);
 
-var port = parseInt(process.argv[2]) || 8080;
+
+var port = parseInt(process.argv[2]) || 8081;
 // // Create Jet Daemon
 var daemon = new _src__WEBPACK_IMPORTED_MODULE_0__.Daemon({
-    log: {
-        logCallbacks: [console.log],
-        logName: 'Daemon',
-        logLevel: _src__WEBPACK_IMPORTED_MODULE_0__.LogLevel.info
-    },
     username: 'Admin',
     password: 'test',
     features: {
@@ -7278,15 +7337,11 @@ console.log('todo-server ready');
 console.log('listening on port', port);
 // Create Jet Peer
 var peer = new _src__WEBPACK_IMPORTED_MODULE_0__.Peer({
-    url: `ws://localhost:8080/`,
-    // url: `ws://172.19.191.155:8081/`,
-    // url: `ws://172.19.211.59:11123/api/jet/`,
-    log: {
-        logCallbacks: [console.log],
-        logName: 'Peer 1',
-        logLevel: _src__WEBPACK_IMPORTED_MODULE_0__.LogLevel.socket
-    }
+    url: `ws://localhost:8081/`
 });
+// const peer2 = new jet.Peer({
+//   port: internalPort,log:{logCallbacks:[console.log],logname:"Peer 2",loglevel:jet.LogLevel.debug}
+// })
 var todoStates = {};
 // Provide a "todo/add" method to create new todos
 var jetState = new _src__WEBPACK_IMPORTED_MODULE_0__.State('todo/value', { test: 4 });
@@ -7295,7 +7350,15 @@ jetState.on('set', (value) => {
 });
 var addTodo = new _src__WEBPACK_IMPORTED_MODULE_0__.Method('todo/add');
 addTodo.on('call', (args) => {
-    console.log(args);
+    var title = args[0];
+    var todo = new _Todo__WEBPACK_IMPORTED_MODULE_1__.Todo(title);
+    // create a new todo state and store ref.
+    const todoState = new _src__WEBPACK_IMPORTED_MODULE_0__.State('todo/#' + todo.id, todo);
+    todoState.on('set', (requestedTodo) => {
+        todo.merge(requestedTodo);
+    });
+    todoStates[todo.id] = todoState;
+    peer.add(todoState);
 });
 // Provide a "todo/remove" method to delete a certain todo
 var removeTodo = new _src__WEBPACK_IMPORTED_MODULE_0__.Method('todo/remove');
@@ -7326,18 +7389,12 @@ setCompleted.on('call', (args) => {
         }
     });
 });
-var todos = new _src__WEBPACK_IMPORTED_MODULE_0__.Fetcher()
-    .path('containsOneOf', ['todo/#0', 'todo/#2', 'todo/#4'])
-    .value('greaterThan', 0, 'id')
-    .range(1, 30)
-    .ascending()
-    .sortByValue()
-    .on('data', () => {
-    // renderTodos(todos)
-});
-const stateTest = new _src__WEBPACK_IMPORTED_MODULE_0__.State('test', 0);
+const stateTest = new _src__WEBPACK_IMPORTED_MODULE_0__.State('test', 1, "admin", "admin");
+const stateTest2 = new _src__WEBPACK_IMPORTED_MODULE_0__.State('test2', 2);
+console.log("connecting");
 peer
     .connect()
+    .then(() => console.log("connected"))
     .then(() => peer.authenticate('Admin', 'test'))
     .then(() => peer.add(jetState))
     .then(() => peer.add(addTodo))
@@ -7345,8 +7402,9 @@ peer
     .then(() => peer.add(setCompleted))
     .then(() => peer.add(clearCompletedTodos))
     .then(() => peer.add(stateTest))
-    .then(() => peer.fetch(todos))
-    .then(() => peer.set('test', 2))
+    .then(() => peer.add(stateTest2))
+    .then(() => peer.get({ "path": { "startsWith": "test" } }))
+    .then((val) => console.log(val))
     .catch((ex) => {
     console.log('Caught exception', ex);
 });

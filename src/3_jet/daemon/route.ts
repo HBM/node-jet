@@ -2,6 +2,11 @@
 import { EventEmitter } from '../../1_socket'
 import JsonRPC from '../../2_jsonrpc'
 import { ValueType } from '../types'
+
+export type access = {
+  readgroup: string, 
+  writegroup: string
+}
 /**
  * A Route is a path and corresponds to a state.
  * The daemon keeps a local cache of all registered routes and all momentary values.
@@ -11,15 +16,18 @@ export class Route extends EventEmitter {
   owner: JsonRPC
   value?: ValueType
   path: string
+  access?: access
   constructor(
     owner: JsonRPC,
     path: string,
-    value: ValueType | undefined = undefined
+    value: ValueType | undefined = undefined,
+    access?: access
   ) {
     super()
     this.owner = owner
     this.value = value
     this.path = path
+    this.access = access
   }
 
   updateValue = (newValue: ValueType) => {

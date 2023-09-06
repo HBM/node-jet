@@ -1,22 +1,16 @@
 import {
   Daemon,
-  Fetcher,
-  LogLevel,
   Method,
   Peer,
   State,
   ValueType
-} from '../../src'
+} from '../../../src'
+import { Todo } from './Todo'
 
-var port = parseInt(process.argv[2]) || 8080
+var port = parseInt(process.argv[2]) || 8081
 
 // // Create Jet Daemon
 var daemon = new Daemon({
-  log: {
-    logCallbacks: [console.log],
-    logName: 'Daemon',
-    logLevel: LogLevel.info
-  },
   username: 'Admin',
   password: 'test',
   features: {
@@ -34,24 +28,15 @@ console.log('listening on port', port)
 
 // Create Jet Peer
 var peer = new Peer({
-  url: `ws://localhost:8080/`,
-  // url: `ws://172.19.191.155:8081/`,
-  // url: `ws://172.19.211.59:11123/api/jet/`,
-  log: {
-    logCallbacks: [console.log],
-    logName: 'Peer 1',
-    logLevel: LogLevel.socket
-  }
+  url: `ws://localhost:8081/`
+ 
 })
 // const peer2 = new jet.Peer({
 //   port: internalPort,log:{logCallbacks:[console.log],logname:"Peer 2",loglevel:jet.LogLevel.debug}
 
 // })
-type todoType = {
-  completed: boolean
-}
 
-var todoStates: Record<string, State<todoType>> = {}
+var todoStates: Record<string, State<Todo>> = {}
 
 // Provide a "todo/add" method to create new todos
 var jetState = new State<ValueType>('todo/value', { test: 4 })
@@ -60,7 +45,16 @@ jetState.on('set', (value) => {
 })
 var addTodo = new Method('todo/add')
 addTodo.on('call', (args) => {
-  console.log(args)
+  var title = args[0]
+  var todo = new Todo(title)
+
+  // create a new todo state and store ref.
+  const todoState = new State('todo/#' + todo.id, todo)
+  todoState.on('set', (requestedTodo) => {
+    todo.merge(requestedTodo)
+  })
+  todoStates[todo.id] = todoState
+  peer.add(todoState)
 })
 
 // Provide a "todo/remove" method to delete a certain todo
@@ -94,20 +88,15 @@ setCompleted.on('call', (args) => {
     }
   })
 })
-var todos = new Fetcher()
-  .path('containsOneOf', ['todo/#0', 'todo/#2', 'todo/#4'])
-  .value('greaterThan', 0, 'id')
-  .range(1, 30)
-  .ascending()
-  .sortByValue()
-  .on('data', () => {
-    // renderTodos(todos)
-  })
 
-const stateTest = new State<ValueType>('test', 0)
 
+const stateTest = new State<ValueType>('test', 1,"admin","admin")
+const stateTest2 = new State<ValueType>('test2', 2)
+
+console.log("connecting")
 peer
   .connect()
+  .then(() => console.log("connected"))
   .then(() => peer.authenticate('Admin', 'test'))
   .then(() => peer.add(jetState))
   .then(() => peer.add(addTodo))
@@ -115,8 +104,9 @@ peer
   .then(() => peer.add(setCompleted))
   .then(() => peer.add(clearCompletedTodos))
   .then(() => peer.add(stateTest))
-  .then(() => peer.fetch(todos))
-  .then(() => peer.set('test', 2))
+  .then(() => peer.add(stateTest2))
+  .then(() => peer.get({"path":{"startsWith":"test"}}))
+  .then((val) => console.log(val))
   .catch((ex) => {
     console.log('Caught exception', ex)
   })

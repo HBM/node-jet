@@ -13,8 +13,8 @@ import { invalidMethod, InvalidParamError, NotFound } from '../errors'
 import { Socket } from '../../1_socket/socket'
 import { Subscription } from '../daemon/subscription'
 import { EventEmitter } from '../../1_socket'
-import { PathParams } from '../messages'
 import { nanoid } from 'nanoid'
+import { MethodParams, PathParams, SetParams } from '../messages'
 
 const fallbackDaemonInfo: InfoOptions = {
   name: 'unknown-daemon',
@@ -26,8 +26,13 @@ const fallbackDaemonInfo: InfoOptions = {
     asNotification: false
   }
 }
+
 export interface JsonParams<T = ValueType> {
   method?: string
+  access?: {
+    read: string,
+    write: string
+  },
   path?: string | Record<string, string | string[]>
   args?: object
   timeout?: number
@@ -79,7 +84,7 @@ export class Peer extends EventEmitter {
   #config: PeerConfig
   #jsonrpc: JsonRPC
   #daemonInfo: InfoOptions = fallbackDaemonInfo
-  #routes: Record<string, Method | State> = {}
+  #routes: Record<string, Method | State<ValueType>> = {}
   #fetcher: Record<string, Fetcher> = {}
   #log: Logger
   cache: Record<string, PublishMessage> = {}
@@ -92,7 +97,7 @@ export class Peer extends EventEmitter {
       'get',
       (_peer: JsonRPC, id: string, m: PathParams) => {
         if (m.path in this.#routes) {
-          const state = this.#routes[m.path] as State
+          const state = this.#routes[m.path] as State<ValueType>
           if (!isState(state)) {
             const error = new invalidMethod(
               `Tried to get value of ${m.path} which is a method`
@@ -109,7 +114,7 @@ export class Peer extends EventEmitter {
     )
     this.#jsonrpc.addListener(
       'set',
-      (_peer: JsonRPC, id: string, m: PathParams) => {
+      (_peer: JsonRPC, id: string, m: SetParams) => {
         if (m.path in this.#routes) {
           const state = this.#routes[m.path]
           if (!isState(state)) {
@@ -144,7 +149,7 @@ export class Peer extends EventEmitter {
     )
     this.#jsonrpc.addListener(
       'call',
-      (_peer: JsonRPC, id: string, m: PathParams) => {
+      (_peer: JsonRPC, id: string, m: MethodParams) => {
         if (m.path in this.#routes) {
           const method = this.#routes[m.path]
           if (isState(method)) {
@@ -327,7 +332,7 @@ export class Peer extends EventEmitter {
    * @param {(State|Method)} content To content to be added.
    * @returns {external:Promise} Gets resolved as soon as the content has been added to the Daemon.
    */
-  add = (stateOrMethod: Method | State) => {
+  add = <T extends ValueType>(stateOrMethod: Method | State<T>) => {
     if (isState(stateOrMethod)) {
       stateOrMethod.addListener('change', (newValue: ValueType) => {
         this.#jsonrpc.sendRequest('change', {
@@ -337,7 +342,7 @@ export class Peer extends EventEmitter {
       })
     }
     return this.#jsonrpc.sendRequest('add', stateOrMethod.toJson()).then(() => {
-      this.#routes[stateOrMethod._path] = stateOrMethod
+      this.#routes[stateOrMethod._path] = stateOrMethod as any as State<ValueType>
       return Promise.resolve()
     })
   }
@@ -348,7 +353,7 @@ export class Peer extends EventEmitter {
    * @param {State|Method} content The content to be removed.
    * @returns {external:Promise} Gets resolved as soon as the content has been removed from the Daemon.
    */
-  remove = (stateOrMethod: Method | State) =>
+  remove = <T extends ValueType>(stateOrMethod: Method | State<T>) =>
     this.#jsonrpc
       .sendRequest('remove', { path: stateOrMethod.path() })
       .then(() => Promise.resolve())

@@ -1,34 +1,28 @@
 /*
  * Jet client-server communications:
  */
-import { Peer, Fetcher } from '../../lib'
-const protocol = window.location.protocol === 'http:' ? 'ws://' : 'wss://'
-const todoList = {}
-var peer = new Peer({ port: 11123 })
+import { Fetcher, Peer } from '../../../src'
+import { Todo } from '../server/Todo'
+import "./base.css"
 
-var addTodo = (title) => {
+const todoList: Record<string,Todo> = {}
+const peer = new Peer({ url: `ws://localhost:8081/` })
+
+const addTodo = (title: string) => {
   peer.call('todo/add', [title])
 }
 
-var removeTodo = (id) => {
+const removeTodo = (id: string) => {
   peer.call('todo/remove', [id])
 }
 
-var setTodoTitle = (id, title) => {
-  peer.set('todo/#' + id, {
-    title: title
-  })
-}
-
-var setTodoCompleted = (todo, completed = undefined) => {
-  peer.set('todo/#' + todo.id, {
-    id: todo.id,
-    title: todo.title,
+const setTodoCompleted = (todo: Todo, completed?:boolean) => {
+  peer.set(`todo/#${todo.id}`, {
+    ...todo,
     completed: completed ? completed : !todo.completed
   })
 }
-
-var todos = new Fetcher().path('startsWith', 'todo/#').on('data', (todo) => {
+const todos = new Fetcher().path('startsWith', 'todo/#').on('data', (todo) => {
   switch (todo.event) {
     case 'Add':
     case 'Change':
@@ -40,12 +34,11 @@ var todos = new Fetcher().path('startsWith', 'todo/#').on('data', (todo) => {
   }
   renderTodos()
 })
-
 /*
  * GUI Logic:
  */
 
-var renderTodo = (todo) => {
+const renderTodo = (todo: Todo) => {
   var container = document.createElement('li')
   if (todo.completed) {
     container.className = 'completed'
@@ -76,11 +69,11 @@ var renderTodo = (todo) => {
   return container
 }
 
-var getCompleted
-var getUncompleted
+var getCompleted: ()=>Todo[]
+var getUncompleted: ()=>Todo[]
 
-var renderTodos = () => {
-  var root = document.getElementById('todo-list')
+const renderTodos = () => {
+  var root = document.getElementById('todo-list')!
   while (root.firstChild) {
     root.removeChild(root.firstChild)
   }
@@ -94,17 +87,16 @@ var renderTodos = () => {
   getUncompleted = () =>
     Object.values(todoList).filter((todo) => todo.completed === false)
 
-  var itemsLeft = document.getElementById('todo-count')
+  var itemsLeft = document.getElementById('todo-count')!
   itemsLeft.innerHTML = '' + getUncompleted().length + ' left'
 }
-
-document.getElementById('clear-completed').addEventListener('click', () => {
+document.getElementById('clear-completed')!.addEventListener('click', () => {
   getCompleted().forEach((todo) => {
     removeTodo(todo.id)
   })
 })
 
-document.getElementById('toggle-all').addEventListener('click', () => {
+document.getElementById('toggle-all')!.addEventListener('click', () => {
   var uncompleted = getUncompleted()
   if (uncompleted.length > 0) {
     uncompleted.forEach((todo) => {
@@ -117,17 +109,22 @@ document.getElementById('toggle-all').addEventListener('click', () => {
   }
 })
 
-document.getElementById('todo-form').addEventListener('submit', (event) => {
-  var titleInput = document.getElementById('new-todo')
-  addTodo(titleInput.value)
-  titleInput.value = ''
+document.getElementById('todo-form')!.addEventListener('submit', (event) => {
+  try {
+  const titleInput = (document.getElementById('new-todo')! as HTMLInputElement).value
+  addTodo(titleInput)
+  ;(document.getElementById('new-todo')! as HTMLInputElement).value = ""
+  }catch (ex){
+    console.log(ex)
+  }
   event.preventDefault()
+ 
+
+  
 })
 
 peer
   .connect()
-  .then(() => peer.authenticate('test', 'test'))
-  .then(() => {
-    peer.fetch(todos)
-  })
+  .then(() => peer.authenticate('Admin', 'test'))
+  .then(() => peer.fetch(todos)).then(()=>renderTodos())
   .catch((ex) => console.log(ex))

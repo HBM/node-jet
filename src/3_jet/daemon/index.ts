@@ -1,7 +1,7 @@
 'use strict'
 
 import { Logger, logger } from '../log'
-import { AuthParams, FetchParams, PathParams } from '../messages'
+import { AddRequest, AuthParams, FetchParams, PathParams, SetParams } from '../messages'
 import { createPathMatcher } from './path_matcher'
 import { Subscription } from './subscription'
 import { Route } from './route'
@@ -10,7 +10,6 @@ import {
   InvvalidCredentials,
   JsonRPCError,
   notAllowed,
-  NotAuthorized,
   NotFound,
   Occupied
 } from '../errors'
@@ -19,6 +18,7 @@ import { JsonRPCServer } from '../../2_jsonrpc/server'
 import { WebServerConfig } from '../../1_socket/wsserver'
 import { TCPServerConfig } from '../../1_socket/tcpserver'
 import { EventEmitter } from '../../1_socket'
+import { Authenticator } from './authenticator'
 
 const version = '2.2.0'
 
@@ -45,17 +45,15 @@ class InfoObject implements InfoOptions {
   version: string
   protocolVersion: string
   features: Features
-  constructor(options: InfoOptions) {
+  constructor(options: InfoOptions, authenticate = false) {
     this.name = options.name || 'node-jet'
     this.version = version
     this.protocolVersion = '1.1.0'
     this.features = {
       batches: options.features?.batches || false,
       fetch: options.features?.fetch || 'full',
-      asNotification: options.features?.asNotification || false
-    }
-    if (options.features?.authenticate) {
-      this.features.authenticate = true
+      asNotification: options.features?.asNotification || false,
+      authenticate: authenticate
     }
   }
 }
@@ -79,24 +77,16 @@ export class Daemon extends EventEmitter {
   jsonRPCServer!: JsonRPCServer
   routes: Record<string, Route> = {}
   subscriber: Subscription[] = []
-  user: AuthParams | undefined = undefined
-  authenticated = false
+  authenticator: Authenticator
   /**
    * Constructor for creating the instance
    * @param {DaemonOptions & InfoOptions} [options] Options for the daemon creation
    */
   constructor(options: DaemonOptions & InfoOptions = {}) {
     super()
-    if (options.username && options.password) {
-      if (!options.features) {
-        options.features = {}
-      }
-      options.features.authenticate = true
-      this.user = { password: options.password, user: options.username }
-    } else {
-      this.authenticated = true
-    }
-    this.infoObject = new InfoObject(options)
+    
+    this.authenticator = new Authenticator(options.username,options.password)
+    this.infoObject = new InfoObject(options,this.authenticator.enabled)
     this.log = new Logger(options.log)
   }
   asNotification = () => this.infoObject.features.asNotification
@@ -112,19 +102,11 @@ export class Daemon extends EventEmitter {
   }
 
   authenticate = (peer: JsonRPC, id: string, params: AuthParams) => {
-    console.log(id, params, this.user)
-    if (!this.user) {
-      peer.respond(id, {}, true)
-      return
-    }
-    if (
-      params.user === this.user.user &&
-      params.password === this.user.password
-    ) {
-      this.authenticated = true
+    
+    if (this.authenticator.login(params.user,params.password)) {
+      peer.user = params.user
       peer.respond(id, {}, true)
     } else {
-      this.authenticated = false
       peer.respond(id, new InvvalidCredentials(params.user), false)
     }
   }
@@ -132,16 +114,14 @@ export class Daemon extends EventEmitter {
   Add as Notification: The message is acknowledged,then all the peers are informed about the new state
   Add synchronous: First all Peers are informed about the new value then message is acknowledged
   */
-  add = (peer: JsonRPC, id: string, params: PathParams) => {
-    if (!this.authenticated) {
-      peer.respond(id, new NotAuthorized(), false)
-    }
+  add = (peer: JsonRPC, id: string, params: AddRequest) => {
+
     const path = params.path
     if (path in this.routes) {
       peer.respond(id, new Occupied(path), false)
       return
     }
-    this.routes[path] = new Route(peer, path, params.value)
+    this.routes[path] = new Route(peer, path,params.value,params.access)
     if (typeof params.value !== 'undefined') {
       this.subscriber.forEach((fetchRule) => {
         if (this.simpleFetch() || fetchRule.matchesPath(path)) {
@@ -155,7 +135,7 @@ export class Daemon extends EventEmitter {
   Change as Notification: The message is acknowledged,then all the peers are informed about the value change
   change synchronous: First all Peers are informed about the new value then the message is acknowledged
   */
-  change = (peer: JsonRPC, id: string, msg: PathParams) => {
+  change = (peer: JsonRPC, id: string, msg: SetParams) => {
     if (msg.path in this.routes && typeof msg.value !== 'undefined') {
       this.routes[msg.path].updateValue(msg.value)
       this.respond(peer, id)
@@ -235,8 +215,9 @@ export class Daemon extends EventEmitter {
     try {
       const matcher = createPathMatcher(params)
       const resp = Object.keys(this.routes)
-        .filter((route) => matcher(route))
+        .filter((route) => matcher(route) && this.authenticator.isAllowed("get",peer.user,this.routes[route].access))
         .map((route: string) => {
+          console.log(route)
           return { path: route, value: this.routes[route].value }
         })
       peer.respond(id, resp, true)

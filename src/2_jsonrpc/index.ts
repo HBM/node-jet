@@ -50,6 +50,7 @@ export class JsonRPC extends EventEmitter {
   config: JsonRpcConfig
   messages: Array<Message> = []
   messageId = 1
+  user: string = ""
   _isOpen = false
   openRequests: Record<
     string,
@@ -175,7 +176,6 @@ export class JsonRPC extends EventEmitter {
    */
   _handleMessage = (event: MessageEvent) => {
     this._convertMessage(event.data).then((message) => {
-      console.log('handling message', message)
       this.logger.sock(`Received message: ${message}`)
       let decoded
       try {

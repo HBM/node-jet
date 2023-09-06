@@ -1,3 +1,4 @@
+import { access } from './daemon/route'
 import { InvalidArgument, invalidRequest, JSONRPCError } from './errors'
 import { EventType, OperatorType, ValueType } from './types'
 
@@ -82,27 +83,41 @@ export interface MethodRequest extends Message {
   params?: MessageParams
 }
 
+export interface PathParams {
+  path: string
+}
+
+export interface SetParams extends PathParams {
+  value: ValueType
+}
+
 export interface PathRequest extends Message {
   id: string
   method: string
-  params: {
-    path: string
-  }
+  params: PathParams
 }
 export interface UpdateRequest extends Message {
   id: string
   method: string
-  params: {
-    path: string
-    value: ValueType
-  }
+  params: SetParams
 }
 
-export interface PathParams {
+export interface Stateparams {
   path: string
   value?: ValueType
+  access?: access
+  
+}
+export interface MethodParams {
+  path: string
+  access?: access
   args?: ValueType[] | Record<string, ValueType>
 }
+
+export interface AddRequest extends Stateparams, MethodParams{
+
+}
+
 export interface AuthParams {
   user: string
   password: string
@@ -110,9 +125,6 @@ export interface AuthParams {
 
 export interface AuthRequest {
   params: AuthParams
-}
-export interface AddRequest extends PathRequest {
-  params: PathParams
 }
 
 export interface GetRequest extends MethodRequest {
