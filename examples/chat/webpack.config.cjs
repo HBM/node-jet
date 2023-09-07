@@ -7,10 +7,10 @@ const HtmlWebpackPlugin = require('html-webpack-plugin')
 const serverConfig = {
   target: 'node',
   mode: 'none',
-  context: path.resolve('examples', 'todo','server'),
+  context: path.resolve('examples', 'chat','server'),
   entry: './index.ts',
   output: {
-    path: path.resolve('examples', 'todo', 'dist'),
+    path: path.resolve('examples', 'chat', 'dist'),
     filename: 'server.cjs'
   },
   resolve: {
@@ -29,12 +29,12 @@ const serverConfig = {
       }
     ]
   },
-  devtool: 'nosources-source-map',
   devServer: {
     devMiddleware: {
       writeToDisk: true,
     }
   },
+  devtool: 'nosources-source-map',
   infrastructureLogging: {
     level: 'log' // enables logging required for problem matchers
   }
@@ -42,11 +42,10 @@ const serverConfig = {
 const clientConfig = {
   target: 'web',
   mode: 'none',
-  context: path.resolve('examples', 'todo','client'),
-  entry: './client.ts',
+  context: path.resolve('examples', 'chat','client'),
+  entry: './index.ts',
   output: {
-    path: path.resolve('examples', 'todo', 'dist'),
-    publicPath: path.resolve('examples', 'todo', 'dist'),
+    path: path.resolve('examples', 'chat', 'dist'),
     filename: 'client.js'
   },
   module: {
@@ -68,7 +67,6 @@ const clientConfig = {
   },
   devtool: 'nosources-source-map',
   plugins:[ new HtmlWebpackPlugin({
-    title: "TODO",
     template: "index.html"
   }),
 ]

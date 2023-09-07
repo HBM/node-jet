@@ -1,34 +1,34 @@
 /*
  * Jet client-server communications:
  */
+import { Fetcher, Peer } from '../../../src'
+import './base.css'
 
-var jet = require('node-jet')
+const peer = new Peer({ url: 'ws://localhost:8081/' })
 
-var peer = new jet.Peer({ port: 11123 })
-
-var renderMessages = function (messages) {
-  var messageContainer = document.getElementById('messages')
+const renderMessages = (messages: { value: string[] }) => {
+  const messageContainer = document.getElementById('messages')!
   while (messageContainer.firstChild) {
     messageContainer.removeChild(messageContainer.firstChild)
   }
-  messages.value.forEach(function (message) {
-    var entry = document.createElement('li')
+  messages.value.forEach((message: string) => {
+    const entry = document.createElement('li')
     entry.innerText = message
     messageContainer.appendChild(entry)
   })
 }
 
-var messageFetcher = new jet.Fetcher()
+const messageFetcher = new Fetcher()
   .path('equals', 'chat/messages')
   .on('data', renderMessages)
 
 document
-  .getElementById('message-form')
+  .getElementById('message-form')!
   .addEventListener('submit', function (event) {
     event.preventDefault()
-    var messageInput = document.getElementById('message')
-    var sendButton = document.getElementById('send')
-    var message = messageInput.value
+    const messageInput = document.getElementById('message')! as HTMLInputElement
+    const sendButton = document.getElementById('send')! as HTMLButtonElement
+    const message = messageInput.value
     messageInput.disabled = true
     sendButton.disabled = true
     peer
@@ -43,8 +43,8 @@ document
       })
   })
 
-document.getElementById('clear').addEventListener('click', function (event) {
-  peer.call('chat/clear')
+document.getElementById('clear')!.addEventListener('click', () => {
+  peer.call('chat/clear', [])
 })
 
 peer.connect().then(() => peer.fetch(messageFetcher))

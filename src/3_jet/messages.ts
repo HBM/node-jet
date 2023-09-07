@@ -44,6 +44,17 @@ export const castMessage = <T extends MethodRequest>(msg: MethodRequest): T => {
           'Only params.user & params.password supported'
         )
       return msg as T
+    case 'addUser':
+      if (
+        !params ||
+        !('user' in params) ||
+        !('password' in params) ||
+        !('groups' in params)
+      )
+        throw new InvalidArgument(
+          'params.user, params.password & params.groups required'
+        )
+      return msg as T
     case 'configure':
       if (!params || !('name' in params))
         throw new InvalidArgument('Only params.name supported')
@@ -80,7 +91,7 @@ export interface ErrorMessage extends Message {
 export interface MethodRequest extends Message {
   id: string
   method: string
-  params?: MessageParams
+  params?: MessageParams | AuthParams
 }
 
 export interface PathParams {
@@ -106,7 +117,6 @@ export interface Stateparams {
   path: string
   value?: ValueType
   access?: access
-  
 }
 export interface MethodParams {
   path: string
@@ -114,13 +124,20 @@ export interface MethodParams {
   args?: ValueType[] | Record<string, ValueType>
 }
 
-export interface AddRequest extends Stateparams, MethodParams{
-
-}
+export interface AddRequest extends Stateparams, MethodParams {}
 
 export interface AuthParams {
   user: string
   password: string
+}
+export interface UserParams {
+  user: string
+  password: string
+  groups: string[]
+}
+
+export interface AddUserRequest {
+  params: UserParams
 }
 
 export interface AuthRequest {

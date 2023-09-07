@@ -8825,122 +8825,47 @@
        * Jet client-server communications:
        */
 
-      const todoList = {}
       const peer = new _src__WEBPACK_IMPORTED_MODULE_0__.Peer({
-        url: `ws://localhost:8081/`
+        url: 'ws://localhost:8081/'
       })
-      const addTodo = (title) => {
-        peer.call('todo/add', [title])
-      }
-      const removeTodo = (id) => {
-        peer.call('todo/remove', [id])
-      }
-      const setTodoCompleted = (todo, completed) => {
-        peer.set(`todo/#${todo.id}`, {
-          ...todo,
-          completed: completed ? completed : !todo.completed
-        })
-      }
-      const todos = new _src__WEBPACK_IMPORTED_MODULE_0__.Fetcher()
-        .path('startsWith', 'todo/#')
-        .on('data', (todo) => {
-          switch (todo.event) {
-            case 'Add':
-            case 'Change':
-              todoList[todo.path] = todo.value
-              break
-            case 'Remove':
-              delete todoList[todo.path]
-              break
-          }
-          renderTodos()
-        })
-      /*
-       * GUI Logic:
-       */
-      const renderTodo = (todo) => {
-        var container = document.createElement('li')
-        if (todo.completed) {
-          container.className = 'completed'
+      const renderMessages = (messages) => {
+        const messageContainer = document.getElementById('messages')
+        while (messageContainer.firstChild) {
+          messageContainer.removeChild(messageContainer.firstChild)
         }
-        var view = document.createElement('div')
-        var toggleCompleted = document.createElement('input')
-        toggleCompleted.type = 'checkbox'
-        toggleCompleted.className = 'toggle'
-        toggleCompleted.checked = todo.completed
-        toggleCompleted.addEventListener('change', () => {
-          setTodoCompleted(todo)
+        messages.value.forEach((message) => {
+          const entry = document.createElement('li')
+          entry.innerText = message
+          messageContainer.appendChild(entry)
         })
-        view.appendChild(toggleCompleted)
-        var title = document.createElement('label')
-        title.innerHTML = todo.title
-        view.appendChild(title)
-        var removeButton = document.createElement('button')
-        removeButton.className = 'destroy'
-        removeButton.addEventListener('click', () => {
-          removeTodo(todo.id)
-        })
-        view.appendChild(removeButton)
-        container.appendChild(view)
-        return container
       }
-      var getCompleted
-      var getUncompleted
-      const renderTodos = () => {
-        var root = document.getElementById('todo-list')
-        while (root.firstChild) {
-          root.removeChild(root.firstChild)
-        }
-        Object.values(todoList).forEach((todo) => {
-          root.appendChild(renderTodo(todo))
-        })
-        getCompleted = () =>
-          Object.values(todoList).filter((todo) => todo.completed === true)
-        getUncompleted = () =>
-          Object.values(todoList).filter((todo) => todo.completed === false)
-        var itemsLeft = document.getElementById('todo-count')
-        itemsLeft.innerHTML = '' + getUncompleted().length + ' left'
-      }
+      const messageFetcher = new _src__WEBPACK_IMPORTED_MODULE_0__.Fetcher()
+        .path('equals', 'chat/messages')
+        .on('data', renderMessages)
       document
-        .getElementById('clear-completed')
-        .addEventListener('click', () => {
-          getCompleted().forEach((todo) => {
-            removeTodo(todo.id)
-          })
-        })
-      document.getElementById('toggle-all').addEventListener('click', () => {
-        var uncompleted = getUncompleted()
-        if (uncompleted.length > 0) {
-          uncompleted.forEach((todo) => {
-            setTodoCompleted(todo, true)
-          })
-        } else {
-          getCompleted().forEach((todo) => {
-            setTodoCompleted(todo, false)
-          })
-        }
-      })
-      document
-        .getElementById('todo-form')
-        .addEventListener('submit', (event) => {
-          try {
-            const titleInput = document.getElementById('new-todo').value
-            addTodo(titleInput)
-            document.getElementById('new-todo').value = ''
-          } catch (ex) {
-            console.log(ex)
-          }
+        .getElementById('message-form')
+        .addEventListener('submit', function (event) {
           event.preventDefault()
+          const messageInput = document.getElementById('message')
+          const sendButton = document.getElementById('send')
+          const message = messageInput.value
+          messageInput.disabled = true
+          sendButton.disabled = true
+          peer
+            .call('chat/append', {
+              message: message
+            })
+            .then(function () {
+              messageInput.disabled = false
+              sendButton.disabled = false
+              messageInput.value = ''
+              messageInput.focus()
+            })
         })
-      peer
-        .connect()
-        .then(() => peer.authenticate('Admin', 'test'))
-        .then(() => peer.get({ path: { startsWith: 'test' } }))
-        .then((val) => console.log(val))
-        // .then(() => peer.authenticate('Operator', ''))
-        .then(() => peer.fetch(todos))
-        .then(() => renderTodos())
-        .catch((ex) => console.log(ex))
+      document.getElementById('clear').addEventListener('click', () => {
+        peer.call('chat/clear', [])
+      })
+      peer.connect().then(() => peer.fetch(messageFetcher))
 
       /***/
     },
@@ -9188,7 +9113,7 @@
         version
         protocolVersion
         features
-        constructor(options, authenticate) {
+        constructor(options, authenticate = false) {
           this.name = options.name || 'node-jet'
           this.version = version
           this.protocolVersion = '1.1.0'
@@ -9222,7 +9147,7 @@
         constructor(options = {}) {
           super()
           this.authenticator =
-            new _UserManager__WEBPACK_IMPORTED_MODULE_7__.UserManager(
+            new _UserManager__WEBPACK_IMPORTED_MODULE_7__.Authenticator(
               options.username,
               options.password
             )
@@ -9252,19 +9177,6 @@
               ),
               false
             )
-          }
-        }
-        addUser = (peer, id, params) => {
-          try {
-            this.authenticator.addUser(
-              peer.user,
-              params.user,
-              params.password,
-              params.groups
-            )
-            peer.respond(id, {}, true)
-          } catch (ex) {
-            peer.respond(id, ex, false)
           }
         }
         /*
@@ -9439,23 +9351,10 @@
         /*
     Call and Set requests: Call and set requests are always forwarded synchronous
     */
-        forward = (method, user, params) => {
+        forward = (method, params) => {
           if (!(params.path in this.routes)) {
             return Promise.reject(
               new _errors__WEBPACK_IMPORTED_MODULE_4__.NotFound(params.path)
-            )
-          }
-          if (
-            !this.authenticator.isAllowed(
-              'set',
-              user,
-              this.routes[params.path].access
-            )
-          ) {
-            return Promise.reject(
-              new _errors__WEBPACK_IMPORTED_MODULE_4__.NotAuthorized(
-                params.path
-              )
             )
           }
           return this.routes[params.path].owner.sendRequest(
@@ -9493,15 +9392,14 @@
             newPeer.addListener('info', this.info)
             newPeer.addListener('configure', this.configure)
             newPeer.addListener('authenticate', this.authenticate)
-            newPeer.addListener('addUser', this.addUser)
             newPeer.addListener('add', this.add)
             newPeer.addListener('change', this.change)
             newPeer.addListener('remove', this.remove)
             newPeer.addListener('get', this.get)
             newPeer.addListener('fetch', this.fetch)
             newPeer.addListener('unfetch', this.unfetch)
-            newPeer.addListener('set', (peer, id, params) =>
-              this.forward('set', peer.user, params)
+            newPeer.addListener('set', (_peer, id, params) =>
+              this.forward('set', params)
                 .then((res) => {
                   newPeer.respond(id, res, true)
                   newPeer.send()
@@ -9511,8 +9409,8 @@
                   newPeer.send()
                 })
             )
-            newPeer.addListener('call', (peer, id, params) =>
-              this.forward('call', peer.user, params)
+            newPeer.addListener('call', (_peer, id, params) =>
+              this.forward('call', params)
                 .then((res) => {
                   newPeer.respond(id, res, true)
                   newPeer.send()
@@ -10040,7 +9938,6 @@
 
       const events = [
         'authenticate',
-        'addUser',
         'configure',
         'info',
         'fetch',
@@ -10815,17 +10712,6 @@
                 'Only params.user & params.password supported'
               )
             return msg
-          case 'addUser':
-            if (
-              !params ||
-              !('user' in params) ||
-              !('password' in params) ||
-              !('groups' in params)
-            )
-              throw new _errors__WEBPACK_IMPORTED_MODULE_0__.InvalidArgument(
-                'params.user, params.password & params.groups required'
-              )
-            return msg
           case 'configure':
             if (!params || !('name' in params))
               throw new _errors__WEBPACK_IMPORTED_MODULE_0__.InvalidArgument(
@@ -11314,13 +11200,13 @@ IN THE SOFTWARE.
       'use strict'
       __webpack_require__.r(__webpack_exports__)
       /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-        /* harmony export */ UserManager: () => /* binding */ UserManager
+        /* harmony export */ Authenticator: () => /* binding */ Authenticator
         /* harmony export */
       })
       /* harmony import */ var _errors__WEBPACK_IMPORTED_MODULE_0__ =
         __webpack_require__(33)
 
-      class UserManager {
+      class Authenticator {
         users
         groups
         enabled
@@ -11363,18 +11249,14 @@ IN THE SOFTWARE.
         }
         isAllowed = (method, user, access) => {
           if (!access) return true
-          const group = method === 'get' ? access.read : access.write
-          if (group && !(group in this.groups)) {
+          const group = method === 'get' ? access.readgroup : access.writegroup
+          if (!(group in this.groups)) {
             throw new _errors__WEBPACK_IMPORTED_MODULE_0__.invalidRequest(
               'Invalid group',
               'Requested group does not exist'
             )
           }
-          return (
-            group === '' ||
-            typeof group === 'undefined' ||
-            this.groups[group].includes(user)
-          )
+          return this.groups[group].includes(user)
         }
       }
 
@@ -11616,7 +11498,7 @@ IN THE SOFTWARE.
               _types__WEBPACK_IMPORTED_MODULE_0__.fetchSimpleId in this.#fetcher
             )
           ) {
-            //create dummy fetcher
+            //create dummy fetcher to
             this.#fetcher[_types__WEBPACK_IMPORTED_MODULE_0__.fetchSimpleId] =
               new _fetcher__WEBPACK_IMPORTED_MODULE_2__['default']()
             const params = {
@@ -11659,13 +11541,6 @@ IN THE SOFTWARE.
          */
         authenticate = (user, password) => {
           return this.#jsonrpc.sendRequest('authenticate', { user, password })
-        }
-        addUser = (user, password, groups) => {
-          return this.#jsonrpc.sendRequest('addUser', {
-            user,
-            password,
-            groups
-          })
         }
         connect = (controller = new AbortController()) =>
           this.#jsonrpc
@@ -11725,9 +11600,7 @@ IN THE SOFTWARE.
           return this.#jsonrpc
             .sendRequest('add', stateOrMethod.toJson())
             .then(() => {
-              this.#routes[stateOrMethod._path] =
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                stateOrMethod
+              this.#routes[stateOrMethod._path] = stateOrMethod
               return Promise.resolve()
             })
         }
@@ -11997,7 +11870,7 @@ IN THE SOFTWARE.
         _value
         _readGroup
         _writeGroup
-        constructor(path, initialValue, readgroup = '', writeGroup = '') {
+        constructor(path, initialValue, readgroup = 'all', writeGroup = 'all') {
           super()
           this._path = path
           this._value = initialValue
@@ -12034,16 +11907,11 @@ IN THE SOFTWARE.
           }
           return this._value
         }
-        toJson = () => {
-          const res = {
-            path: this._path,
-            value: this._value
-          }
-          if (this._readGroup || this._writeGroup) {
-            res.access = { read: this._readGroup, write: this._writeGroup }
-          }
-          return res
-        }
+        toJson = () => ({
+          path: this._path,
+          value: this._value,
+          access: { readgroup: this._readGroup, writegroup: this._writeGroup }
+        })
       }
       /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = State
 
@@ -12070,11 +11938,9 @@ IN THE SOFTWARE.
        */
       class Method extends _1_socket__WEBPACK_IMPORTED_MODULE_0__.EventEmitter {
         _path
-        _writeGroup
-        constructor(path, writeGroup = '') {
+        constructor(path) {
           super()
           this._path = path
-          this._writeGroup = writeGroup
         }
         path = () => {
           return this._path
@@ -12085,9 +11951,6 @@ IN THE SOFTWARE.
         toJson = () => {
           const params = {
             path: this._path
-          }
-          if (this._writeGroup) {
-            params.access = { write: this._writeGroup }
           }
           return params
         }
@@ -12545,33 +12408,11 @@ IN THE SOFTWARE.
         /*#__PURE__*/ __webpack_require__.n(
           _node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_1__
         )
-      /* harmony import */ var _node_modules_css_loader_dist_runtime_getUrl_js__WEBPACK_IMPORTED_MODULE_2__ =
-        __webpack_require__(66)
-      /* harmony import */ var _node_modules_css_loader_dist_runtime_getUrl_js__WEBPACK_IMPORTED_MODULE_2___default =
-        /*#__PURE__*/ __webpack_require__.n(
-          _node_modules_css_loader_dist_runtime_getUrl_js__WEBPACK_IMPORTED_MODULE_2__
-        )
       // Imports
 
-      var ___CSS_LOADER_URL_IMPORT_0___ = new URL(
-        /* asset import */ __webpack_require__(67),
-        __webpack_require__.b
-      )
-      var ___CSS_LOADER_URL_IMPORT_1___ = new URL(
-        /* asset import */ __webpack_require__(68),
-        __webpack_require__.b
-      )
       var ___CSS_LOADER_EXPORT___ =
         _node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_1___default()(
           _node_modules_css_loader_dist_runtime_sourceMaps_js__WEBPACK_IMPORTED_MODULE_0___default()
-        )
-      var ___CSS_LOADER_URL_REPLACEMENT_0___ =
-        _node_modules_css_loader_dist_runtime_getUrl_js__WEBPACK_IMPORTED_MODULE_2___default()(
-          ___CSS_LOADER_URL_IMPORT_0___
-        )
-      var ___CSS_LOADER_URL_REPLACEMENT_1___ =
-        _node_modules_css_loader_dist_runtime_getUrl_js__WEBPACK_IMPORTED_MODULE_2___default()(
-          ___CSS_LOADER_URL_IMPORT_1___
         )
       // Module
       ___CSS_LOADER_EXPORT___.push([
@@ -12580,379 +12421,8 @@ IN THE SOFTWARE.
 body {
 	margin: 0;
 	padding: 0;
-}
-
-button {
-	margin: 0;
-	padding: 0;
-	border: 0;
-	background: none;
-	font-size: 100%;
-	vertical-align: baseline;
-	font-family: inherit;
-	font-weight: inherit;
-	color: inherit;
-	-webkit-appearance: none;
-	appearance: none;
-	-webkit-font-smoothing: antialiased;
-	-moz-font-smoothing: antialiased;
-	font-smoothing: antialiased;
-}
-
-body {
-	font: 14px 'Helvetica Neue', Helvetica, Arial, sans-serif;
-	line-height: 1.4em;
-	background: #f5f5f5;
-	color: #4d4d4d;
-	min-width: 230px;
-	max-width: 550px;
-	margin: 0 auto;
-	-webkit-font-smoothing: antialiased;
-	-moz-font-smoothing: antialiased;
-	font-smoothing: antialiased;
-	font-weight: 300;
-}
-
-button,
-input[type="checkbox"] {
-	outline: none;
-}
-
-.hidden {
-	display: none;
-}
-
-#todoapp {
-	background: #fff;
-	margin: 130px 0 40px 0;
-	position: relative;
-	box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.2),
-	            0 25px 50px 0 rgba(0, 0, 0, 0.1);
-}
-
-#todoapp input::-webkit-input-placeholder {
-	font-style: italic;
-	font-weight: 300;
-	color: #e6e6e6;
-}
-
-#todoapp input::-moz-placeholder {
-	font-style: italic;
-	font-weight: 300;
-	color: #e6e6e6;
-}
-
-#todoapp input::input-placeholder {
-	font-style: italic;
-	font-weight: 300;
-	color: #e6e6e6;
-}
-
-#todoapp h1 {
-	position: absolute;
-	top: -155px;
+	height: 100%;
 	width: 100%;
-	font-size: 100px;
-	font-weight: 100;
-	text-align: center;
-	color: rgba(175, 47, 47, 0.15);
-	-webkit-text-rendering: optimizeLegibility;
-	-moz-text-rendering: optimizeLegibility;
-	text-rendering: optimizeLegibility;
-}
-
-#new-todo,
-.edit {
-	position: relative;
-	margin: 0;
-	width: 100%;
-	font-size: 24px;
-	font-family: inherit;
-	font-weight: inherit;
-	line-height: 1.4em;
-	border: 0;
-	outline: none;
-	color: inherit;
-	padding: 6px;
-	border: 1px solid #999;
-	box-shadow: inset 0 -1px 5px 0 rgba(0, 0, 0, 0.2);
-	box-sizing: border-box;
-	-webkit-font-smoothing: antialiased;
-	-moz-font-smoothing: antialiased;
-	font-smoothing: antialiased;
-}
-
-#new-todo {
-	padding: 16px 16px 16px 60px;
-	border: none;
-	background: rgba(0, 0, 0, 0.003);
-	box-shadow: inset 0 -2px 1px rgba(0,0,0,0.03);
-}
-
-#main {
-	position: relative;
-	z-index: 2;
-	border-top: 1px solid #e6e6e6;
-}
-
-label[for='toggle-all'] {
-	display: none;
-}
-
-#toggle-all {
-	position: absolute;
-	top: -55px;
-	left: -12px;
-	width: 60px;
-	height: 34px;
-	text-align: center;
-	border: none; /* Mobile Safari */
-}
-
-#toggle-all:before {
-	content: '❯';
-	font-size: 22px;
-	color: #e6e6e6;
-	padding: 10px 27px 10px 27px;
-}
-
-#toggle-all:checked:before {
-	color: #737373;
-}
-
-#todo-list {
-	margin: 0;
-	padding: 0;
-	list-style: none;
-}
-
-#todo-list li {
-	position: relative;
-	font-size: 24px;
-	border-bottom: 1px solid #ededed;
-}
-
-#todo-list li:last-child {
-	border-bottom: none;
-}
-
-#todo-list li.editing {
-	border-bottom: none;
-	padding: 0;
-}
-
-#todo-list li.editing .edit {
-	display: block;
-	width: 506px;
-	padding: 13px 17px 12px 17px;
-	margin: 0 0 0 43px;
-}
-
-#todo-list li.editing .view {
-	display: none;
-}
-
-#todo-list li .toggle {
-	text-align: center;
-	width: 40px;
-	/* auto, since non-WebKit browsers doesn't support input styling */
-	height: auto;
-	position: absolute;
-	top: 0;
-	bottom: 0;
-	margin: auto 0;
-	border: none; /* Mobile Safari */
-	-webkit-appearance: none;
-	appearance: none;
-}
-
-#todo-list li .toggle:after {
-	content: url(${___CSS_LOADER_URL_REPLACEMENT_0___});
-}
-
-#todo-list li .toggle:checked:after {
-	content: url(${___CSS_LOADER_URL_REPLACEMENT_1___});
-}
-
-#todo-list li label {
-	white-space: pre;
-	word-break: break-word;
-	padding: 15px 60px 15px 15px;
-	margin-left: 45px;
-	display: block;
-	line-height: 1.2;
-	transition: color 0.4s;
-}
-
-#todo-list li.completed label {
-	color: #d9d9d9;
-	text-decoration: line-through;
-}
-
-#todo-list li .destroy {
-	display: none;
-	position: absolute;
-	top: 0;
-	right: 10px;
-	bottom: 0;
-	width: 40px;
-	height: 40px;
-	margin: auto 0;
-	font-size: 30px;
-	color: #cc9a9a;
-	margin-bottom: 11px;
-	transition: color 0.2s ease-out;
-}
-
-#todo-list li .destroy:hover {
-	color: #af5b5e;
-}
-
-#todo-list li .destroy:after {
-	content: '×';
-}
-
-#todo-list li:hover .destroy {
-	display: block;
-}
-
-#todo-list li .edit {
-	display: none;
-}
-
-#todo-list li.editing:last-child {
-	margin-bottom: -1px;
-}
-
-#footer {
-	color: #777;
-	padding: 10px 15px;
-	height: 20px;
-	text-align: center;
-	border-top: 1px solid #e6e6e6;
-}
-
-#footer:before {
-	content: '';
-	position: absolute;
-	right: 0;
-	bottom: 0;
-	left: 0;
-	height: 50px;
-	overflow: hidden;
-	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2),
-	            0 8px 0 -3px #f6f6f6,
-	            0 9px 1px -3px rgba(0, 0, 0, 0.2),
-	            0 16px 0 -6px #f6f6f6,
-	            0 17px 2px -6px rgba(0, 0, 0, 0.2);
-}
-
-#todo-count {
-	float: left;
-	text-align: left;
-}
-
-#todo-count strong {
-	font-weight: 300;
-}
-
-#filters {
-	margin: 0;
-	padding: 0;
-	list-style: none;
-	position: absolute;
-	right: 0;
-	left: 0;
-}
-
-#filters li {
-	display: inline;
-}
-
-#filters li a {
-	color: inherit;
-	margin: 3px;
-	padding: 3px 7px;
-	text-decoration: none;
-	border: 1px solid transparent;
-	border-radius: 3px;
-}
-
-#filters li a.selected,
-#filters li a:hover {
-	border-color: rgba(175, 47, 47, 0.1);
-}
-
-#filters li a.selected {
-	border-color: rgba(175, 47, 47, 0.2);
-}
-
-#clear-completed,
-html #clear-completed:active {
-	float: right;
-	position: relative;
-	line-height: 20px;
-	text-decoration: none;
-	cursor: pointer;
-	position: relative;
-}
-
-#clear-completed:hover {
-	text-decoration: underline;
-}
-
-#info {
-	margin: 65px auto 0;
-	color: #bfbfbf;
-	font-size: 10px;
-	text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
-	text-align: center;
-}
-
-#info p {
-	line-height: 1;
-}
-
-#info a {
-	color: inherit;
-	text-decoration: none;
-	font-weight: 400;
-}
-
-#info a:hover {
-	text-decoration: underline;
-}
-
-/*
-	Hack to remove background from Mobile Safari.
-	Can't use it globally since it destroys checkboxes in Firefox
-*/
-@media screen and (-webkit-min-device-pixel-ratio:0) {
-	#toggle-all,
-	#todo-list li .toggle {
-		background: none;
-	}
-
-	#todo-list li .toggle {
-		height: 40px;
-	}
-
-	#toggle-all {
-		-webkit-transform: rotate(90deg);
-		transform: rotate(90deg);
-		-webkit-appearance: none;
-		appearance: none;
-	}
-}
-
-@media (max-width: 430px) {
-	#footer {
-		height: 50px;
-	}
-
-	#filters {
-		bottom: 10px;
-	}
 }
 `,
         '',
@@ -12960,8 +12430,7 @@ html #clear-completed:active {
           version: 3,
           sources: ['webpack://./base.css'],
           names: [],
-          mappings:
-            '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',
+          mappings: 'AAAA;;CAEC,SAAS;CACT,UAAU;CACV,YAAY;CACZ,WAAW;AACZ',
           sourceRoot: ''
         }
       ])
@@ -13093,53 +12562,6 @@ html #clear-completed:active {
       }
 
       /***/
-    },
-    /* 66 */
-    /***/ (module) => {
-      'use strict'
-
-      module.exports = function (url, options) {
-        if (!options) {
-          options = {}
-        }
-        if (!url) {
-          return url
-        }
-        url = String(url.__esModule ? url.default : url)
-
-        // If url is already wrapped in quotes, remove them
-        if (/^['"].*['"]$/.test(url)) {
-          url = url.slice(1, -1)
-        }
-        if (options.hash) {
-          url += options.hash
-        }
-
-        // Should url be wrapped?
-        // See https://drafts.csswg.org/css-values-3/#urls
-        if (/["'() \t\n]|(%20)/.test(url) || options.needQuotes) {
-          return '"'.concat(url.replace(/"/g, '\\"').replace(/\n/g, '\\n'), '"')
-        }
-        return url
-      }
-
-      /***/
-    },
-    /* 67 */
-    /***/ (module) => {
-      'use strict'
-      module.exports =
-        'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="-10 -18 100 135"><circle cx="50" cy="50" r="50" fill="none" stroke="#ededed" stroke-width="3"/></svg>'
-
-      /***/
-    },
-    /* 68 */
-    /***/ (module) => {
-      'use strict'
-      module.exports =
-        'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="-10 -18 100 135"><circle cx="50" cy="50" r="50" fill="none" stroke="#bddad5" stroke-width="3"/><path fill="#5dc2af" d="M72 25L42 71 27 56l-4 4 20 20 34-52z"/></svg>'
-
-      /***/
     }
     /******/
   ]
@@ -13269,7 +12691,7 @@ html #clear-completed:active {
   /******/
   /******/
   ;(() => {
-    /******/ __webpack_require__.h = () => '3f7c0d2195c2d5d3cff5'
+    /******/ __webpack_require__.h = () => '87f7c1d53ea220bad94a'
     /******/
   })() /* webpack/runtime/global */
   /******/
@@ -13891,15 +13313,40 @@ html #clear-completed:active {
   /******/
   /******/
   ;(() => {
-    /******/ __webpack_require__.p =
-      '/home/florian/ws/hbk/web/lib/node-jet/examples/todo/dist'
+    /******/ var scriptUrl
+    /******/ if (__webpack_require__.g.importScripts)
+      scriptUrl = __webpack_require__.g.location + ''
+    /******/ var document = __webpack_require__.g.document
+    /******/ if (!scriptUrl && document) {
+      /******/ if (document.currentScript)
+        /******/ scriptUrl = document.currentScript.src
+      /******/ if (!scriptUrl) {
+        /******/ var scripts = document.getElementsByTagName('script')
+        /******/ if (scripts.length) {
+          /******/ var i = scripts.length - 1
+          /******/ while (i > -1 && !scriptUrl) scriptUrl = scripts[i--].src
+          /******/
+        }
+        /******/
+      }
+      /******/
+    }
+    /******/ // When supporting browsers where an automatic publicPath is not supported you must specify an output.publicPath manually via configuration
+    /******/ // or pass an empty string ("") and set the __webpack_public_path__ variable from your code to use your own logic.
+    /******/ if (!scriptUrl)
+      throw new Error('Automatic publicPath is not supported in this browser')
+    /******/ scriptUrl = scriptUrl
+      .replace(/#.*$/, '')
+      .replace(/\?.*$/, '')
+      .replace(/\/[^\/]+$/, '/')
+    /******/ __webpack_require__.p = scriptUrl
     /******/
   })() /* webpack/runtime/jsonp chunk loading */
   /******/
   /******/
   /******/
   ;(() => {
-    /******/ __webpack_require__.b = document.baseURI || self.location.href
+    /******/ // no baseURI
     /******/
     /******/ // object to store loaded and loading chunks
     /******/ // undefined = chunk not loaded, null = chunk preloaded/prefetched
