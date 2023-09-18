@@ -330,6 +330,33 @@ describe('Testing Peer', () => {
       })
     })
   })
+  it('Should add a State', (done) => {
+    const sendSpy = jest.fn().mockReturnValue(Promise.resolve({}))
+    const jsonrpc = { ...fullFetcherPeer(), sendRequest: sendSpy }
+    jest.spyOn(JsonRPC, 'default').mockImplementation(() => jsonrpc)
+    const peer = new Peer()
+    peer.addUser('Admin', 'admin', ['test']).then(() => {
+      expect(sendSpy).toBeCalledWith('addUser', {
+        password: 'admin',
+        user: 'Admin',
+        groups: ['test']
+      })
+      done()
+    })
+  })
+  it('Should authenticate', (done) => {
+    const sendSpy = jest.fn().mockReturnValue(Promise.resolve({}))
+    const jsonrpc = { ...fullFetcherPeer(), sendRequest: sendSpy }
+    jest.spyOn(JsonRPC, 'default').mockImplementation(() => jsonrpc)
+    const peer = new Peer()
+    peer.authenticate('Admin', 'admin').then(() => {
+      expect(sendSpy).toBeCalledWith('authenticate', {
+        password: 'admin',
+        user: 'Admin'
+      })
+      done()
+    })
+  })
   describe('Should test getting a state', () => {
     it('Should fail to get a state', (done) => {
       const sendSpy = jest.fn().mockReturnValue(Promise.reject('invalid path'))

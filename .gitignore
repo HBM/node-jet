@@ -6,3 +6,4 @@ out
 .vscode
 
 examples/*/public/bundle.js
+examples/*/dist

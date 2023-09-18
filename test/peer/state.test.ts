@@ -15,10 +15,13 @@ describe('Testing Method', () => {
   it('Should create json from state', () => {
     const state = new State<ValueType>('foo', {})
     expect(state.toJson()).toEqual({ path: 'foo', value: {} })
-    const st2 = new State('foo', 5, true)
+    const st2 = new State('foo', 5, 'all', 'admin')
     expect(st2.toJson()).toEqual({
       path: 'foo',
-      // access: { id: "usr" },
+      access: {
+        read: 'all',
+        write: 'admin'
+      },
       value: 5
     })
   })

@@ -50,6 +50,7 @@ export class JsonRPC extends EventEmitter {
   config: JsonRpcConfig
   messages: Array<Message> = []
   messageId = 1
+  user = ''
   _isOpen = false
   openRequests: Record<
     string,
