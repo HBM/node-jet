@@ -3,14 +3,13 @@
 const path = require('path')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 
-
 const serverConfig = {
   target: 'node',
   mode: 'none',
-  context: path.resolve('examples', 'balls','server'),
+  context: path.resolve('./', 'examples', 'balls', 'server'),
   entry: './index.ts',
   output: {
-    path: path.resolve('examples', 'balls', 'dist'),
+    path: path.resolve('./', 'examples', 'balls', 'dist'),
     filename: 'server.cjs'
   },
   resolve: {
@@ -32,7 +31,7 @@ const serverConfig = {
   devtool: 'nosources-source-map',
   devServer: {
     devMiddleware: {
-      writeToDisk: true,
+      writeToDisk: true
     }
   },
   infrastructureLogging: {
@@ -42,12 +41,13 @@ const serverConfig = {
 const clientConfig = {
   target: 'web',
   mode: 'none',
-  context: path.resolve('examples', 'balls','client'),
+  context: path.resolve('./', 'examples', 'balls', 'client'),
   entry: './index.ts',
   output: {
-    path: path.resolve('examples', 'balls', 'dist'),
-    publicPath: path.resolve('examples', 'balls', 'dist'),
-    filename: 'client.js'
+    path: path.resolve('./', 'examples', 'balls', 'dist'),
+    filename: 'client.js',
+    publicPath: '/',
+    clean: true
   },
   module: {
     rules: [
@@ -57,21 +57,21 @@ const clientConfig = {
       },
       {
         test: /\.(scss|css)$/,
-        use: ['style-loader','css-loader','postcss-loader']
+        use: ['style-loader', 'css-loader', 'postcss-loader']
       }
-
     ]
   },
   resolve: {
     extensions: ['.ts', '.js'],
-    alias: { events: require.resolve('events/') },
+    alias: { events: require.resolve('events/') }
   },
   devtool: 'nosources-source-map',
-  plugins:[ new HtmlWebpackPlugin({
-    title: "TODO",
-    template: "index.html"
-  }),
-]
+  plugins: [
+    new HtmlWebpackPlugin({
+      title: 'TODO',
+      template: 'index.html'
+    })
+  ]
 }
 
 module.exports = [clientConfig, serverConfig]
