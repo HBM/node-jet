@@ -42,11 +42,8 @@ export class UserManager {
     this.groups['all'].push(newUser)
   }
 
-  login = (user: string, password: string) => {
-    return (
-      Object.keys(this.users).includes(user) && password === this.users[user]
-    )
-  }
+  login = (user: string, password: string) =>
+    Object.keys(this.users).includes(user) && password === this.users[user]
 
   isAllowed = (method: 'get' | 'set', user: string, access?: access) => {
     if (!access) return true
