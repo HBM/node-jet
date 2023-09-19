@@ -1,6 +1,6 @@
-import { InvalidArgument } from '../errors'
-import { ValueRule, ValueType } from '../types'
-import { getValue } from '../utils'
+import { InvalidArgument } from '../errors.js'
+import { ValueRule, ValueType } from '../types.js'
+import { getValue } from '../utils.js'
 
 type compareFunction = (x: ValueType) => boolean
 type generatorFunction = (

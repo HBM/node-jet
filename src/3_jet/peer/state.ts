@@ -1,9 +1,9 @@
 'use strict'
 
-import { ValueType } from '../types'
-import { JsonParams } from '.'
-import { EventEmitter } from '../../1_socket'
-import { invalidState } from '../errors'
+import { ValueType } from '../types.js'
+import { JsonParams } from './index.js'
+import { EventEmitter } from '../../1_socket/index.js'
+import { invalidState } from '../errors.js'
 
 /**
  * Create a Jet State instance

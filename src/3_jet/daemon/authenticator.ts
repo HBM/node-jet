@@ -1,5 +1,5 @@
-import { NotAuthorized } from "../errors"
-import { access } from "./route"
+import { NotAuthorized } from "../errors.js"
+import { access } from "./route.js"
 
 export class Authenticator {
 

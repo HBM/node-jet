@@ -1,7 +1,7 @@
 'use strict'
-import { EventEmitter } from '../../1_socket'
-import JsonRPC from '../../2_jsonrpc'
-import { ValueType } from '../types'
+import { EventEmitter } from '../../1_socket/index.js'
+import JsonRPC from '../../2_jsonrpc/index.js'
+import { ValueType } from '../types.js'
 
 export type access = {
   readgroup: string, 

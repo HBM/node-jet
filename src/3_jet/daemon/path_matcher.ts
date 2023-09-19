@@ -1,7 +1,6 @@
-// import { Notification } from "./fetcher";
-import { InvalidArgument } from '../errors'
-import { FetchParams } from '../messages'
-import { PathRule, pathRules } from '../types'
+import { InvalidArgument } from '../errors.js'
+import { FetchParams } from '../messages.js'
+import { PathRule, pathRules } from '../types.js'
 
 type functionGenerator =
   | ((what: string) => (path: string) => boolean)

@@ -1,7 +1,7 @@
-import { State } from './peer/state'
-import { Method } from './peer/method'
-import { JsonRPCError, JSONRPCError } from './errors'
-import { ErrorType, ValueType } from './types'
+import { State } from './peer/state.js'
+import { Method } from './peer/method.js'
+import { JsonRPCError, JSONRPCError } from './errors.js'
+import { ErrorType, ValueType } from './types.js'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const getValue = (o: any, field: string) => {

@@ -1,8 +1,8 @@
 /* istanbul ignore file */
-import { EventEmitter, WebSocketImpl } from '.'
+import { EventEmitter, WebSocketImpl } from './index.js'
 import { WebSocket, WebSocketServer as WsServer } from 'ws'
 import { Server as HTTPServer } from 'http'
-import { Socket } from './socket'
+import { Socket } from './socket.js'
 
 export interface WebServerConfig {
   url?: string

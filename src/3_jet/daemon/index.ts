@@ -1,10 +1,10 @@
 'use strict'
 
-import { Logger, logger } from '../log'
-import { AddRequest, AuthParams, FetchParams, PathParams, SetParams } from '../messages'
-import { createPathMatcher } from './path_matcher'
-import { Subscription } from './subscription'
-import { Route } from './route'
+import { Logger, logger } from '../log.js'
+import { AddRequest, AuthParams, FetchParams, PathParams, SetParams } from '../messages.js'
+import { createPathMatcher } from './path_matcher.js'
+import { Subscription } from './subscription.js'
+import { Route } from './route.js'
 import {
   ConnectionInUse,
   InvvalidCredentials,
@@ -12,13 +12,13 @@ import {
   notAllowed,
   NotFound,
   Occupied
-} from '../errors'
-import JsonRPC from '../../2_jsonrpc'
-import { JsonRPCServer } from '../../2_jsonrpc/server'
-import { WebServerConfig } from '../../1_socket/wsserver'
-import { TCPServerConfig } from '../../1_socket/tcpserver'
-import { EventEmitter } from '../../1_socket'
-import { Authenticator } from './authenticator'
+} from '../errors.js'
+import JsonRPC from '../../2_jsonrpc/index.js'
+import { JsonRPCServer } from '../../2_jsonrpc/server.js'
+import { WebServerConfig } from '../../1_socket/wsserver.js'
+import { TCPServerConfig } from '../../1_socket/tcpserver.js'
+import { EventEmitter } from '../../1_socket/index.js'
+import { Authenticator } from './authenticator.js'
 
 const version = '2.2.0'
 
