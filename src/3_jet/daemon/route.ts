@@ -1,4 +1,3 @@
-'use strict'
 import { EventEmitter } from '../../1_socket/index.js'
 import JsonRPC from '../../2_jsonrpc/index.js'
 import { ValueType } from '../types.js'
