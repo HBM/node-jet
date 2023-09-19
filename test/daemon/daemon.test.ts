@@ -4,7 +4,9 @@ import {
   Daemon,
   InfoOptions,
   InvalidArgument,
+  InvvalidCredentials as InvalidCredentials,
   notAllowed,
+  NotAuthorized,
   NotFound,
   Occupied
 } from '../../src/jet'
@@ -14,6 +16,8 @@ import {
   AddMethod,
   AddResolve,
   AddState,
+  addUser,
+  authenticate,
   CallRequest,
   changeState,
   configure,
@@ -58,6 +62,7 @@ describe('Testing Daemon 2 (Notifications)', () => {
           features: {
             asNotification: true,
             batches: true,
+            authenticate: false,
             fetch: 'full'
           },
           name: 'node-jet',
@@ -65,6 +70,79 @@ describe('Testing Daemon 2 (Notifications)', () => {
           version: '2.2.0'
         })
         expect(res.success).toEqual(true)
+      })
+      .then(() => mockServer.simulateDisconnect(peer))
+      .then(() => daemon.close())
+      .then(() => done())
+  })
+  it('should test addUser', (done) => {
+    const daemon = new Daemon({
+      ...fullDaemon,
+      username: 'Admin',
+      password: 'admin'
+    })
+    daemon.listen({})
+    const peer = simpleFecherPeer()
+    mockServer
+      .simulateConnection(peer)
+      .then(() => mockServer.message(peer, authenticate('Admin', 'admin')))
+      .then(() => mockServer.message(peer, addUser('t', 't2', ['test'])))
+      .then((res) => {
+        expect(res.message).toEqual({})
+        expect(res.success).toEqual(true)
+      })
+      .then(() => mockServer.simulateDisconnect(peer))
+      .then(() => daemon.close())
+      .then(() => done())
+  })
+  it('should fail addUser', (done) => {
+    const daemon = new Daemon({
+      ...fullDaemon,
+      username: 'Admin',
+      password: 'admin'
+    })
+    daemon.listen({})
+    const peer = simpleFecherPeer()
+    mockServer
+      .simulateConnection(peer)
+      .then(() => mockServer.message(peer, addUser('test', 'test', ['test'])))
+      .then((res) => {
+        expect(res.message).toEqual(new NotAuthorized(''))
+        expect(res.success).toEqual(false)
+      })
+      .then(() => mockServer.simulateDisconnect(peer))
+      .then(() => daemon.close())
+      .then(() => done())
+  })
+  it('should test authenticate', (done) => {
+    const daemon = new Daemon({
+      ...fullDaemon,
+      username: 'Admin',
+      password: 'admin'
+    })
+    daemon.listen({})
+    const peer = simpleFecherPeer()
+    mockServer
+      .simulateConnection(peer)
+      .then(() => mockServer.message(peer, authenticate('Admin', 'admin')))
+      .then((res) => {
+        expect(res.message).toEqual({})
+        expect(res.success).toEqual(true)
+      })
+      .then(() => mockServer.simulateDisconnect(peer))
+      .then(() => daemon.close())
+      .then(() => done())
+  })
+  it('should fail authenticate', (done) => {
+    const daemon = new Daemon(fullDaemon)
+    daemon.listen({})
+    const peer = simpleFecherPeer()
+    mockServer
+      .simulateConnection(peer)
+      .then(() => mockServer.message(peer, authenticate('test', 'test')))
+      .then((res) => {
+        expect(res.message).toEqual(new InvalidCredentials(''))
+        expect(res.success).toEqual(false)
       })
       .then(() => mockServer.simulateDisconnect(peer))
       .then(() => daemon.close())
@@ -345,6 +423,28 @@ describe('Testing Daemon 2 (Notifications)', () => {
       .then(() => mockServer.message(peer, CallRequest('bar2', [4])))
       .then((res) => {
         expect(res.message).toEqual(new NotFound())
+        expect(res.success).toEqual(false)
+      })
+      .then(() => mockServer.simulateDisconnect(peer))
+      .then(() => done())
+  })
+  it('Should fail call', (done) => {
+    const mockServer = jsonRPCServer()
+    jest.spyOn(Server, 'JsonRPCServer').mockImplementation(() => mockServer)
+    const daemon = new Daemon({
+      ...fullDaemon,
+      username: 'Admin',
+      password: 'admin'
+    })
+    daemon.listen({})
+    const peer = simpleFecherPeer()
+    mockServer
+      .simulateConnection(peer)
+      .then(() => mockServer.message(peer, AddMethod('bar', ['admin'])))
+      .then((res) => expect(res.success).toEqual(true))
+      .then(() => mockServer.message(peer, CallRequest('bar', [4])))
+      .then((res) => {
+        expect(res.message).toEqual(new NotAuthorized())
         expect(res.success).toEqual(false)
       })
       .then(() => mockServer.simulateDisconnect(peer))

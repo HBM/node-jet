@@ -3,9 +3,9 @@
  */
 import { Fetcher, Peer } from '../../../src'
 import { Todo } from '../server/Todo'
-import "./base.css"
+import './base.css'
 
-const todoList: Record<string,Todo> = {}
+const todoList: Record<string, Todo> = {}
 const peer = new Peer({ url: `ws://localhost:8081/` })
 
 const addTodo = (title: string) => {
@@ -16,7 +16,7 @@ const removeTodo = (id: string) => {
   peer.call('todo/remove', [id])
 }
 
-const setTodoCompleted = (todo: Todo, completed?:boolean) => {
+const setTodoCompleted = (todo: Todo, completed?: boolean) => {
   peer.set(`todo/#${todo.id}`, {
     ...todo,
     completed: completed ? completed : !todo.completed
@@ -69,8 +69,8 @@ const renderTodo = (todo: Todo) => {
   return container
 }
 
-var getCompleted: ()=>Todo[]
-var getUncompleted: ()=>Todo[]
+var getCompleted: () => Todo[]
+var getUncompleted: () => Todo[]
 
 const renderTodos = () => {
   var root = document.getElementById('todo-list')!
@@ -111,20 +111,23 @@ document.getElementById('toggle-all')!.addEventListener('click', () => {
 
 document.getElementById('todo-form')!.addEventListener('submit', (event) => {
   try {
-  const titleInput = (document.getElementById('new-todo')! as HTMLInputElement).value
-  addTodo(titleInput)
-  ;(document.getElementById('new-todo')! as HTMLInputElement).value = ""
-  }catch (ex){
+    const titleInput = (
+      document.getElementById('new-todo')! as HTMLInputElement
+    ).value
+    addTodo(titleInput)
+    ;(document.getElementById('new-todo')! as HTMLInputElement).value = ''
+  } catch (ex) {
     console.log(ex)
   }
   event.preventDefault()
- 
-
-  
 })
 
 peer
   .connect()
   .then(() => peer.authenticate('Admin', 'test'))
-  .then(() => peer.fetch(todos)).then(()=>renderTodos())
+  .then(() => peer.get({ path: { startsWith: 'test' } }))
+  .then((val) => console.log(val))
+  // .then(() => peer.authenticate('Operator', ''))
+  .then(() => peer.fetch(todos))
+  .then(() => renderTodos())
   .catch((ex) => console.log(ex))

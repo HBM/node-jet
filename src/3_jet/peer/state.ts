@@ -25,7 +25,7 @@ export class State<T extends ValueType> extends EventEmitter {
   _value: T
   _readGroup: string
   _writeGroup: string
-  constructor(path: string, initialValue: T, readgroup="all",writeGroup="all") {
+  constructor(path: string, initialValue: T, readgroup = '', writeGroup = '') {
     super()
     this._path = path
     this._value = initialValue
@@ -64,11 +64,16 @@ export class State<T extends ValueType> extends EventEmitter {
     return this._value
   }
 
-  toJson = (): JsonParams<T> => ({
-    path: this._path,
-    value: this._value,
-    access: {read:this._readGroup,write:this._writeGroup}
-  })
+  toJson = (): JsonParams<T> => {
+    const res: JsonParams<T> = {
+      path: this._path,
+      value: this._value
+    }
+    if (this._readGroup || this._writeGroup) {
+      res.access = { read: this._readGroup, write: this._writeGroup }
+    }
+    return res
+  }
 }
 
 export default State

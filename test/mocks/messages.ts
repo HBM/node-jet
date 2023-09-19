@@ -11,11 +11,29 @@ export const configure = (values: Record<string, string>) => ({
   params: { values }
 })
 
-export const AddMethod = (path: string) => ({
+export const authenticate = (user: string, password: string) => ({
   id: '1',
-  method: 'add',
-  params: { path }
+  method: 'authenticate',
+  params: { user, password }
 })
+export const addUser = (user: string, password: string, groups: string[]) => ({
+  id: '1',
+  method: 'addUser',
+  params: { user, password, groups }
+})
+
+export const AddMethod = (path: string, groups?: string[]) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const req: any = {
+    id: '1',
+    method: 'add',
+    params: { path }
+  }
+  if (groups) {
+    req.params.access = { write: groups }
+  }
+  return req
+}
 export const AddState = (path: string, value: ValueType) => ({
   id: '1',
   method: 'add',

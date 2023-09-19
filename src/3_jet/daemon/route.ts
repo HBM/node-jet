@@ -4,8 +4,8 @@ import JsonRPC from '../../2_jsonrpc/index.js'
 import { ValueType } from '../types.js'
 
 export type access = {
-  readgroup: string, 
-  writegroup: string
+  read?: string
+  write: string
 }
 /**
  * A Route is a path and corresponds to a state.

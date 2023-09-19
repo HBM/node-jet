@@ -1,10 +1,4 @@
-import {
-  Daemon,
-  Method,
-  Peer,
-  State,
-  ValueType
-} from '../../../src'
+import { Daemon, Method, Peer, State, ValueType } from '../../../src'
 import { Todo } from './Todo'
 
 var port = parseInt(process.argv[2]) || 8081
@@ -29,7 +23,6 @@ console.log('listening on port', port)
 // Create Jet Peer
 var peer = new Peer({
   url: `ws://localhost:8081/`
- 
 })
 // const peer2 = new jet.Peer({
 //   port: internalPort,log:{logCallbacks:[console.log],logname:"Peer 2",loglevel:jet.LogLevel.debug}
@@ -58,7 +51,7 @@ addTodo.on('call', (args) => {
 })
 
 // Provide a "todo/remove" method to delete a certain todo
-var removeTodo = new Method('todo/remove')
+var removeTodo = new Method('todo/remove', 'admin')
 removeTodo.on('call', (id: string) => {
   if (id in todoStates) {
     peer.remove(todoStates[id] as State<ValueType>)
@@ -89,15 +82,16 @@ setCompleted.on('call', (args) => {
   })
 })
 
-
-const stateTest = new State<ValueType>('test', 1,"admin","admin")
+const stateTest = new State<ValueType>('test', 1, 'admin', 'admin')
 const stateTest2 = new State<ValueType>('test2', 2)
 
-console.log("connecting")
+console.log('connecting')
 peer
   .connect()
-  .then(() => console.log("connected"))
+  .then(() => console.log('connected'))
   .then(() => peer.authenticate('Admin', 'test'))
+  .then(() => peer.addUser('Operator', '', ['operation']))
+  .then(() => peer.addUser('Maintainer', '', ['maintenance']))
   .then(() => peer.add(jetState))
   .then(() => peer.add(addTodo))
   .then(() => peer.add(removeTodo))
@@ -105,8 +99,6 @@ peer
   .then(() => peer.add(clearCompletedTodos))
   .then(() => peer.add(stateTest))
   .then(() => peer.add(stateTest2))
-  .then(() => peer.get({"path":{"startsWith":"test"}}))
-  .then((val) => console.log(val))
   .catch((ex) => {
     console.log('Caught exception', ex)
   })

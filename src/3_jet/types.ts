@@ -2,6 +2,7 @@ import { Fetcher } from '../jet.js'
 
 export const events = [
   'authenticate',
+  'addUser',
   'configure',
   'info',
   'fetch',

@@ -15,4 +15,8 @@ describe('Testing Method', () => {
     method = new Method('foo')
     expect(method.toJson()).toEqual({ path: 'foo' })
   })
+  it('Should create json method with write constraints from Method', () => {
+    const method = new Method('foo', 'admin')
+    expect(method.toJson()).toEqual({ path: 'foo', access: { write: 'admin' } })
+  })
 })

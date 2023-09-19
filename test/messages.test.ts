@@ -66,6 +66,41 @@ describe('Testing message casting', () => {
     } as any)
     expect(typeof msg).toEqual('object')
   })
+  it('Should parse addUser', () => {
+    const msg = castMessage<MethodRequest>({
+      id: 'abc',
+      method: 'addUser',
+      params: { user: 'user', password: 'pw', groups: [''] }
+    })
+    expect(typeof msg).toEqual('object')
+  })
+  it('Should fail addUser', () => {
+    expect(() =>
+      castMessage<MethodRequest>({
+        id: 'abc',
+        method: 'addUser',
+        params: { user: 'user', password: 'pw' }
+      })
+    ).toThrow(new InvalidArgument('no method'))
+  })
+  it('Should parse authenticate', () => {
+    const msg = castMessage<MethodRequest>({
+      id: 'abc',
+      method: 'authenticate',
+      params: { user: 'user', password: 'pw' }
+    })
+    expect(typeof msg).toEqual('object')
+  })
+  it('Should fail authenticate', () => {
+    expect(() =>
+      castMessage<MethodRequest>({
+        id: 'abc',
+        method: 'authenticate',
+        params: { password: 'pw' }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any)
+    ).toThrow(new InvalidArgument('no method'))
+  })
   it('fetch without id', () => {
     expect(() =>
       castMessage<MethodRequest>({

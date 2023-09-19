@@ -12,6 +12,7 @@ import { Subscription } from '../daemon/subscription.js'
 import { EventEmitter } from '../../1_socket/index.js'
 import { nanoid } from 'nanoid'
 import { MethodParams, PathParams, SetParams } from '../messages.js'
+import { access } from '../daemon/route.js'
 
 const fallbackDaemonInfo: InfoOptions = {
   name: 'unknown-daemon',
@@ -26,16 +27,14 @@ const fallbackDaemonInfo: InfoOptions = {
 
 export interface JsonParams<T = ValueType> {
   method?: string
-  access?: {
-    read: string,
-    write: string
-  },
+  access?: access
   path?: string | Record<string, string | string[]>
   args?: object
   timeout?: number
   value?: T
   user?: string
   password?: string
+  groups?: string[]
   id?: string
 }
 export type publishEvent = 'Add' | 'Remove' | 'Change'
@@ -238,7 +237,7 @@ export class Peer extends EventEmitter {
         fetcher.emit('data', entry)
       })
     if (!(fetchSimpleId in this.#fetcher)) {
-      //create dummy fetcher to
+      //create dummy fetcher
       this.#fetcher[fetchSimpleId] = new Fetcher()
       const params = { id: fetchSimpleId, path: { startsWith: '' } }
       return this.#jsonrpc
@@ -278,6 +277,10 @@ export class Peer extends EventEmitter {
    */
   authenticate = (user: string, password: string) => {
     return this.#jsonrpc.sendRequest('authenticate', { user, password })
+  }
+
+  addUser = (user: string, password: string, groups: string[]) => {
+    return this.#jsonrpc.sendRequest('addUser', { user, password, groups })
   }
   connect = (controller: AbortController = new AbortController()) =>
     this.#jsonrpc
@@ -339,7 +342,9 @@ export class Peer extends EventEmitter {
       })
     }
     return this.#jsonrpc.sendRequest('add', stateOrMethod.toJson()).then(() => {
-      this.#routes[stateOrMethod._path] = stateOrMethod as any as State<ValueType>
+      this.#routes[stateOrMethod._path] =
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        stateOrMethod as any as State<ValueType>
       return Promise.resolve()
     })
   }

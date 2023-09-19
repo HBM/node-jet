@@ -6,10 +6,10 @@ const HtmlWebpackPlugin = require('html-webpack-plugin')
 const serverConfig = {
   target: 'node',
   mode: 'none',
-  context: path.resolve('./', 'examples', 'todo', 'server'),
+  context: path.resolve('./', 'examples', 'balls', 'server'),
   entry: './index.ts',
   output: {
-    path: path.resolve('./', 'examples', 'todo', 'dist'),
+    path: path.resolve('./', 'examples', 'balls', 'dist'),
     filename: 'server.cjs'
   },
   resolve: {
@@ -41,10 +41,10 @@ const serverConfig = {
 const clientConfig = {
   target: 'web',
   mode: 'none',
-  context: path.resolve('./', 'examples', 'todo', 'client'),
-  entry: './client.ts',
+  context: path.resolve('./', 'examples', 'balls', 'client'),
+  entry: './index.ts',
   output: {
-    path: path.resolve('./', 'examples', 'todo', 'dist'),
+    path: path.resolve('./', 'examples', 'balls', 'dist'),
     filename: 'client.js',
     publicPath: '/',
     clean: true
