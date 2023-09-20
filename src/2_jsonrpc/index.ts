@@ -3,8 +3,8 @@ import {
   JsonRPCError,
   methodNotFoundError,
   ParseError
-} from '../3_jet/errors'
-import { JsonParams } from '../3_jet/peer'
+} from '../3_jet/errors.js'
+import { JsonParams } from '../3_jet/peer/index.js'
 import {
   castMessage,
   ErrorMessage,
@@ -12,11 +12,11 @@ import {
   MessageParams,
   MethodRequest,
   ResultMessage
-} from '../3_jet/messages'
-import { logger, Logger } from '../3_jet/log'
-import { Socket } from '../1_socket/socket'
-import { EventEmitter } from '../1_socket'
-import { ValueType } from '../3_jet/types'
+} from '../3_jet/messages.js'
+import { logger, Logger } from '../3_jet/log.js'
+import { Socket } from '../1_socket/socket.js'
+import { EventEmitter } from '../1_socket/index.js'
+import { ValueType } from '../3_jet/types.js'
 /**
  * Helper shorthands.
  */

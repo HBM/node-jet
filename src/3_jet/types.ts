@@ -1,6 +1,4 @@
-'use strict'
-
-import { Fetcher } from '../jet'
+import { Fetcher } from '../jet.js'
 
 export const events = [
   'authenticate',

@@ -1,7 +1,7 @@
 /* istanbul ignore file */
 import { WebSocket as ws } from 'ws'
-import MessageSocket from './message-socket'
-import { isBrowser, isNodeJs } from '.'
+import MessageSocket from './message-socket.js'
+import { isBrowser, isNodeJs } from './index.js'
 
 /** Socket instance.
  * @class

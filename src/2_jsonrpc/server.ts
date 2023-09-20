@@ -1,9 +1,9 @@
-import JsonRPC from '.'
-import { EventEmitter } from '../1_socket'
-import { Socket } from '../1_socket/socket'
-import { TCPServer, TCPServerConfig } from '../1_socket/tcpserver'
-import { WebServerConfig, WebsocketServer } from '../1_socket/wsserver'
-import { Logger } from '../3_jet/log'
+import JsonRPC from './index.js'
+import { EventEmitter } from '../1_socket/index.js'
+import { Socket } from '../1_socket/socket.js'
+import { TCPServer, TCPServerConfig } from '../1_socket/tcpserver.js'
+import { WebServerConfig, WebsocketServer } from '../1_socket/wsserver.js'
+import { Logger } from '../3_jet/log.js'
 /**
  * JSONRPCServer instance
  */

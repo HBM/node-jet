@@ -16,7 +16,13 @@ module.exports = {
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   roots: ['<rootDir>/test'],
   testRegex: '/test/.*\\.(test|spec)?\\.(ts|tsx)$',
-  transform: { '^.+\\.(js|ts|tsx)?$': ['ts-jest', { isolatedModules: true }] },
+  transform: {
+    '^.+\\.(js|ts|tsx)?$': ['ts-jest', { isolatedModules: true, useESM: true }]
+  },
   transformIgnorePatterns: ['node_modules/(?!nanoid)'],
-  testEnvironment: 'jsdom'
+  testEnvironment: 'jsdom',
+  moduleNameMapper: {
+    '(.+)\\.js': '$1'
+  },
+  extensionsToTreatAsEsm: ['.ts']
 }
