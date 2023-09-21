@@ -1,6 +1,6 @@
 {
   "name": "node-jet",
-  "version": "3.0.7",
+  "version": "3.0.8",
   "description": "Jet Realtime Message Bus for the Web. Daemon and Peer implementation.",
   "url": "https://github.com/hbm/node-jet",
   "author": {

@@ -1,4 +1,3 @@
-'use strict'
 const errorUrlBase =
   'https://github.com/lipp/node-jet/blob/master/doc/peer.markdown'
 export const NO_ERROR_CODE = 1000

@@ -1,11 +1,11 @@
 'use strict'
 
-import JsonRPC from '../../2_jsonrpc'
-import { FetchParams, MethodParams } from '../messages'
-import { ValueType } from '../types'
-import { createPathMatcher } from './path_matcher'
-import { Route } from './route'
-import { create as createValueMatcher } from './value_matcher'
+import JsonRPC from '../../2_jsonrpc/index.js'
+import { FetchParams, MethodParams } from '../messages.js'
+import { ValueType } from '../types.js'
+import { createPathMatcher } from './path_matcher.js'
+import { Route } from './route.js'
+import { create as createValueMatcher } from './value_matcher.js'
 
 /** A subscription corresponds to a fetch request.
  * Each subscription contains all the routes that match the subscription  */

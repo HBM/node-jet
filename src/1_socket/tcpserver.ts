@@ -1,8 +1,8 @@
 /* istanbul ignore file */
 import { Server, createServer } from 'net'
-import { EventEmitter } from '.'
-import MessageSocket from './message-socket'
-import { Socket } from './socket'
+import { EventEmitter } from './index.js'
+import MessageSocket from './message-socket.js'
+import { Socket } from './socket.js'
 import { Socket as natSocket } from 'net'
 
 export interface TCPServerConfig {

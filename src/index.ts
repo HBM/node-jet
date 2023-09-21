@@ -1,3 +1,3 @@
-import * as jet from './jet'
-export * from './jet'
+import * as jet from './jet.js'
+export * from './jet.js'
 export default jet

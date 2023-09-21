@@ -1,13 +1,13 @@
-import { EventEmitter } from '../../1_socket'
-import { Subscription } from '../daemon/subscription'
-import { FetchParams } from '../messages'
+import { EventEmitter } from '../../1_socket/index.js'
+import { Subscription } from '../daemon/subscription.js'
+import { FetchParams } from '../messages.js'
 import {
   PathRule,
   ValueType,
   OperatorType as Operator,
   ValueRule,
   pathFunction
-} from '../types'
+} from '../types.js'
 
 export class Fetcher extends EventEmitter {
   message: FetchParams = { id: '' }

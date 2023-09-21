@@ -1,6 +1,6 @@
-import { access } from './daemon/route'
-import { InvalidArgument, invalidRequest, JSONRPCError } from './errors'
-import { EventType, OperatorType, ValueType } from './types'
+import { access } from './daemon/route.js'
+import { InvalidArgument, invalidRequest, JSONRPCError } from './errors.js'
+import { EventType, OperatorType, ValueType } from './types.js'
 
 export interface MethodParams {
   path: string
