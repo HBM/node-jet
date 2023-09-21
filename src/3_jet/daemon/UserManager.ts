@@ -1,5 +1,5 @@
-import { NotAuthorized, invalidRequest } from '../errors'
-import { access } from './route'
+import { NotAuthorized, invalidRequest } from '../errors.js'
+import { access } from './route.js'
 
 export class UserManager {
   users: Record<string, string>

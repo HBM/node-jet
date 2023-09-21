@@ -1,7 +1,7 @@
 /**
  * Helpers
  */
-import { JsonParams } from '.'
+import { JsonParams } from './index.js'
 import { EventEmitter } from '../../1_socket/index.js'
 import { ValueType } from '../types.js'
 /**
