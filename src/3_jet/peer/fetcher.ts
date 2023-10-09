@@ -6,7 +6,8 @@ import {
   ValueType,
   OperatorType as Operator,
   ValueRule,
-  pathFunction
+  pathFunction,
+  PublishMessage
 } from '../types.js'
 
 export class Fetcher extends EventEmitter {
@@ -18,6 +19,13 @@ export class Fetcher extends EventEmitter {
     this.setMaxListeners(0)
   }
 
+  addListener = <T extends ValueType>(
+    eventName: 'data',
+    listener: (update: PublishMessage<T>) => void
+  ) => {
+    super.addListener(eventName, listener)
+    return this
+  }
   path: pathFunction = (key: PathRule, value: string | string[]) => {
     if (!this.message.path) {
       this.message.path = {}

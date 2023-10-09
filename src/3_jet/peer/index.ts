@@ -83,7 +83,7 @@ export class Peer extends EventEmitter {
   #routes: Record<string, Method | State<ValueType>> = {}
   #fetcher: Record<string, Fetcher> = {}
   #log: Logger
-  cache: Record<string, PublishMessage> = {}
+  cache: Record<string, PublishMessage<ValueType>> = {}
   constructor(config?: PeerConfig, sock?: Socket) {
     super()
     this.#config = config || {}
@@ -167,7 +167,7 @@ export class Peer extends EventEmitter {
     )
     this.#jsonrpc.addListener(
       fetchSimpleId,
-      (_peer: JsonRPC, _id: string, m: PublishMessage) => {
+      (_peer: JsonRPC, _id: string, m: PublishMessage<ValueType>) => {
         this.cache[m.path] = m
         Object.values(this.#fetcher).forEach((fetcher) => {
           if (fetcher.matches(m.path, m.value)) {
@@ -324,7 +324,8 @@ export class Peer extends EventEmitter {
    * @param {object} expression A Fetch expression to retrieve a snapshot of the currently matching data.
    * @returns {external:Promise}
    */
-  get = (expression: JsonParams) => this.#jsonrpc.sendRequest('get', expression)
+  get = <T extends ValueType>(expression: JsonParams) =>
+    this.#jsonrpc.sendRequest<{ path: string; value: T }[]>('get', expression)
 
   /**
    * Adds a state or method to the Daemon.
