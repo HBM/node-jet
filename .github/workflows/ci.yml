@@ -1,6 +1,6 @@
 name: node-jet CI
 env:
-  NODE_VERSION: '19.x'
+  NODE_VERSION: "20.8"
 on:
   release:
     types: [created]
