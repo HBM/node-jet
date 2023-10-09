@@ -16,7 +16,12 @@ describe('Testing Fetcher', () => {
     expect(fetch.matches('test', { user: { id: 3 } })).toEqual(false)
   })
   it('Should create differential Fetcher', () => {
-    const fetch = new Fetcher().path('equals', 'test').differential()
+    const fetch = new Fetcher()
+      .path('equals', 'test')
+      .addListener('data', () => {
+        //do nothing
+      })
+      .differential()
     expect(fetch.matches('test', { user: { id: 3 } })).toEqual(true)
   })
   it('Should create ascending Fetcher', () => {

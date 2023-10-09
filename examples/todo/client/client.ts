@@ -1,7 +1,7 @@
 /*
  * Jet client-server communications:
  */
-import { Fetcher, Peer } from '../../../src'
+import { Fetcher, Peer, PublishMessage, ValueType } from '../../../src'
 import { Todo } from '../server/Todo'
 import './base.css'
 
@@ -22,18 +22,20 @@ const setTodoCompleted = (todo: Todo, completed?: boolean) => {
     completed: completed ? completed : !todo.completed
   })
 }
-const todos = new Fetcher().path('startsWith', 'todo/#').on('data', (todo) => {
-  switch (todo.event) {
-    case 'Add':
-    case 'Change':
-      todoList[todo.path] = todo.value
-      break
-    case 'Remove':
-      delete todoList[todo.path]
-      break
-  }
-  renderTodos()
-})
+const todos = new Fetcher()
+  .path('startsWith', 'todo/#')
+  .addListener('data', (todo: PublishMessage<Todo>) => {
+    switch (todo.event) {
+      case 'Add':
+      case 'Change':
+        todoList[todo.path] = todo.value
+        break
+      case 'Remove':
+        delete todoList[todo.path]
+        break
+    }
+    renderTodos()
+  })
 /*
  * GUI Logic:
  */

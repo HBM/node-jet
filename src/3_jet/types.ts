@@ -60,10 +60,10 @@ export interface ValueRule {
   operator: OperatorType
   value: string | number | boolean
 }
-export type PublishMessage = {
+export type PublishMessage<T extends ValueType> = {
   path: string
   event: string
-  value?: ValueType
+  value: T
 }
 export const operators = [
   'greaterThan',
