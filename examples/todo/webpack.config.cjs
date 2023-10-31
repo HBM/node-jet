@@ -38,40 +38,40 @@ const serverConfig = {
     level: 'log' // enables logging required for problem matchers
   }
 }
-// const clientConfig = {
-//   target: 'web',
-//   mode: 'none',
-//   context: path.resolve('./', 'examples', 'todo', 'client'),
-//   entry: './client.ts',
-//   output: {
-//     path: path.resolve('./', 'examples', 'todo', 'dist'),
-//     filename: 'client.js',
-//     publicPath: '/',
-//     clean: true
-//   },
-//   module: {
-//     rules: [
-//       {
-//         test: /\.ts$/,
-//         use: ['ts-loader']
-//       },
-//       {
-//         test: /\.(scss|css)$/,
-//         use: ['style-loader', 'css-loader', 'postcss-loader']
-//       }
-//     ]
-//   },
-//   resolve: {
-//     extensions: ['.ts', '.js'],
-//     alias: { events: require.resolve('events/') }
-//   },
-//   devtool: 'nosources-source-map',
-//   plugins: [
-//     new HtmlWebpackPlugin({
-//       title: 'TODO',
-//       template: 'index.html'
-//     })
-//   ]
-// }
+const clientConfig = {
+  target: 'web',
+  mode: 'none',
+  context: path.resolve('./', 'examples', 'todo', 'client'),
+  entry: './client.ts',
+  output: {
+    path: path.resolve('./', 'examples', 'todo', 'dist'),
+    filename: 'client.js',
+    publicPath: '/',
+    clean: true
+  },
+  module: {
+    rules: [
+      {
+        test: /\.ts$/,
+        use: ['ts-loader']
+      },
+      {
+        test: /\.(scss|css)$/,
+        use: ['style-loader', 'css-loader', 'postcss-loader']
+      }
+    ]
+  },
+  resolve: {
+    extensions: ['.ts', '.js'],
+    alias: { events: require.resolve('events/') }
+  },
+  devtool: 'nosources-source-map',
+  plugins: [
+    new HtmlWebpackPlugin({
+      title: 'TODO',
+      template: 'index.html'
+    })
+  ]
+}
 
-module.exports = [serverConfig]
+module.exports = [serverConfig,clientConfig]
