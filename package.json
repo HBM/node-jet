@@ -34,7 +34,6 @@
   ],
   "scripts": {
     "test": "jest",
-    "prepare": "npm version patch",
     "build": "tsc",
     "ci": "npm run ci:eslint && npm run ci:prettier && npm run ci:type-check && npm run test",
     "ci:eslint": "eslint --max-warnings 0 --ignore-path .prettierignore $npm_package_config_files",
