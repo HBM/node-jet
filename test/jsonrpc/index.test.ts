@@ -106,13 +106,11 @@ describe('Testing JsonRpc', () => {
       done()
     })
     const jsonrpc = new JsonRPC(new Logger())
-      jsonrpc.connect().then(() =>{
+    jsonrpc.connect().then(() => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       jsonrpc.queue({ event: 'Add', path: 'foo', value: 1 } as any, '_f')
       jsonrpc.send()
-    }
-   
-    )
+    })
     sock.emit('open')
   })
   it('Should test batch notify', (done) => {
@@ -499,15 +497,12 @@ describe('Testing JsonRpc', () => {
     jsonrpc.connect().then(async () => {
       jsonrpc.sendImmediate = false
       jsonrpc.sendRequest('add', { path: 'foo', value: 3 })
-      const p1 = jsonrpc.sendRequest('add', { path: 'foo1', value: 4 }).catch((ex)=>{
-        expect(ex).toEqual({"code": 0, "name": "error"})
+      jsonrpc.sendRequest('add', { path: 'foo1', value: 4 }).catch((ex) => {
+        expect(ex).toEqual({ code: 0, name: 'error' })
         done()
       })
       jsonrpc.sendImmediate = true
       jsonrpc.send()
-
-        
-     
     })
 
     sock.emit('open')

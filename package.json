@@ -40,7 +40,7 @@
     "ci:prettier": "prettier --check $npm_package_config_files ",
     "ci:type-check": "tsc --noEmit --skipLibCheck",
     "prettier": "prettier --write $npm_package_config_files",
-    "eslint": "eslint --max-warnings 0 --ignore-path .prettierignore $npm_package_config_files",
+    "eslint": "eslint --fix  --max-warnings 0 --ignore-path .prettierignore $npm_package_config_files",
     "ex:chat": "npm run build && concurrently \"webpack serve --config examples/chat/webpack.config.cjs\" \"wait-on examples/chat/dist/server.cjs && node examples/chat/dist/server.cjs\"",
     "ex:todo": "npm run build && concurrently \"webpack serve --config examples/todo/webpack.config.cjs\" \"wait-on examples/todo/dist/server.cjs && node examples/todo/dist/server.cjs\"",
     "ex:balls": "npm run build && concurrently \"webpack serve --config examples/balls/webpack.config.cjs\" \"wait-on examples/balls/dist/server.cjs && node examples/balls/dist/server.cjs\""
