@@ -2,8 +2,10 @@ name: node-jet CI
 env:
   NODE_VERSION: '20.8'
 on:
-  release:
-    types: [created]
+  pull_request:
+    branches: [ master ]
+    types: [opened, closed]
+
 
 jobs:
   build:
