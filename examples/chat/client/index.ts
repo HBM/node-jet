@@ -31,13 +31,6 @@ document
   .getElementById('message-form')!
   .addEventListener('submit', function (event) {
     event.preventDefault()
-    // const ps = [
-    //   new Promise((res,rej)=>{peer.set("test1",5).then(res).catch(rej)}),
-    //   new Promise((res,rej)=>{peer.set("test2",15).then(res).catch(rej)})
-    // ]
-    // Promise.allSettled(ps).then((res)=>{
-    //   console.log(res)
-    // })
     const messageInput = document.getElementById('message')! as HTMLInputElement
     const sendButton = document.getElementById('send')! as HTMLButtonElement
     const message = messageInput.value
