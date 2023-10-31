@@ -35,7 +35,7 @@ jobs:
       - run: npm ci
       - run: git config --global user.email "you@example.com"
       - run: git config --global user.name "you@example.com"
-      - run: npm version ${{ env.RELEASE_VERSION }}
+      - run: npm version v13.0.20
       - run: npm run build
       - run: npm publish --dry-run
         env:
