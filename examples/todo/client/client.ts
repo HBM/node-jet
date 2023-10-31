@@ -1,7 +1,7 @@
 /*
  * Jet client-server communications:
  */
-import { Fetcher, Peer, PublishMessage, ValueType } from '../../../src'
+import { Fetcher, Peer, PublishMessage, ValueType } from '../../../lib'
 import { Todo } from '../server/Todo'
 import './base.css'
 

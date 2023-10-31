@@ -310,9 +310,7 @@ export class Peer extends EventEmitter {
    *
    */
   batch = (action: () => void) => {
-    if (this.#daemonInfo.features?.batches) {
-      this.#jsonrpc.sendImmediate = false
-    }
+    this.#jsonrpc.sendImmediate = false
     action()
     this.#jsonrpc.sendImmediate = true
     return this.#jsonrpc.send()

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { Daemon, Method, Peer, State } from '../../../src'
+import { Daemon, Method, Peer, State } from '../../../lib'
 import { canvasSize } from '../defs'
 
 var port = parseInt(process.argv[2]) || 8081

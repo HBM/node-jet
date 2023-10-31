@@ -205,11 +205,9 @@ export class JsonRPC extends EventEmitter {
   _dispatchSingleMessage = (
     message: MethodRequest | ResultMessage | ErrorMessage
   ) => {
-    if (isResultMessage(message) || isErrorMessage(message)) {
+    if (isResultMessage(message) || isErrorMessage(message))
       this._dispatchResponse(message)
-    } else {
-      this._dispatchRequest(castMessage<MethodRequest>(message))
-    }
+    else this._dispatchRequest(castMessage<MethodRequest>(message))
   }
 
   /**
@@ -219,12 +217,8 @@ export class JsonRPC extends EventEmitter {
    */
   _dispatchResponse = (message: ResultMessage | ErrorMessage) => {
     const mid = message.id
-    if (isResultMessage(message)) {
-      this.successCb(mid, message.result)
-    }
-    if (isErrorMessage(message)) {
-      this.errorCb(mid, message.error)
-    }
+    if (isResultMessage(message)) this.successCb(mid, message.result)
+    if (isErrorMessage(message)) this.errorCb(mid, message.error)
   }
 
   /**
@@ -237,28 +231,16 @@ export class JsonRPC extends EventEmitter {
     if (this.listenerCount(message.method) === 0) {
       this.logger.error(`Method ${message.method} is unknown`)
       this.respond(message.id, new methodNotFoundError(message.method), false)
-    } else {
-      this.emit(message.method, this, message.id, message.params)
-    }
+    } else this.emit(message.method, this, message.id, message.params)
   }
 
   /**
    * Queue.
    */
   queue = <T extends MessageParams | Message>(message: T, id = '') => {
-    if (!this._isOpen) {
-      return Promise.reject(new ConnectionClosed())
-    }
-    if (id) {
-      this.messages.push({ method: id, params: message } as Message)
-    } else {
-      this.messages.push(message as Message)
-    }
-    if (this.sendImmediate) {
-      return this.send()
-    } else {
-      return Promise.resolve()
-    }
+    if (!this._isOpen) return Promise.reject(new ConnectionClosed())
+    if (id) this.messages.push({ method: id, params: message } as Message)
+    else this.messages.push(message as Message)
   }
 
   /**
@@ -272,19 +254,7 @@ export class JsonRPC extends EventEmitter {
       this.logger.sock(`Sending message:  ${encoded}`)
       this.sock.send(encoded)
       this.messages = []
-    } else {
-      return Promise.resolve()
     }
-    return Promise.all(this.batchPromises)
-      .then((res) => {
-        this.batchPromises = []
-        return Promise.resolve(res)
-      })
-      .catch((ex) => {
-        this.batchPromises = []
-        this.logger.error(JSON.stringify(ex))
-        return Promise.reject(ex)
-      })
   }
 
   /**
@@ -295,6 +265,7 @@ export class JsonRPC extends EventEmitter {
    */
   respond = (id: string, params: ValueType, success: boolean) => {
     this.queue({ id, [success ? 'result' : 'error']: params })
+    if (this.sendImmediate) this.send()
   }
 
   successCb = (id: string, result: ValueType) => {
@@ -314,36 +285,28 @@ export class JsonRPC extends EventEmitter {
    */
   sendRequest = <T extends ValueType>(
     method: string,
-    params: JsonParams,
-    immediate: boolean | undefined = undefined
-  ): Promise<T> => {
-    const promise = new Promise<ValueType>((resolve, reject) => {
-      if (!this._isOpen) {
-        reject(new ConnectionClosed())
-      } else {
+    params: JsonParams
+  ): Promise<T> =>
+    new Promise<T>((resolve, reject) => {
+      console.log('Sending request')
+      if (!this._isOpen) reject(new ConnectionClosed())
+      else {
         const rpcId = this.messageId.toString()
         this.messageId++
-        this.openRequests[rpcId] = { resolve, reject }
+        this.openRequests[rpcId] = {
+          resolve: resolve as (
+            value: ValueType | PromiseLike<ValueType>
+          ) => void,
+          reject
+        }
         this.queue({
           id: rpcId.toString(),
           method,
           params
         })
-        if (immediate) {
-          this.send()
-        }
+        if (this.sendImmediate) this.send()
       }
     })
-    this.batchPromises.push(promise)
-    if (immediate || this.sendImmediate)
-      return promise.catch((err) => {
-        this.logger.error(JSON.stringify(err))
-        return Promise.reject(err)
-      }) as Promise<T>
-    else {
-      return Promise.resolve({} as T)
-    }
-  }
 }
 
 export default JsonRPC

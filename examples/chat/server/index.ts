@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { Daemon, Method, Peer, State } from '../../../src'
+import { Daemon, LogLevel, Method, Peer, State } from '../../../lib/jet.js'
 
 const wsPort = parseInt(process.argv[2]) || 8081
 const internalPort = 10222
@@ -21,7 +21,8 @@ console.log('listening on port', wsPort)
 
 // Create Jet Peer
 const peer = new Peer({
-  port: internalPort
+  port: internalPort,
+  log: { logName: '', logCallbacks: [console.log], logLevel: LogLevel.socket }
 })
 
 // the messages state is simply an array
@@ -44,10 +45,13 @@ const clear = new Method('chat/clear')
 clear.on('call', () => {
   messages.value([])
 })
-
 peer
   .connect()
-  .then(() =>
-    Promise.all([peer.add(messages), peer.add(append), peer.add(clear)])
-  )
+  .then(() => {
+    peer.batch(() => {
+      peer.add(messages)
+      peer.add(append)
+      peer.add(clear)
+    })
+  })
   .then(() => {})
