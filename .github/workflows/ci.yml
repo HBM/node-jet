@@ -4,6 +4,9 @@ env:
 on:
   release:
     types: [created]
+  pull_request:
+    branches:
+      - master
 
 jobs:
   build:
@@ -20,6 +23,7 @@ jobs:
       - run: npm test
 
   publish-npm:
+    if: startsWith(github.ref, 'refs/tags/v')
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -29,6 +33,9 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           registry-url: https://registry.npmjs.org/
       - run: npm ci
+      - run: git config --global user.email "schopp@hbkworld.com"
+      - run: git config --global user.name "Florian Schopp"
+      - run: npm version ${{ env.RELEASE_VERSION }}
       - run: npm run build
       - run: npm publish
         env:

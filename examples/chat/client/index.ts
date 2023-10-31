@@ -1,10 +1,15 @@
 /*
  * Jet client-server communications:
  */
-import { Fetcher, Peer } from '../../../src'
+import { Peer } from '../../../lib/3_jet/peer/index.js'
+import { Fetcher } from '../../../lib/3_jet/peer/fetcher.js'
 import './base.css'
+import { LogLevel } from '../../../lib/jet.js'
 
-const peer = new Peer({ url: 'ws://localhost:8081/' })
+const peer = new Peer({
+  url: 'ws://localhost:8081/',
+  log: { logName: '', logCallbacks: [console.log], logLevel: LogLevel.socket }
+})
 
 const renderMessages = (messages: { value: string[] }) => {
   const messageContainer = document.getElementById('messages')!

@@ -2,7 +2,7 @@
  * Jet client-server communications:
  */
 import { select, selectAll, pointer } from 'd3-selection'
-import { Fetcher, Peer } from '../../../src'
+import { Fetcher, Peer } from '../../../lib'
 import { canvasSize } from '../defs'
 import { ballType } from '../server'
 
