@@ -288,7 +288,6 @@ export class JsonRPC extends EventEmitter {
     params: JsonParams
   ): Promise<T> =>
     new Promise<T>((resolve, reject) => {
-      console.log('Sending request')
       if (!this._isOpen) reject(new ConnectionClosed())
       else {
         const rpcId = this.messageId.toString()
