@@ -37,6 +37,6 @@ jobs:
       - run: git config --global user.name "Florian Schopp"
       - run: npm version ${{ env.RELEASE_VERSION }}
       - run: npm run build
-      - run: npm publish --dry-run
+      - run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{secrets.npm_token}}
