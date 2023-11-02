@@ -83,6 +83,44 @@ describe('Testing Peer', () => {
           done()
         })
       })
+      it('should fail call with thrown string', (done) => {
+        const s = new Method('foo')
+        s.on('call', () => {
+          throw 'test'
+        })
+        peer.add(s).then(() => {
+          const par = { path: 'foo', value: 5 }
+          cbs['call'](undefined, 'fooId', par)
+
+          expect(jsonRpc.respond).toBeCalledWith(
+            'fooId',
+            new InvalidParamError('InvalidParam', 'Failed to call method'),
+            false
+          )
+          done()
+        })
+      })
+      it('should fail call with thrown object', (done) => {
+        const s = new Method('foo')
+        s.on('call', () => {
+          throw { test: 4 }
+        })
+        peer.add(s).then(() => {
+          const par = { path: 'foo', value: 5 }
+          cbs['call'](undefined, 'fooId', par)
+
+          expect(jsonRpc.respond).toBeCalledWith(
+            'fooId',
+            new InvalidParamError(
+              'InvalidParam',
+              'Failed to call method',
+              'details'
+            ),
+            false
+          )
+          done()
+        })
+      })
       it('should fail set with error', (done) => {
         const s = new State<ValueType>('foo', 5)
         s.on('set', () => {
