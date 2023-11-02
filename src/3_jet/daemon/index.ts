@@ -283,7 +283,7 @@ export class Daemon extends EventEmitter {
     ) {
       return Promise.reject(new NotAuthorized(params.path))
     }
-    return this.routes[params.path].owner.sendRequest(method, params)
+    return this.routes[params.path].owner.sendRequest(method, params, true)
   }
 
   /*

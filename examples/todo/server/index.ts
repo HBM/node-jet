@@ -1,4 +1,4 @@
-import { Daemon, Method, Peer, State, ValueType } from '../../../lib'
+import { Daemon, LogLevel, Method, Peer, State, ValueType } from '../../../lib'
 import { Todo } from './Todo'
 
 var port = parseInt(process.argv[2]) || 8081
