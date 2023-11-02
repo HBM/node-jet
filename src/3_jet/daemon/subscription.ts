@@ -58,6 +58,7 @@ export class Subscription {
 
   send = () => {
     this.messages.forEach((msg) => this.owner?.queue(msg, this.id))
+    this.owner?.send()
     this.messages = []
   }
 }

@@ -1,12 +1,19 @@
 /*
  * Jet client-server communications:
  */
-import { Fetcher, Peer, PublishMessage, ValueType } from '../../../lib'
+import { Fetcher, Peer, PublishMessage } from '../../../lib'
 import { Todo } from '../server/Todo'
 import './base.css'
 
 const todoList: Record<string, Todo> = {}
-const peer = new Peer({ url: `ws://localhost:8081/` })
+const peer = new Peer({
+  url: `ws://localhost:8081/`
+  // log: {
+  //   logCallbacks: [console.log],
+  //   logName: 'Peer 2',
+  //   logLevel: LogLevel.socket
+  // }
+})
 
 const addTodo = (title: string) => {
   peer.call('todo/add', [title])
@@ -35,6 +42,24 @@ const todos = new Fetcher()
         break
     }
     renderTodos()
+  })
+
+const test2 = new Fetcher().path('startsWith', 'te')
+
+const test = new Fetcher()
+  .path('startsWith', 'test')
+  .addListener('data', (todo: PublishMessage<Todo>) => {
+    switch (todo.event) {
+      case 'Add':
+        console.log('add', todo.value)
+      case 'Change':
+        console.log('change', todo.value)
+        // todoList[todo.path] = todo.value
+        break
+      case 'Remove':
+        delete todoList[todo.path]
+        break
+    }
   })
 /*
  * GUI Logic:
@@ -127,9 +152,12 @@ document.getElementById('todo-form')!.addEventListener('submit', (event) => {
 peer
   .connect()
   .then(() => peer.authenticate('Admin', 'test'))
-  .then(() => peer.get({ path: { startsWith: 'test' } }))
-  .then((val) => console.log(val))
-  // .then(() => peer.authenticate('Operator', ''))
-  .then(() => peer.fetch(todos))
+  .then(() =>
+    peer.batch(() => {
+      peer.fetch(test)
+      peer.fetch(test2)
+      peer.fetch(todos)
+    })
+  )
   .then(() => renderTodos())
   .catch((ex) => console.log(ex))

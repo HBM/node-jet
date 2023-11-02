@@ -457,14 +457,12 @@ describe('Testing JsonRpc', () => {
     const jsonrpc = new JsonRPC(new Logger())
     jsonrpc.connect().then(() => {
       sock.emit('message', { data: json })
-      expect(jsonrpc.sendRequest('add', { path: 'foo' }, true)).rejects.toEqual(
-        {
-          code: -32602,
-          data: {
-            pathNotExists: 'Foo'
-          }
+      expect(jsonrpc.sendRequest('add', { path: 'foo' })).rejects.toEqual({
+        code: -32602,
+        data: {
+          pathNotExists: 'Foo'
         }
-      )
+      })
       done()
     })
 

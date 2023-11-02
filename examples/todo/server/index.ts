@@ -9,9 +9,14 @@ var daemon = new Daemon({
   password: 'test',
   features: {
     fetch: 'full',
-    batches: true,
-    asNotification: true
+    batches: false,
+    asNotification: false
   }
+  // log: {
+  //   logCallbacks: [console.log],
+  //   logName: 'Daemon',
+  //   logLevel: LogLevel.socket
+  // }
 })
 
 daemon.listen({
@@ -23,6 +28,11 @@ console.log('listening on port', port)
 // Create Jet Peer
 var peer = new Peer({
   url: `ws://localhost:8081/`
+  // log: {
+  //   logCallbacks: [console.log],
+  //   logName: 'Peer 1',
+  //   logLevel: LogLevel.socket
+  // }
 })
 // const peer2 = new jet.Peer({
 //   port: internalPort,log:{logCallbacks:[console.log],logname:"Peer 2",loglevel:jet.LogLevel.debug}
