@@ -43,24 +43,6 @@ const todos = new Fetcher()
     }
     renderTodos()
   })
-
-const test2 = new Fetcher().path('startsWith', 'te')
-
-const test = new Fetcher()
-  .path('startsWith', 'test')
-  .addListener('data', (todo: PublishMessage<Todo>) => {
-    switch (todo.event) {
-      case 'Add':
-        console.log('add', todo.value)
-      case 'Change':
-        console.log('change', todo.value)
-        // todoList[todo.path] = todo.value
-        break
-      case 'Remove':
-        delete todoList[todo.path]
-        break
-    }
-  })
 /*
  * GUI Logic:
  */
@@ -152,12 +134,6 @@ document.getElementById('todo-form')!.addEventListener('submit', (event) => {
 peer
   .connect()
   .then(() => peer.authenticate('Admin', 'test'))
-  .then(() =>
-    peer.batch(() => {
-      peer.fetch(test)
-      peer.fetch(test2)
-      peer.fetch(todos)
-    })
-  )
+  .then(() => peer.fetch(todos))
   .then(() => renderTodos())
   .catch((ex) => console.log(ex))

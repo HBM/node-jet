@@ -9,8 +9,8 @@ var daemon = new Daemon({
   password: 'test',
   features: {
     fetch: 'full',
-    batches: false,
-    asNotification: false
+    batches: true,
+    asNotification: true
   }
   // log: {
   //   logCallbacks: [console.log],
