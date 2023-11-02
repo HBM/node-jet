@@ -336,6 +336,7 @@ export class Daemon extends EventEmitter {
           this.forward('set', peer.user, params)
             .then((res) => newPeer.respond(id, res, true))
             .catch((err) => newPeer.respond(id, err, false))
+            .finally(() => newPeer.send())
       )
       newPeer.addListener(
         'call',
@@ -343,6 +344,7 @@ export class Daemon extends EventEmitter {
           this.forward('call', peer.user, params)
             .then((res) => newPeer.respond(id, res, true))
             .catch((err) => newPeer.respond(id, err, false))
+            .finally(() => newPeer.send())
       )
     })
     this.jsonRPCServer.addListener('disconnect', (peer: JsonRPC) => {

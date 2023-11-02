@@ -158,8 +158,20 @@ export class Peer extends EventEmitter {
             this.#jsonrpc.respond(id, error, false)
             return
           }
-          method.call(m.args)
-          this.#jsonrpc.respond(id, {}, true)
+          try {
+            method.call(m.args)
+            this.#jsonrpc.respond(id, {}, true)
+          } catch (err) {
+            this.#jsonrpc.respond(
+              id,
+              new InvalidParamError(
+                'InvalidParam',
+                'Failed to call method',
+                err && typeof err == 'object' ? err.toString() : undefined
+              ),
+              false
+            )
+          }
         } else {
           const error = new NotFound(m.path)
           this.#log.error(error.toString())

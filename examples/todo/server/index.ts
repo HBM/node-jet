@@ -1,4 +1,4 @@
-import { Daemon, LogLevel, Method, Peer, State, ValueType } from '../../../lib'
+import { Daemon, Method, Peer, State, ValueType } from '../../../lib'
 import { Todo } from './Todo'
 
 var port = parseInt(process.argv[2]) || 8081
@@ -12,11 +12,6 @@ var daemon = new Daemon({
     batches: true,
     asNotification: true
   }
-  // log: {
-  //   logCallbacks: [console.log],
-  //   logName: 'Daemon',
-  //   logLevel: LogLevel.socket
-  // }
 })
 
 daemon.listen({
@@ -28,16 +23,7 @@ console.log('listening on port', port)
 // Create Jet Peer
 var peer = new Peer({
   url: `ws://localhost:8081/`
-  // log: {
-  //   logCallbacks: [console.log],
-  //   logName: 'Peer 1',
-  //   logLevel: LogLevel.socket
-  // }
 })
-// const peer2 = new jet.Peer({
-//   port: internalPort,log:{logCallbacks:[console.log],logname:"Peer 2",loglevel:jet.LogLevel.debug}
-
-// })
 
 var todoStates: Record<string, State<Todo>> = {}
 
@@ -56,8 +42,13 @@ addTodo.on('call', (args) => {
   todoState.on('set', (requestedTodo) => {
     todo.merge(requestedTodo)
   })
+  if (todo.id in todoStates) {
+    throw 'already existent'
+  }
   todoStates[todo.id] = todoState
-  peer.add(todoState)
+  peer.add(todoState).catch(() => {
+    console.log('State already existent')
+  })
 })
 
 // Provide a "todo/remove" method to delete a certain todo

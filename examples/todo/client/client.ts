@@ -8,15 +8,10 @@ import './base.css'
 const todoList: Record<string, Todo> = {}
 const peer = new Peer({
   url: `ws://localhost:8081/`
-  // log: {
-  //   logCallbacks: [console.log],
-  //   logName: 'Peer 2',
-  //   logLevel: LogLevel.socket
-  // }
 })
 
 const addTodo = (title: string) => {
-  peer.call('todo/add', [title])
+  peer.call('todo/add', [title]).catch(() => console.log('Failed to add'))
 }
 
 const removeTodo = (id: string) => {
