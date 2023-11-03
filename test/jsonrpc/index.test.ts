@@ -65,7 +65,7 @@ describe('Testing JsonRpc', () => {
       done()
     })
     const jsonrpc = new JsonRPC(new Logger(), {}, sock)
-    jsonrpc.sendRequest('add', { path: 'foo', value: 3 })
+    jsonrpc.sendRequest('add', { path: 'foo', value: 3 }, true)
   })
   it('Should test batch send', (done) => {
     const sock = sockMock()
@@ -457,14 +457,12 @@ describe('Testing JsonRpc', () => {
     const jsonrpc = new JsonRPC(new Logger())
     jsonrpc.connect().then(() => {
       sock.emit('message', { data: json })
-      expect(jsonrpc.sendRequest('add', { path: 'foo' }, true)).rejects.toEqual(
-        {
-          code: -32602,
-          data: {
-            pathNotExists: 'Foo'
-          }
+      expect(jsonrpc.sendRequest('add', { path: 'foo' })).rejects.toEqual({
+        code: -32602,
+        data: {
+          pathNotExists: 'Foo'
         }
-      )
+      })
       done()
     })
 
@@ -495,13 +493,13 @@ describe('Testing JsonRpc', () => {
     })
     const jsonrpc = new JsonRPC(new Logger(), { batches: true })
     jsonrpc.connect().then(async () => {
-      jsonrpc.sendImmediate = false
-      jsonrpc.sendRequest('add', { path: 'foo', value: 3 })
-      jsonrpc.sendRequest('add', { path: 'foo1', value: 4 }).catch((ex) => {
-        expect(ex).toEqual({ code: 0, name: 'error' })
-        done()
-      })
-      jsonrpc.sendImmediate = true
+      jsonrpc.sendRequest('add', { path: 'foo', value: 3 }, false)
+      jsonrpc
+        .sendRequest('add', { path: 'foo1', value: 4 }, false)
+        .catch((ex) => {
+          expect(ex).toEqual({ code: 0, name: 'error' })
+          done()
+        })
       jsonrpc.send()
     })
 

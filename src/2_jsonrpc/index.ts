@@ -59,7 +59,6 @@ export class JsonRPC extends EventEmitter {
       reject: (value: JsonRPCError | PromiseLike<JsonRPCError>) => void
     }
   > = {}
-  batchPromises: Promise<ValueType>[] = []
   requestId = ''
   resolveDisconnect!: (value: void | PromiseLike<void>) => void
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -71,11 +70,10 @@ export class JsonRPC extends EventEmitter {
   connectPromise!: Promise<void>
   logger: Logger
   abortController!: AbortController
-  sendImmediate: boolean
+
   constructor(logger: Logger, config?: JsonRpcConfig, sock?: Socket) {
     super()
     this.config = config || {}
-    this.sendImmediate = config?.batches ? false : true
     this.createDisconnectPromise()
     this.createConnectPromise()
     this.logger = logger
@@ -241,6 +239,7 @@ export class JsonRPC extends EventEmitter {
     if (!this._isOpen) return Promise.reject(new ConnectionClosed())
     if (id) this.messages.push({ method: id, params: message } as Message)
     else this.messages.push(message as Message)
+    if (!this.config.batches) this.send()
   }
 
   /**
@@ -265,7 +264,6 @@ export class JsonRPC extends EventEmitter {
    */
   respond = (id: string, params: ValueType, success: boolean) => {
     this.queue({ id, [success ? 'result' : 'error']: params })
-    if (this.sendImmediate) this.send()
   }
 
   successCb = (id: string, result: ValueType) => {
@@ -285,7 +283,9 @@ export class JsonRPC extends EventEmitter {
    */
   sendRequest = <T extends ValueType>(
     method: string,
-    params: JsonParams
+    params: JsonParams,
+    // Jet Peer uses send immediate to call all functions without delay
+    sendImmediate = false
   ): Promise<T> =>
     new Promise<T>((resolve, reject) => {
       if (!this._isOpen) reject(new ConnectionClosed())
@@ -303,7 +303,7 @@ export class JsonRPC extends EventEmitter {
           method,
           params
         })
-        if (this.sendImmediate) this.send()
+        if (sendImmediate) this.send()
       }
     })
 }

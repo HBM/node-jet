@@ -83,6 +83,44 @@ describe('Testing Peer', () => {
           done()
         })
       })
+      it('should fail call with thrown string', (done) => {
+        const s = new Method('foo')
+        s.on('call', () => {
+          throw 'test'
+        })
+        peer.add(s).then(() => {
+          const par = { path: 'foo', value: 5 }
+          cbs['call'](undefined, 'fooId', par)
+
+          expect(jsonRpc.respond).toBeCalledWith(
+            'fooId',
+            new InvalidParamError('InvalidParam', 'Failed to call method'),
+            false
+          )
+          done()
+        })
+      })
+      it('should fail call with thrown object', (done) => {
+        const s = new Method('foo')
+        s.on('call', () => {
+          throw { test: 4 }
+        })
+        peer.add(s).then(() => {
+          const par = { path: 'foo', value: 5 }
+          cbs['call'](undefined, 'fooId', par)
+
+          expect(jsonRpc.respond).toBeCalledWith(
+            'fooId',
+            new InvalidParamError(
+              'InvalidParam',
+              'Failed to call method',
+              'details'
+            ),
+            false
+          )
+          done()
+        })
+      })
       it('should fail set with error', (done) => {
         const s = new State<ValueType>('foo', 5)
         s.on('set', () => {
@@ -237,7 +275,7 @@ describe('Testing Peer', () => {
       const peer = new Peer()
       peer.connect().then(() => {
         expect(connectSpy).toBeCalled()
-        expect(sendSpy).toBeCalledWith('info', {})
+        expect(sendSpy).toBeCalledWith('info', {}, true)
         expect(peer.isConnected()).toBe(true)
         done()
       })
@@ -251,7 +289,11 @@ describe('Testing Peer', () => {
       jest.spyOn(JsonRPC, 'default').mockImplementation(() => jsonrpc)
       const peer = new Peer()
       peer.add(new State<ValueType>('My path', 3)).catch((ex) => {
-        expect(sendSpy).toBeCalledWith('add', { path: 'My path', value: 3 })
+        expect(sendSpy).toBeCalledWith(
+          'add',
+          { path: 'My path', value: 3 },
+          true
+        )
         expect(ex).toBe('invalid path')
         done()
       })
@@ -263,9 +305,17 @@ describe('Testing Peer', () => {
       const peer = new Peer()
       const myState = new State<ValueType>('My path', 4)
       peer.add(myState).then(() => {
-        expect(sendSpy).toBeCalledWith('add', { path: 'My path', value: 4 })
+        expect(sendSpy).toBeCalledWith(
+          'add',
+          { path: 'My path', value: 4 },
+          true
+        )
         myState.value(6)
-        expect(sendSpy).toBeCalledWith('change', { path: 'My path', value: 6 })
+        expect(sendSpy).toBeCalledWith(
+          'change',
+          { path: 'My path', value: 6 },
+          true
+        )
         done()
       })
     })
@@ -275,7 +325,7 @@ describe('Testing Peer', () => {
       jest.spyOn(JsonRPC, 'default').mockImplementation(() => jsonrpc)
       const peer = new Peer()
       peer.add(new Method('My path')).then(() => {
-        expect(sendSpy).toBeCalledWith('add', { path: 'My path' })
+        expect(sendSpy).toBeCalledWith('add', { path: 'My path' }, true)
         done()
       })
     })
@@ -285,7 +335,7 @@ describe('Testing Peer', () => {
       jest.spyOn(JsonRPC, 'default').mockImplementation(() => jsonrpc)
       const peer = new Peer()
       peer.add(new Method('My path')).then(() => {
-        expect(sendSpy).toBeCalledWith('add', { path: 'My path' })
+        expect(sendSpy).toBeCalledWith('add', { path: 'My path' }, true)
         done()
       })
     })
@@ -296,13 +346,31 @@ describe('Testing Peer', () => {
       const peer = new Peer()
       peer.batch(() => jest.fn())
     })
+    it('Should fail to create  batch', (done) => {
+      const sendSpy = jest.fn().mockReturnValue(Promise.resolve({}))
+      const connSpy = jest
+        .fn()
+        .mockReturnValue(Promise.resolve({ features: { batches: false } }))
+      const jsonrpc = {
+        ...fullFetcherPeer(),
+        sendRequest: sendSpy,
+        connect: connSpy
+      }
+
+      jest.spyOn(JsonRPC, 'default').mockImplementation(() => jsonrpc)
+      const peer = new Peer()
+      peer.connect().then(() => {
+        expect(() => peer.batch(() => jest.fn())).toThrow('')
+        done()
+      })
+    })
     it('Should send configure', (done) => {
       const sendSpy = jest.fn().mockReturnValue(Promise.resolve({}))
       const jsonrpc = { ...fullFetcherPeer(), sendRequest: sendSpy }
       jest.spyOn(JsonRPC, 'default').mockImplementation(() => jsonrpc)
       const peer = new Peer()
       peer.configure({}).then(() => {
-        expect(sendSpy).toBeCalledWith('config', {})
+        expect(sendSpy).toBeCalledWith('config', {}, true)
         done()
       })
     })
@@ -314,7 +382,7 @@ describe('Testing Peer', () => {
       jest.spyOn(JsonRPC, 'default').mockImplementation(() => jsonrpc)
       const peer = new Peer()
       peer.remove(new State<ValueType>('My path', 5)).catch((ex) => {
-        expect(sendSpy).toBeCalledWith('remove', { path: 'My path' })
+        expect(sendSpy).toBeCalledWith('remove', { path: 'My path' }, true)
         expect(ex).toBe('invalid path')
         done()
       })
@@ -325,7 +393,7 @@ describe('Testing Peer', () => {
       jest.spyOn(JsonRPC, 'default').mockImplementation(() => jsonrpc)
       const peer = new Peer()
       peer.remove(new State<ValueType>('My path', 5)).then(() => {
-        expect(sendSpy).toBeCalledWith('remove', { path: 'My path' })
+        expect(sendSpy).toBeCalledWith('remove', { path: 'My path' }, true)
         done()
       })
     })
@@ -336,11 +404,15 @@ describe('Testing Peer', () => {
     jest.spyOn(JsonRPC, 'default').mockImplementation(() => jsonrpc)
     const peer = new Peer()
     peer.addUser('Admin', 'admin', ['test']).then(() => {
-      expect(sendSpy).toBeCalledWith('addUser', {
-        password: 'admin',
-        user: 'Admin',
-        groups: ['test']
-      })
+      expect(sendSpy).toBeCalledWith(
+        'addUser',
+        {
+          password: 'admin',
+          user: 'Admin',
+          groups: ['test']
+        },
+        true
+      )
       done()
     })
   })
@@ -350,10 +422,14 @@ describe('Testing Peer', () => {
     jest.spyOn(JsonRPC, 'default').mockImplementation(() => jsonrpc)
     const peer = new Peer()
     peer.authenticate('Admin', 'admin').then(() => {
-      expect(sendSpy).toBeCalledWith('authenticate', {
-        password: 'admin',
-        user: 'Admin'
-      })
+      expect(sendSpy).toBeCalledWith(
+        'authenticate',
+        {
+          password: 'admin',
+          user: 'Admin'
+        },
+        true
+      )
       done()
     })
   })
@@ -364,7 +440,11 @@ describe('Testing Peer', () => {
       jest.spyOn(JsonRPC, 'default').mockImplementation(() => jsonrpc)
       const peer = new Peer()
       peer.get({ path: { startsWith: 'a' } }).catch((ex) => {
-        expect(sendSpy).toBeCalledWith('get', { path: { startsWith: 'a' } })
+        expect(sendSpy).toBeCalledWith(
+          'get',
+          { path: { startsWith: 'a' } },
+          true
+        )
         expect(ex).toBe('invalid path')
         done()
       })
@@ -375,7 +455,11 @@ describe('Testing Peer', () => {
       jest.spyOn(JsonRPC, 'default').mockImplementation(() => jsonrpc)
       const peer = new Peer()
       peer.get({ path: { startsWith: 'a' } }).then((res) => {
-        expect(sendSpy).toBeCalledWith('get', { path: { startsWith: 'a' } })
+        expect(sendSpy).toBeCalledWith(
+          'get',
+          { path: { startsWith: 'a' } },
+          true
+        )
         expect(res).toBe(5)
         done()
       })
@@ -389,10 +473,14 @@ describe('Testing Peer', () => {
       jest.spyOn(JsonRPC, 'default').mockImplementation(() => jsonrpc)
       const peer = new Peer()
       peer.set('Foo', 5).catch((ex) => {
-        expect(sendSpy).toBeCalledWith('set', {
-          path: 'Foo',
-          value: 5
-        })
+        expect(sendSpy).toBeCalledWith(
+          'set',
+          {
+            path: 'Foo',
+            value: 5
+          },
+          true
+        )
         expect(ex).toBe('invalid path')
         done()
       })
@@ -403,7 +491,7 @@ describe('Testing Peer', () => {
       jest.spyOn(JsonRPC, 'default').mockImplementation(() => jsonrpc)
       const peer = new Peer()
       peer.set('Foo', 5).then((res) => {
-        expect(sendSpy).toBeCalledWith('set', { path: 'Foo', value: 5 })
+        expect(sendSpy).toBeCalledWith('set', { path: 'Foo', value: 5 }, true)
         expect(res).toBe(5)
         done()
       })
@@ -416,10 +504,14 @@ describe('Testing Peer', () => {
       jest.spyOn(JsonRPC, 'default').mockImplementation(() => jsonrpc)
       const peer = new Peer()
       peer.call('Foo', [5]).catch((ex) => {
-        expect(sendSpy).toBeCalledWith('call', {
-          path: 'Foo',
-          args: [5]
-        })
+        expect(sendSpy).toBeCalledWith(
+          'call',
+          {
+            path: 'Foo',
+            args: [5]
+          },
+          true
+        )
         expect(ex).toBe('invalid path')
         done()
       })
@@ -430,10 +522,14 @@ describe('Testing Peer', () => {
       jest.spyOn(JsonRPC, 'default').mockImplementation(() => jsonrpc)
       const peer = new Peer()
       peer.call('Foo', { abc: 4 }).then((res) => {
-        expect(sendSpy).toBeCalledWith('call', {
-          path: 'Foo',
-          args: { abc: 4 }
-        })
+        expect(sendSpy).toBeCalledWith(
+          'call',
+          {
+            path: 'Foo',
+            args: { abc: 4 }
+          },
+          true
+        )
         expect(res).toEqual({})
         done()
       })
@@ -446,10 +542,14 @@ describe('Testing Peer', () => {
       jest.spyOn(JsonRPC, 'default').mockImplementation(() => jsonrpc)
       const peer = new Peer()
       peer.call('Foo', [5]).catch((ex) => {
-        expect(sendSpy).toBeCalledWith('call', {
-          path: 'Foo',
-          args: [5]
-        })
+        expect(sendSpy).toBeCalledWith(
+          'call',
+          {
+            path: 'Foo',
+            args: [5]
+          },
+          true
+        )
         expect(ex).toBe('invalid path')
         done()
       })
@@ -460,10 +560,14 @@ describe('Testing Peer', () => {
       jest.spyOn(JsonRPC, 'default').mockImplementation(() => jsonrpc)
       const peer = new Peer()
       peer.call('Foo', { abc: 4 }).then((res) => {
-        expect(sendSpy).toBeCalledWith('call', {
-          path: 'Foo',
-          args: { abc: 4 }
-        })
+        expect(sendSpy).toBeCalledWith(
+          'call',
+          {
+            path: 'Foo',
+            args: { abc: 4 }
+          },
+          true
+        )
         expect(res).toEqual({})
         done()
       })
@@ -476,7 +580,11 @@ describe('Testing Peer', () => {
       jest.spyOn(JsonRPC, 'default').mockImplementation(() => jsonrpc)
       const peer = new Peer()
       peer.fetch(new Fetcher()).catch((ex) => {
-        expect(sendSpy).toBeCalledWith('fetch', expect.objectContaining({}))
+        expect(sendSpy).toBeCalledWith(
+          'fetch',
+          expect.objectContaining({}),
+          true
+        )
         expect(ex).toBe('invalid path')
         done()
       })
@@ -500,7 +608,8 @@ describe('Testing Peer', () => {
             'fetch',
             expect.objectContaining({
               path: { startsWith: 'a' }
-            })
+            }),
+            true
           )
         })
         .then(() => peer.fetch(new Fetcher().path('equals', 'b')))
@@ -509,7 +618,8 @@ describe('Testing Peer', () => {
             'fetch',
             expect.objectContaining({
               path: { equals: 'b' }
-            })
+            }),
+            true
           )
 
           done()
@@ -537,10 +647,14 @@ describe('Testing Peer', () => {
         )
         .then(() => peer.fetch(new Fetcher().path('startsWith', 'f')))
         .then(() => {
-          expect(mockPeer.sendRequest).toBeCalledWith('fetch', {
-            id: 'fetch_all',
-            path: { startsWith: '' }
-          })
+          expect(mockPeer.sendRequest).toBeCalledWith(
+            'fetch',
+            {
+              id: 'fetch_all',
+              path: { startsWith: '' }
+            },
+            true
+          )
         })
         .then(() => peer.fetch(new Fetcher().path('equals', 'b')))
         .then(() => {
@@ -577,7 +691,7 @@ describe('Testing Peer', () => {
         .then(() => peer.fetch(fetcher))
         .then(() => peer.unfetch(fetcher))
         .then(() => {
-          expect(sendSpy).toBeCalledWith('unfetch', expect.anything())
+          expect(sendSpy).toBeCalledWith('unfetch', expect.anything(), true)
           done()
         })
     })
@@ -609,7 +723,7 @@ describe('Testing Peer', () => {
         .then(() => {
           //Only send unfetch event when no fetchers are registered anymore
           expect(sendSpy).toBeCalledTimes(3)
-          expect(sendSpy).toBeCalledWith('unfetch', { id: 'fetch_all' })
+          expect(sendSpy).toBeCalledWith('unfetch', { id: 'fetch_all' }, true)
           done()
         })
     })

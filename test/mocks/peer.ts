@@ -11,6 +11,7 @@ export const fullFetcherPeer = (): any => {
     respond: jest.fn(),
     send: jest.fn(),
     queue: jest.fn(),
+    config: {},
     sendRequest: jest
       .fn()
       .mockImplementation((method) =>
@@ -33,6 +34,7 @@ export const simpleFecherPeer = (): any => {
     ...(jest.createMockFromModule('../../src/2_jsonrpc') as JsonRPC.JsonRPC),
     connect: () => Promise.resolve(),
     callbacks: {},
+    config: {},
     _isOpen: true,
     respond: jest.fn(),
     send: jest.fn(),

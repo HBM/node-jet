@@ -24,10 +24,6 @@ console.log('listening on port', port)
 var peer = new Peer({
   url: `ws://localhost:8081/`
 })
-// const peer2 = new jet.Peer({
-//   port: internalPort,log:{logCallbacks:[console.log],logname:"Peer 2",loglevel:jet.LogLevel.debug}
-
-// })
 
 var todoStates: Record<string, State<Todo>> = {}
 
@@ -46,8 +42,13 @@ addTodo.on('call', (args) => {
   todoState.on('set', (requestedTodo) => {
     todo.merge(requestedTodo)
   })
+  if (todo.id in todoStates) {
+    throw 'already existent'
+  }
   todoStates[todo.id] = todoState
-  peer.add(todoState)
+  peer.add(todoState).catch(() => {
+    console.log('State already existent')
+  })
 })
 
 // Provide a "todo/remove" method to delete a certain todo

@@ -1,15 +1,17 @@
 /*
  * Jet client-server communications:
  */
-import { Fetcher, Peer, PublishMessage, ValueType } from '../../../lib'
+import { Fetcher, Peer, PublishMessage } from '../../../lib'
 import { Todo } from '../server/Todo'
 import './base.css'
 
 const todoList: Record<string, Todo> = {}
-const peer = new Peer({ url: `ws://localhost:8081/` })
+const peer = new Peer({
+  url: `ws://localhost:8081/`
+})
 
 const addTodo = (title: string) => {
-  peer.call('todo/add', [title])
+  peer.call('todo/add', [title]).catch(() => console.log('Failed to add'))
 }
 
 const removeTodo = (id: string) => {
@@ -127,9 +129,6 @@ document.getElementById('todo-form')!.addEventListener('submit', (event) => {
 peer
   .connect()
   .then(() => peer.authenticate('Admin', 'test'))
-  .then(() => peer.get({ path: { startsWith: 'test' } }))
-  .then((val) => console.log(val))
-  // .then(() => peer.authenticate('Operator', ''))
   .then(() => peer.fetch(todos))
   .then(() => renderTodos())
   .catch((ex) => console.log(ex))

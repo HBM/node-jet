@@ -79,6 +79,8 @@ export interface PeerConfig extends JsonRpcConfig {
 export class Peer extends EventEmitter {
   #config: PeerConfig
   #jsonrpc: JsonRPC
+  //All requests are send immediately except the batch function is called
+  #sendImmediate = true
   #daemonInfo: InfoOptions = fallbackDaemonInfo
   #routes: Record<string, Method | State<ValueType>> = {}
   #fetcher: Record<string, Fetcher> = {}
@@ -156,8 +158,20 @@ export class Peer extends EventEmitter {
             this.#jsonrpc.respond(id, error, false)
             return
           }
-          method.call(m.args)
-          this.#jsonrpc.respond(id, {}, true)
+          try {
+            method.call(m.args)
+            this.#jsonrpc.respond(id, {}, true)
+          } catch (err) {
+            this.#jsonrpc.respond(
+              id,
+              new InvalidParamError(
+                'InvalidParam',
+                'Failed to call method',
+                err && typeof err == 'object' ? err.toString() : undefined
+              ),
+              false
+            )
+          }
         } else {
           const error = new NotFound(m.path)
           this.#log.error(error.toString())
@@ -189,7 +203,7 @@ export class Peer extends EventEmitter {
       if (Object.keys(this.#fetcher).length === 2) {
         const param = { id: fetchSimpleId }
         return this.#jsonrpc
-          .sendRequest('unfetch', param)
+          .sendRequest('unfetch', param, this.#sendImmediate)
           .then(() => delete this.#fetcher[id])
           .then(() => Promise.resolve())
       } else {
@@ -197,10 +211,12 @@ export class Peer extends EventEmitter {
         return Promise.resolve()
       }
     } else {
-      return this.#jsonrpc.sendRequest('unfetch', { id }).then(() => {
-        delete this.#fetcher[id]
-        return Promise.resolve()
-      })
+      return this.#jsonrpc
+        .sendRequest('unfetch', { id }, this.#sendImmediate)
+        .then(() => {
+          delete this.#fetcher[id]
+          return Promise.resolve()
+        })
     }
   }
   fetchFull = () => this.#daemonInfo.features?.fetch === 'full'
@@ -225,7 +241,7 @@ export class Peer extends EventEmitter {
         }
       )
       return this.#jsonrpc
-        .sendRequest('fetch', params)
+        .sendRequest('fetch', params, this.#sendImmediate)
         .then(() => Promise.resolve())
     }
     const sub = new Subscription(fetcher.message)
@@ -241,7 +257,7 @@ export class Peer extends EventEmitter {
       this.#fetcher[fetchSimpleId] = new Fetcher()
       const params = { id: fetchSimpleId, path: { startsWith: '' } }
       return this.#jsonrpc
-        .sendRequest('fetch', params)
+        .sendRequest('fetch', params, this.#sendImmediate)
         .then(() => Promise.resolve())
     } else {
       return Promise.resolve()
@@ -276,11 +292,19 @@ export class Peer extends EventEmitter {
    * })
    */
   authenticate = (user: string, password: string) => {
-    return this.#jsonrpc.sendRequest('authenticate', { user, password })
+    return this.#jsonrpc.sendRequest(
+      'authenticate',
+      { user, password },
+      this.#sendImmediate
+    )
   }
 
   addUser = (user: string, password: string, groups: string[]) => {
-    return this.#jsonrpc.sendRequest('addUser', { user, password, groups })
+    return this.#jsonrpc.sendRequest(
+      'addUser',
+      { user, password, groups },
+      this.#sendImmediate
+    )
   }
   connect = (controller: AbortController = new AbortController()) =>
     this.#jsonrpc
@@ -288,7 +312,7 @@ export class Peer extends EventEmitter {
       .then(() => this.info())
       .then((daemonInfo) => {
         this.#daemonInfo = daemonInfo || fallbackDaemonInfo
-        this.#jsonrpc.sendImmediate =
+        this.#jsonrpc.config.batches =
           !this.#daemonInfo.features?.batches || true
         return Promise.resolve()
       })
@@ -310,9 +334,11 @@ export class Peer extends EventEmitter {
    *
    */
   batch = (action: () => void) => {
-    this.#jsonrpc.sendImmediate = false
+    if (!this.#daemonInfo.features?.batches)
+      throw 'Daemon does not support batches'
+    this.#sendImmediate = false
     action()
-    this.#jsonrpc.sendImmediate = true
+    this.#sendImmediate = true
     return this.#jsonrpc.send()
   }
 
@@ -323,29 +349,39 @@ export class Peer extends EventEmitter {
    * @returns {external:Promise}
    */
   get = <T extends ValueType>(expression: JsonParams) =>
-    this.#jsonrpc.sendRequest<{ path: string; value: T }[]>('get', expression)
+    this.#jsonrpc.sendRequest<{ path: string; value: T }[]>(
+      'get',
+      expression,
+      this.#sendImmediate
+    )
 
   /**
    * Adds a state or method to the Daemon.
    *
-   * @param {(State|Method)} content To content to be added.
+   * @param {(State|Method)} content The content to be added.
    * @returns {external:Promise} Gets resolved as soon as the content has been added to the Daemon.
    */
   add = <T extends ValueType>(stateOrMethod: Method | State<T>) => {
     if (isState(stateOrMethod)) {
       stateOrMethod.addListener('change', (newValue: ValueType) => {
-        this.#jsonrpc.sendRequest('change', {
-          path: stateOrMethod._path,
-          value: newValue
-        })
+        this.#jsonrpc.sendRequest(
+          'change',
+          {
+            path: stateOrMethod._path,
+            value: newValue
+          },
+          this.#sendImmediate
+        )
       })
     }
-    return this.#jsonrpc.sendRequest('add', stateOrMethod.toJson()).then(() => {
-      this.#routes[stateOrMethod._path] =
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        stateOrMethod as any as State<ValueType>
-      return Promise.resolve()
-    })
+    return this.#jsonrpc
+      .sendRequest('add', stateOrMethod.toJson(), this.#sendImmediate)
+      .then(() => {
+        this.#routes[stateOrMethod._path] =
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          stateOrMethod as any as State<ValueType>
+        return Promise.resolve()
+      })
   }
 
   /**
@@ -356,7 +392,11 @@ export class Peer extends EventEmitter {
    */
   remove = <T extends ValueType>(stateOrMethod: Method | State<T>) =>
     this.#jsonrpc
-      .sendRequest('remove', { path: stateOrMethod.path() })
+      .sendRequest(
+        'remove',
+        { path: stateOrMethod.path() },
+        this.#sendImmediate
+      )
       .then(() => Promise.resolve())
 
   /**
@@ -374,14 +414,19 @@ export class Peer extends EventEmitter {
   ): Promise<object> => {
     const params = { path: path } as JsonParams
     if (callparams) params.args = callparams
-    return this.#jsonrpc.sendRequest<object>('call', params)
+    return this.#jsonrpc.sendRequest<object>(
+      'call',
+      params,
+      this.#sendImmediate
+    )
   }
 
   /**
    * Info
    * @private
    */
-  info = () => this.#jsonrpc.sendRequest<InfoOptions>('info', {})
+  info = () =>
+    this.#jsonrpc.sendRequest<InfoOptions>('info', {}, this.#sendImmediate)
 
   /**
    * Authenticate
@@ -398,7 +443,7 @@ export class Peer extends EventEmitter {
    * @private
    */
   configure = (params: JsonParams) =>
-    this.#jsonrpc.sendRequest('config', params)
+    this.#jsonrpc.sendRequest('config', params, this.#sendImmediate)
 
   /**
    * Set a {State} to another value.
@@ -410,7 +455,7 @@ export class Peer extends EventEmitter {
    *
    */
   set = (path: string, value: ValueType) =>
-    this.#jsonrpc.sendRequest('set', { path, value })
+    this.#jsonrpc.sendRequest('set', { path, value }, this.#sendImmediate)
 }
 
 export default Peer
