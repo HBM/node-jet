@@ -76,7 +76,7 @@ export type OperatorType = (typeof operators)[number]
 export interface AccessType {
   id?: string
 }
-export type ValueType = string | number | object | boolean
+export type ValueType = string | number | object | boolean | null
 
 export type ErrorType = {
   message: string
