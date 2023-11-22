@@ -23,9 +23,8 @@ const generatePredicate = (field: string, rule: ValueRule): compareFunction => {
   }
   if (rule.value === null) {
     throw new InvalidArgument('unknown value cant be nullish')
-  } else {
-    return gen(field, rule.value)
   }
+  return gen(field, rule.value)
 }
 
 const createValuePredicates = (valueOptions: Record<string, ValueRule>) => {
