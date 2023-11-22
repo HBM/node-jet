@@ -62,6 +62,16 @@ describe('Testing Value matcher', () => {
     } as any
     expect(() => create(params)).toThrow(new InvalidArgument())
   })
+  it('Should test value null', () => {
+    const params = {
+      path: {},
+      sort: {},
+      id: '',
+      value: { '': { operator: 'equals', value: null } }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any
+    expect(() => create(params)).toThrow(new InvalidArgument())
+  })
   it('Should test invalid values', () => {
     const params = {
       path: {},
