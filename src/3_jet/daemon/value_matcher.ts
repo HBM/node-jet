@@ -5,7 +5,7 @@ import { getValue } from '../utils.js'
 type compareFunction = (x: ValueType) => boolean
 type generatorFunction = (
   field: string,
-  other: string | ValueType
+  other: Omit<ValueType, 'null'>
 ) => compareFunction
 
 const generators: Record<string, generatorFunction> = {
@@ -20,9 +20,11 @@ const generatePredicate = (field: string, rule: ValueRule): compareFunction => {
   const gen = generators[rule.operator]
   if (!gen) {
     throw new InvalidArgument('unknown rule ' + rule.operator)
-  } else {
-    return gen(field, rule.value)
   }
+  if (rule.value === null) {
+    throw new InvalidArgument('unknown value cant be nullish')
+  }
+  return gen(field, rule.value)
 }
 
 const createValuePredicates = (valueOptions: Record<string, ValueRule>) => {
