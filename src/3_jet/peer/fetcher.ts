@@ -1,7 +1,7 @@
 import { EventEmitter } from '../../1_socket/index.js'
 import { Subscription } from '../daemon/subscription.js'
-import { FetchParams } from '../messages.js'
-import {
+import type { FetchParams } from '../messages.js'
+import type {
   PathRule,
   ValueType,
   OperatorType as Operator,

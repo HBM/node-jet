@@ -1,7 +1,7 @@
 'use strict'
 
-import { Logger, logger } from '../log.js'
-import {
+import { Logger, type logger } from '../log.js'
+import type {
   AddRequest,
   AuthParams,
   FetchParams,
@@ -15,16 +15,16 @@ import { Route } from './route.js'
 import {
   ConnectionInUse,
   InvvalidCredentials,
-  JsonRPCError,
+  type JsonRPCError,
   notAllowed,
   NotAuthorized,
   NotFound,
   Occupied
 } from '../errors.js'
-import JsonRPC from '../../2_jsonrpc/index.js'
+import type JsonRPC from '../../2_jsonrpc/index.js'
 import { JsonRPCServer } from '../../2_jsonrpc/server.js'
-import { WebServerConfig } from '../../1_socket/wsserver.js'
-import { TCPServerConfig } from '../../1_socket/tcpserver.js'
+import type { WebServerConfig } from '../../1_socket/wsserver.js'
+import type { TCPServerConfig } from '../../1_socket/tcpserver.js'
 import { EventEmitter } from '../../1_socket/index.js'
 import { UserManager } from './UserManager.js'
 
@@ -61,7 +61,7 @@ class InfoObject implements InfoOptions {
       batches: options.features?.batches || false,
       fetch: options.features?.fetch || 'full',
       asNotification: options.features?.asNotification || false,
-      authenticate: authenticate
+      authenticate
     }
   }
 }
@@ -136,7 +136,7 @@ export class Daemon extends EventEmitter {
   Add synchronous: First all Peers are informed about the new value then message is acknowledged
   */
   add = (peer: JsonRPC, id: string, params: AddRequest) => {
-    const path = params.path
+    const { path } = params
     if (path in this.routes) {
       peer.respond(id, new Occupied(path), false)
       return
@@ -244,11 +244,12 @@ export class Daemon extends EventEmitter {
               this.routes[route].access
             )
         )
-        .map((route: string) => {
-          return { path: route, value: this.routes[route].value }
-        })
+        .map((route: string) => ({
+          path: route,
+          value: this.routes[route].value
+        }))
       peer.respond(id, resp, true)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
     } catch (ex: any) {
       peer.respond(id, ex, false)
     }
@@ -270,9 +271,13 @@ export class Daemon extends EventEmitter {
   /*
   Call and Set requests: Call and set requests are always forwarded synchronous
   */
-  forward = (method: 'set' | 'call', user: string, params: PathParams) => {
+  forward = async (
+    method: 'set' | 'call',
+    user: string,
+    params: PathParams
+  ) => {
     if (!(params.path in this.routes)) {
-      return Promise.reject(new NotFound(params.path))
+      return await Promise.reject(new NotFound(params.path))
     }
     if (
       !this.authenticator.isAllowed(
@@ -281,9 +286,13 @@ export class Daemon extends EventEmitter {
         this.routes[params.path].access
       )
     ) {
-      return Promise.reject(new NotAuthorized(params.path))
+      return await Promise.reject(new NotAuthorized(params.path))
     }
-    return this.routes[params.path].owner.sendRequest(method, params, true)
+    return await this.routes[params.path].owner.sendRequest(
+      method,
+      params,
+      true
+    )
   }
 
   /*
@@ -332,19 +341,33 @@ export class Daemon extends EventEmitter {
 
       newPeer.addListener(
         'set',
-        (peer: JsonRPC, id: string, params: PathParams) =>
-          this.forward('set', peer.user, params)
-            .then((res) => newPeer.respond(id, res, true))
-            .catch((err) => newPeer.respond(id, err, false))
-            .finally(() => newPeer.send())
+        async (peer: JsonRPC, id: string, params: PathParams) => {
+          await this.forward('set', peer.user, params)
+            .then((res) => {
+              newPeer.respond(id, res, true)
+            })
+            .catch((err) => {
+              newPeer.respond(id, err, false)
+            })
+            .finally(() => {
+              newPeer.send()
+            })
+        }
       )
       newPeer.addListener(
         'call',
-        (peer: JsonRPC, id: string, params: PathParams) =>
-          this.forward('call', peer.user, params)
-            .then((res) => newPeer.respond(id, res, true))
-            .catch((err) => newPeer.respond(id, err, false))
-            .finally(() => newPeer.send())
+        async (peer: JsonRPC, id: string, params: PathParams) => {
+          await this.forward('call', peer.user, params)
+            .then((res) => {
+              newPeer.respond(id, res, true)
+            })
+            .catch((err) => {
+              newPeer.respond(id, err, false)
+            })
+            .finally(() => {
+              newPeer.send()
+            })
+        }
       )
     })
     this.jsonRPCServer.addListener('disconnect', (peer: JsonRPC) => {

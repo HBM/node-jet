@@ -1,6 +1,6 @@
-import { access } from './daemon/route.js'
-import { InvalidArgument, invalidRequest, JSONRPCError } from './errors.js'
-import { EventType, OperatorType, ValueType } from './types.js'
+import type { access } from './daemon/route.js'
+import { InvalidArgument, invalidRequest, type JSONRPCError } from './errors.js'
+import type { EventType, OperatorType, ValueType } from './types.js'
 
 export interface MethodParams {
   path: string
@@ -34,15 +34,16 @@ export interface Message {
 export const castMessage = <T extends MethodRequest>(msg: MethodRequest): T => {
   if (!('method' in msg)) throw new invalidRequest('No method')
   const method = msg.method as EventType
-  const params = msg.params
+  const { params } = msg
   switch (method) {
     case 'info':
       return msg as T
     case 'authenticate':
-      if (!params || !('user' in params) || !('password' in params))
+      if (!params || !('user' in params) || !('password' in params)) {
         throw new InvalidArgument(
           'Only params.user & params.password supported'
         )
+      }
       return msg as T
     case 'addUser':
       if (
@@ -50,22 +51,26 @@ export const castMessage = <T extends MethodRequest>(msg: MethodRequest): T => {
         !('user' in params) ||
         !('password' in params) ||
         !('groups' in params)
-      )
+      ) {
         throw new InvalidArgument(
           'params.user, params.password & params.groups required'
         )
+      }
       return msg as T
     case 'configure':
-      if (!params || !('name' in params))
+      if (!params || !('name' in params)) {
         throw new InvalidArgument('Only params.name supported')
+      }
       return msg as T
     case 'unfetch':
-      if (!params || !('id' in params))
+      if (!params || !('id' in params)) {
         throw new InvalidArgument('Fetch id required')
+      }
       return msg as T
     default:
-      if (!params || !('path' in params))
+      if (!params || !('path' in params)) {
         throw new InvalidArgument('Path required')
+      }
   }
   switch (method) {
     case 'fetch':

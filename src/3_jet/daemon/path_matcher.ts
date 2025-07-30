@@ -1,42 +1,36 @@
 import { InvalidArgument } from '../errors.js'
-import { FetchParams } from '../messages.js'
-import { PathRule, pathRules } from '../types.js'
+import type { FetchParams } from '../messages.js'
+import { type PathRule, pathRules } from '../types.js'
 
 type functionGenerator =
   | ((what: string) => (path: string) => boolean)
   | ((what: string[]) => (path: string) => boolean)
 
-const contains = (what: string) => (path: string) => path.indexOf(what) !== -1
+const contains = (what: string) => (path: string) => path.includes(what)
 
-const containsAllOf = (whatArray: string[]) => {
-  return (path: string) => {
-    let i
-    for (i = 0; i < whatArray.length; i = i + 1) {
-      if (path.indexOf(whatArray[i]) === -1) {
-        return false
-      }
+const containsAllOf = (whatArray: string[]) => (path: string) => {
+  let i
+  for (i = 0; i < whatArray.length; i = i + 1) {
+    if (!path.includes(whatArray[i])) {
+      return false
     }
-    return true
   }
+  return true
 }
 
-const containsOneOf = (whatArray: string[]) => {
-  return (path: string) => {
-    let i
-    for (i = 0; i < whatArray.length; i = i + 1) {
-      if (path.indexOf(whatArray[i]) !== -1) {
-        return true
-      }
+const containsOneOf = (whatArray: string[]) => (path: string) => {
+  let i
+  for (i = 0; i < whatArray.length; i = i + 1) {
+    if (path.includes(whatArray[i])) {
+      return true
     }
-    return false
   }
+  return false
 }
 
-const startsWith = (what: string) => (path: string) =>
-  path.substring(0, what.length) === what
+const startsWith = (what: string) => (path: string) => path.startsWith(what)
 
-const endsWith = (what: string) => (path: string) =>
-  path.lastIndexOf(what) === path.length - what.length
+const endsWith = (what: string) => (path: string) => path.endsWith(what)
 
 const equals = (what: string) => (path: string) => path === what
 
@@ -51,21 +45,21 @@ const equalsOneOf = (whatArray: string[]) => (path: string) => {
 }
 
 const negate = (gen: functionGenerator): functionGenerator =>
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   ((args: any) => () => !gen(args)) as functionGenerator
 
 const generators: Record<PathRule, functionGenerator> = {
-  equals: equals,
+  equals,
   equalsNot: negate(equals),
-  contains: contains,
+  contains,
   containsNot: negate(contains),
-  containsAllOf: containsAllOf,
-  containsOneOf: containsOneOf,
-  startsWith: startsWith,
+  containsAllOf,
+  containsOneOf,
+  startsWith,
   startsNotWith: negate(startsWith),
-  endsWith: endsWith,
+  endsWith,
   endsNotWith: negate(endsWith),
-  equalsOneOf: equalsOneOf,
+  equalsOneOf,
   equalsNotOneOf: negate(equalsOneOf)
 }
 
@@ -75,10 +69,11 @@ export const createPathMatcher = (options: FetchParams) => {
   }
   const po = options.path
   Object.keys(po).forEach((key) => {
-    if (!(key in generators) && key !== 'caseInsensitive')
+    if (!(key in generators) && key !== 'caseInsensitive') {
       throw new InvalidArgument('unknown rule ' + key)
+    }
   })
-  const predicates: ((path: string) => boolean)[] = []
+  const predicates: Array<(path: string) => boolean> = []
   pathRules.forEach((name) => {
     let option = po[name]
     if (option) {
@@ -90,7 +85,7 @@ export const createPathMatcher = (options: FetchParams) => {
           option = option.toLowerCase()
         }
       }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       predicates.push(gen(option as any))
     }
   })

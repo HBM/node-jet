@@ -1,7 +1,0 @@
-dir: lib
-name: node-jet
-flavor: jsdoc
-packageJson: package.json
-articles:
-  - Overview: README.md
-  - Todo App: examples/todo/README.md

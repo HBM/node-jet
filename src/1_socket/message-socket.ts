@@ -1,5 +1,5 @@
 /* istanbul ignore file */
-import { Socket, connect } from 'net'
+import { Socket, connect } from 'node:net'
 import { EventEmitter } from './index.js'
 
 /**
@@ -14,7 +14,7 @@ export class MessageSocket extends EventEmitter {
     if (port instanceof Socket) {
       this.socket = port
     } else {
-      this.socket = connect(port as number, ip)
+      this.socket = connect(port, ip)
       this.socket.on('connect', () => {
         this.emit('open')
       })
@@ -23,7 +23,6 @@ export class MessageSocket extends EventEmitter {
     this.socket.on('data', (buf: Uint8Array) => {
       let bigBuf = Buffer.concat([this.last, buf])
       while (true) {
-        // eslint-disable-line no-constant-condition
         if (this.len < 0) {
           if (bigBuf.length < 4) {
             this.last = bigBuf
@@ -86,12 +85,12 @@ export class MessageSocket extends EventEmitter {
    */
   addEventListener(
     method: string | symbol,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     listener: { (...args: any[]): void; call?: any }
   ) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const onMessage = (data: any) => {
-      listener.call(this, new MessageEvent('data', { data: data }))
+      listener.call(this, new MessageEvent('data', { data }))
     }
 
     const onClose = (code: string, message: CloseEventInit) => {

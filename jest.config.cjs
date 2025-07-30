@@ -1,4 +1,4 @@
-/* eslint-disable strict */
+ 
 module.exports = {
   cacheDirectory: '<rootDir>/.cache/unit',
   collectCoverage: true,

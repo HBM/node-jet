@@ -1,22 +1,22 @@
 import {
   ConnectionClosed,
-  JsonRPCError,
+  type JsonRPCError,
   methodNotFoundError,
   ParseError
 } from '../3_jet/errors.js'
-import { JsonParams } from '../3_jet/peer/index.js'
+import type { JsonParams } from '../3_jet/peer/index.js'
 import {
   castMessage,
-  ErrorMessage,
-  Message,
-  MessageParams,
-  MethodRequest,
-  ResultMessage
+  type ErrorMessage,
+  type Message,
+  type MessageParams,
+  type MethodRequest,
+  type ResultMessage
 } from '../3_jet/messages.js'
-import { logger, Logger } from '../3_jet/log.js'
+import type { logger, Logger } from '../3_jet/log.js'
 import { Socket } from '../1_socket/socket.js'
 import { EventEmitter } from '../1_socket/index.js'
-import { ValueType } from '../3_jet/types.js'
+import type { ValueType } from '../3_jet/types.js'
 /**
  * Helper shorthands.
  */
@@ -27,12 +27,8 @@ export type resultCallback =
   | ((_success: boolean, _result?: object) => void)
   | undefined
 
-const isResultMessage = (msg: Message): msg is ResultMessage => {
-  return 'result' in msg
-}
-const isErrorMessage = (msg: Message): msg is ErrorMessage => {
-  return 'error' in msg
-}
+const isResultMessage = (msg: Message): msg is ResultMessage => 'result' in msg
+const isErrorMessage = (msg: Message): msg is ErrorMessage => 'error' in msg
 export interface JsonRpcConfig {
   batches?: boolean
   url?: string
@@ -48,7 +44,7 @@ export interface JsonRpcConfig {
 export class JsonRPC extends EventEmitter {
   sock!: Socket
   config: JsonRpcConfig
-  messages: Array<Message> = []
+  messages: Message[] = []
   messageId = 1
   user = ''
   _isOpen = false
@@ -61,11 +57,11 @@ export class JsonRPC extends EventEmitter {
   > = {}
   requestId = ''
   resolveDisconnect!: (value: void | PromiseLike<void>) => void
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   rejectDisconnect!: (reason?: any) => void
   disconnectPromise!: Promise<void>
   resolveConnect!: (value: void | PromiseLike<void>) => void
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   rejectConnect!: (reason?: any) => void
   connectPromise!: Promise<void>
   logger: Logger
@@ -128,30 +124,32 @@ export class JsonRPC extends EventEmitter {
    * Method to connect to a Server instance. Either TCP Server or Webserver
    * @params controller: an AbortController that can be used to abort the connection
    */
-  connect = (
+  connect = async (
     controller: AbortController = new AbortController()
   ): Promise<void> => {
     if (this._isOpen) {
-      return Promise.resolve()
+      await Promise.resolve()
+      return
     }
     this.abortController = controller
-    const config = this.config
+    const { config } = this
     this.sock = new Socket()
     this.sock.connect(config.url, config.ip, config.port || 11122)
     this.subscribeToSocketEvents()
-    return this.connectPromise
+    await this.connectPromise
   }
 
   /**
    * Close.
    */
-  close = (): Promise<void> => {
+  close = async (): Promise<void> => {
     if (!this._isOpen) {
-      return Promise.resolve()
+      await Promise.resolve()
+      return
     }
     this.send()
     this.sock.close()
-    return this.disconnectPromise
+    await this.disconnectPromise
   }
 
   _handleError = (err: Event) => {
@@ -161,11 +159,13 @@ export class JsonRPC extends EventEmitter {
     }
   }
 
-  _convertMessage = (message: Blob | string): Promise<string> => {
+  _convertMessage = async (message: Blob | string): Promise<string> => {
     if (message instanceof Blob) {
-      return message.arrayBuffer().then((buf) => new TextDecoder().decode(buf))
+      return await message
+        .arrayBuffer()
+        .then((buf) => new TextDecoder().decode(buf))
     }
-    return Promise.resolve(message)
+    return await Promise.resolve(message)
   }
   /**
    * _dispatchMessage
@@ -186,9 +186,9 @@ export class JsonRPC extends EventEmitter {
           this._dispatchSingleMessage(decoded)
         }
         this.send()
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
       } catch (err: any) {
-        const decodedId = (decoded && decoded.id) || ''
+        const decodedId = decoded?.id || ''
         this.respond(decodedId, new ParseError(message), false)
         this.logger.error(err)
       }
@@ -203,9 +203,9 @@ export class JsonRPC extends EventEmitter {
   _dispatchSingleMessage = (
     message: MethodRequest | ResultMessage | ErrorMessage
   ) => {
-    if (isResultMessage(message) || isErrorMessage(message))
+    if (isResultMessage(message) || isErrorMessage(message)) {
       this._dispatchResponse(message)
-    else this._dispatchRequest(castMessage<MethodRequest>(message))
+    } else this._dispatchRequest(castMessage<MethodRequest>(message))
   }
 
   /**
@@ -235,8 +235,8 @@ export class JsonRPC extends EventEmitter {
   /**
    * Queue.
    */
-  queue = <T extends MessageParams | Message>(message: T, id = '') => {
-    if (!this._isOpen) return Promise.reject(new ConnectionClosed())
+  queue = async <T extends MessageParams | Message>(message: T, id = '') => {
+    if (!this._isOpen) return await Promise.reject(new ConnectionClosed())
     if (id) this.messages.push({ method: id, params: message } as Message)
     else this.messages.push(message as Message)
     if (!this.config.batches) this.send()
@@ -281,13 +281,13 @@ export class JsonRPC extends EventEmitter {
   /**
    * Method to send a request to a JSONRPC Server.
    */
-  sendRequest = <T extends ValueType>(
+  sendRequest = async <T extends ValueType>(
     method: string,
     params: JsonParams,
     // Jet Peer uses send immediate to call all functions without delay
     sendImmediate = false
   ): Promise<T> =>
-    new Promise<T>((resolve, reject) => {
+    await new Promise<T>((resolve, reject) => {
       if (!this._isOpen) reject(new ConnectionClosed())
       else {
         const rpcId = this.messageId.toString()

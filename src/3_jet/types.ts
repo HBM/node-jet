@@ -1,4 +1,4 @@
-import { Fetcher } from '../jet.js'
+import type { Fetcher } from '../jet.js'
 
 export const events = [
   'authenticate',
@@ -34,7 +34,7 @@ export const pathRules = [
 export type PathRule = (typeof pathRules)[number]
 export type sortable = 'boolean' | 'number' | 'string'
 
-export type pathFunction = {
+export interface pathFunction {
   (
     key:
       | 'equals'
@@ -60,7 +60,7 @@ export interface ValueRule {
   operator: OperatorType
   value: string | number | boolean
 }
-export type PublishMessage<T extends ValueType> = {
+export interface PublishMessage<T extends ValueType> {
   path: string
   event: string
   value: T
@@ -78,7 +78,7 @@ export interface AccessType {
 }
 export type ValueType = string | number | object | boolean | null
 
-export type ErrorType = {
+export interface ErrorType {
   message: string
   stack: string
   lineNumber: number

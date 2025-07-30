@@ -1,6 +1,6 @@
 {
   "name": "node-jet",
-  "version": "3.0.12",
+  "version": "3.0.13",
   "description": "Jet Realtime Message Bus for the Web. Daemon and Peer implementation.",
   "url": "https://github.com/hbm/node-jet",
   "author": {
@@ -36,11 +36,11 @@
     "test": "jest",
     "build": "tsc",
     "ci": "npm run ci:eslint && npm run ci:prettier && npm run ci:type-check && npm run test",
-    "ci:eslint": "eslint --max-warnings 0 --ignore-path .prettierignore $npm_package_config_files",
+    "ci:eslint": "eslint --max-warnings 0",
     "ci:prettier": "prettier --check $npm_package_config_files ",
     "ci:type-check": "tsc --noEmit --skipLibCheck",
     "prettier": "prettier --write $npm_package_config_files",
-    "eslint": "eslint --fix  --max-warnings 0 --ignore-path .prettierignore $npm_package_config_files",
+    "eslint": "eslint --fix  --max-warnings 0 ",
     "ex:chat": "npm run build && concurrently \"webpack serve --config examples/chat/webpack.config.cjs\" \"wait-on examples/chat/dist/server.cjs && node examples/chat/dist/server.cjs\"",
     "ex:todo": "rm -r examples/todo/dist && npm run build && concurrently \"webpack serve --config examples/todo/webpack.config.cjs\" \"wait-on examples/todo/dist/server.cjs && node examples/todo/dist/server.cjs\"",
     "ex:balls": "npm run build && concurrently \"webpack serve --config examples/balls/webpack.config.cjs\" \"wait-on examples/balls/dist/server.cjs && node examples/balls/dist/server.cjs\""
@@ -58,6 +58,7 @@
     "ws": "^8.18.3"
   },
   "devDependencies": {
+    "@eslint/compat": "^1.3.1",
     "@types/d3-selection": "^3.0.11",
     "@types/jest": "^30.0.0",
     "@types/prettier": "^3.0.0",
@@ -67,6 +68,7 @@
     "concurrently": "^9.2.0",
     "d3": "^7.9.0",
     "eslint": "^9.32.0",
+    "eslint-config-love": "^121.0.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.3",
     "jest": "^30.0.5",
@@ -86,7 +88,7 @@
     "lib"
   ],
   "config": {
-    "files": "**/*.{js,jsx,ts,tsx,json,html,yml}"
+    "files": "**/*.{js,jsx,ts,tsx,json,html}"
   },
   "engines": {
     "node": ">6.14.18"

@@ -33,7 +33,7 @@ export class JSONRPCError extends Error implements JSONRPCError {
     this.data = {
       name: 'jet.' + name,
       url: errorUrlBase + '#jet' + name.toLowerCase(),
-      details: details
+      details
     }
   }
   toString = () =>

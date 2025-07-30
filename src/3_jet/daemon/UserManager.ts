@@ -1,5 +1,5 @@
 import { NotAuthorized, invalidRequest } from '../errors.js'
-import { access } from './route.js'
+import type { access } from './route.js'
 
 export class UserManager {
   users: Record<string, string>
@@ -24,7 +24,7 @@ export class UserManager {
     password: string,
     groups: string[]
   ) => {
-    if (!this.groups['admin'].includes(requestUser)) {
+    if (!this.groups.admin.includes(requestUser)) {
       throw new NotAuthorized('Only admin users can create User')
     }
     if (Object.keys(this.users).includes(newUser)) {
@@ -39,7 +39,7 @@ export class UserManager {
       this.groups[group].push(newUser)
     })
 
-    this.groups['all'].push(newUser)
+    this.groups.all.push(newUser)
   }
 
   login = (user: string, password: string) =>

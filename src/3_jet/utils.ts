@@ -1,9 +1,9 @@
-import { State } from './peer/state.js'
-import { Method } from './peer/method.js'
-import { JsonRPCError, JSONRPCError } from './errors.js'
-import { ErrorType, ValueType } from './types.js'
+import type { State } from './peer/state.js'
+import type { Method } from './peer/method.js'
+import type { JsonRPCError, JSONRPCError } from './errors.js'
+import type { ErrorType, ValueType } from './types.js'
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 export const getValue = (o: any, field: string) => {
   if (field === '') return o
   const keys = field.split('.')
@@ -25,7 +25,7 @@ const isJsonRPCError = (
 export const errorObject = (err: JSONRPCError | ErrorType | string) => {
   let data
   if (isJsonRPCError(err)) {
-    return err as JSONRPCError
+    return err
   } else {
     data = {} as ErrorType
     if (typeof err === 'string') {
@@ -40,12 +40,10 @@ export const errorObject = (err: JSONRPCError | ErrorType | string) => {
     return {
       code: -32603,
       message: 'Internal error',
-      data: data
+      data
     }
   }
 }
 export const isState = <T extends ValueType>(
   stateOrMethod: State<T> | Method
-): stateOrMethod is State<T> => {
-  return '_value' in stateOrMethod
-}
+): stateOrMethod is State<T> => '_value' in stateOrMethod

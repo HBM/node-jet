@@ -1,8 +1,8 @@
 import { EventEmitter } from '../../1_socket/index.js'
-import JsonRPC from '../../2_jsonrpc/index.js'
-import { ValueType } from '../types.js'
+import type JsonRPC from '../../2_jsonrpc/index.js'
+import type { ValueType } from '../types.js'
 
-export type access = {
+export interface access {
   read?: string
   write: string
 }

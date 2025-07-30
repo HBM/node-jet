@@ -1,7 +1,7 @@
 'use strict'
 
-import { ValueType } from '../types.js'
-import { JsonParams } from './index.js'
+import type { ValueType } from '../types.js'
+import type { JsonParams } from './index.js'
 import { EventEmitter } from '../../1_socket/index.js'
 import { invalidState } from '../errors.js'
 

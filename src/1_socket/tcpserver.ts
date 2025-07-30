@@ -1,9 +1,9 @@
 /* istanbul ignore file */
-import { Server, createServer } from 'net'
+import { type Server, createServer } from 'node:net'
 import { EventEmitter } from './index.js'
 import MessageSocket from './message-socket.js'
 import { Socket } from './socket.js'
-import { Socket as natSocket } from 'net'
+import type { Socket as natSocket } from 'node:net'
 
 export interface TCPServerConfig {
   tcpPort?: number
