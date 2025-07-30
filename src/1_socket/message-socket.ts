@@ -85,10 +85,9 @@ export class MessageSocket extends EventEmitter {
    */
   addEventListener(
     method: string | symbol,
-     
+
     listener: { (...args: any[]): void; call?: any }
   ) {
-     
     const onMessage = (data: any) => {
       listener.call(this, new MessageEvent('data', { data }))
     }

@@ -67,7 +67,6 @@ export class Socket {
     if ((this.type === 'ws' && isBrowser) || this.type === 'ms') {
       ;(this.sock as WebSocket).addEventListener(event, cb)
     } else if (this.type === 'ws' && isNodeJs) {
-       
       ;(this.sock as ws).addEventListener(event as any, cb as any)
     } else {
       throw Error('Could not detect socket type')

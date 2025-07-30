@@ -388,7 +388,6 @@ export class Peer extends EventEmitter {
       .sendRequest('add', stateOrMethod.toJson(), this.#sendImmediate)
       .then(async () => {
         this.#routes[stateOrMethod._path] =
-           
           stateOrMethod as any as State<ValueType>
         await Promise.resolve()
       })

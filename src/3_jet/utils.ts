@@ -3,7 +3,6 @@ import type { Method } from './peer/method.js'
 import type { JsonRPCError, JSONRPCError } from './errors.js'
 import type { ErrorType, ValueType } from './types.js'
 
- 
 export const getValue = (o: any, field: string) => {
   if (field === '') return o
   const keys = field.split('.')

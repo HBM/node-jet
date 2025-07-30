@@ -45,7 +45,6 @@ const equalsOneOf = (whatArray: string[]) => (path: string) => {
 }
 
 const negate = (gen: functionGenerator): functionGenerator =>
-   
   ((args: any) => () => !gen(args)) as functionGenerator
 
 const generators: Record<PathRule, functionGenerator> = {
@@ -85,7 +84,7 @@ export const createPathMatcher = (options: FetchParams) => {
           option = option.toLowerCase()
         }
       }
-       
+
       predicates.push(gen(option as any))
     }
   })

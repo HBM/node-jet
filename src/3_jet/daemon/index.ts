@@ -249,7 +249,6 @@ export class Daemon extends EventEmitter {
           value: this.routes[route].value
         }))
       peer.respond(id, resp, true)
-       
     } catch (ex: any) {
       peer.respond(id, ex, false)
     }

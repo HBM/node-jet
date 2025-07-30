@@ -57,11 +57,11 @@ export class JsonRPC extends EventEmitter {
   > = {}
   requestId = ''
   resolveDisconnect!: (value: void | PromiseLike<void>) => void
-   
+
   rejectDisconnect!: (reason?: any) => void
   disconnectPromise!: Promise<void>
   resolveConnect!: (value: void | PromiseLike<void>) => void
-   
+
   rejectConnect!: (reason?: any) => void
   connectPromise!: Promise<void>
   logger: Logger
@@ -186,7 +186,6 @@ export class JsonRPC extends EventEmitter {
           this._dispatchSingleMessage(decoded)
         }
         this.send()
-         
       } catch (err: any) {
         const decodedId = decoded?.id || ''
         this.respond(decodedId, new ParseError(message), false)
