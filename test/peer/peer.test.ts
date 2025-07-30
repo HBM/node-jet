@@ -32,13 +32,17 @@ describe('Testing Peer', () => {
         peer.add(s).then(() => {
           const par = { path: 'foo', value: 5 }
           cbs['get'](undefined, 'fooId', { path: 'foo' })
-          expect(jsonRpc.respond).toBeCalledWith('fooId', par, true)
+          expect(jsonRpc.respond).toHaveBeenCalledWith('fooId', par, true)
           done()
         })
       })
       it('should fail get', () => {
         cbs['get'](undefined, 'fooId', { path: 'foo' })
-        expect(jsonRpc.respond).toBeCalledWith('fooId', new NotFound(), false)
+        expect(jsonRpc.respond).toHaveBeenCalledWith(
+          'fooId',
+          new NotFound(),
+          false
+        )
       })
       it('should fail to get a method', (done) => {
         const m = new Method('foo')
@@ -47,7 +51,7 @@ describe('Testing Peer', () => {
           .then(() => cbs['get'](undefined, 'fooId', { path: 'foo' }))
           .then(() =>
             waitForExpect(() =>
-              expect(jsonRpc.respond).toBeCalledWith(
+              expect(jsonRpc.respond).toHaveBeenCalledWith(
                 'fooId',
                 new invalidMethod(),
                 false
@@ -62,7 +66,7 @@ describe('Testing Peer', () => {
           const par = { path: 'foo', value: 5 }
           cbs['set'](undefined, 'fooId', par)
           expect(s._value).toEqual(5)
-          expect(jsonRpc.respond).toBeCalledWith('fooId', par, true)
+          expect(jsonRpc.respond).toHaveBeenCalledWith('fooId', par, true)
           done()
         })
       })
@@ -75,7 +79,7 @@ describe('Testing Peer', () => {
           const par = { path: 'foo', value: 5 }
           cbs['set'](undefined, 'fooId', par)
           expect(s._value).toEqual(5)
-          expect(jsonRpc.respond).toBeCalledWith(
+          expect(jsonRpc.respond).toHaveBeenCalledWith(
             'fooId',
             new InvalidParamError('InvalidParam', 'Failed to set value'),
             false
@@ -92,7 +96,7 @@ describe('Testing Peer', () => {
           const par = { path: 'foo', value: 5 }
           cbs['call'](undefined, 'fooId', par)
 
-          expect(jsonRpc.respond).toBeCalledWith(
+          expect(jsonRpc.respond).toHaveBeenCalledWith(
             'fooId',
             new InvalidParamError('InvalidParam', 'Failed to call method'),
             false
@@ -109,7 +113,7 @@ describe('Testing Peer', () => {
           const par = { path: 'foo', value: 5 }
           cbs['call'](undefined, 'fooId', par)
 
-          expect(jsonRpc.respond).toBeCalledWith(
+          expect(jsonRpc.respond).toHaveBeenCalledWith(
             'fooId',
             new InvalidParamError(
               'InvalidParam',
@@ -130,7 +134,7 @@ describe('Testing Peer', () => {
           const par = { path: 'foo', value: 5 }
           cbs['set'](undefined, 'fooId', par)
           expect(s._value).toEqual(5)
-          expect(jsonRpc.respond).toBeCalledWith(
+          expect(jsonRpc.respond).toHaveBeenCalledWith(
             'fooId',
             new InvalidParamError('InvalidParam', 'Failed to set value'),
             false
@@ -140,7 +144,11 @@ describe('Testing Peer', () => {
       })
       it('should fail set', () => {
         cbs['set'](undefined, 'fooId', { path: 'foo' })
-        expect(jsonRpc.respond).toBeCalledWith('fooId', new NotFound(), false)
+        expect(jsonRpc.respond).toHaveBeenCalledWith(
+          'fooId',
+          new NotFound(),
+          false
+        )
       })
       it('should fail to set a method', (done) => {
         const m = new Method('foo')
@@ -150,7 +158,7 @@ describe('Testing Peer', () => {
           .then(() => cbs['set'](undefined, 'fooId', { path: 'foo' }))
           .then(() =>
             waitForExpect(() =>
-              expect(jsonRpc.respond).toBeCalledWith(
+              expect(jsonRpc.respond).toHaveBeenCalledWith(
                 'fooId',
                 new invalidMethod(),
                 false
@@ -168,14 +176,18 @@ describe('Testing Peer', () => {
         peer.add(m).then(() => {
           const par = { path: 'bar', args: ['a', 'b'] }
           cbs['call'](undefined, 'fooId3', par)
-          expect(callSpy).toBeCalledTimes(1)
-          expect(jsonRpc.respond).toBeCalledWith('fooId3', {}, true)
+          expect(callSpy).toHaveBeenCalledTimes(1)
+          expect(jsonRpc.respond).toHaveBeenCalledWith('fooId3', {}, true)
           done()
         })
       })
       it('should fail call', () => {
         cbs['call'](undefined, 'fooId', { path: 'foo' })
-        expect(jsonRpc.respond).toBeCalledWith('fooId', new NotFound(), false)
+        expect(jsonRpc.respond).toHaveBeenCalledWith(
+          'fooId',
+          new NotFound(),
+          false
+        )
       })
       it('should fail to set a method', (done) => {
         const m = new State('foo', 5)
@@ -184,7 +196,7 @@ describe('Testing Peer', () => {
           .then(() => cbs['call'](undefined, 'fooId', { path: 'foo' }))
           .then(() =>
             waitForExpect(() =>
-              expect(jsonRpc.respond).toBeCalledWith(
+              expect(jsonRpc.respond).toHaveBeenCalledWith(
                 'fooId',
                 new invalidMethod(),
                 false
@@ -209,7 +221,7 @@ describe('Testing Peer', () => {
             }
           })
 
-          expect(fetchSpy).toBeCalledTimes(1)
+          expect(fetchSpy).toHaveBeenCalledTimes(1)
           done()
         })
       })
@@ -242,7 +254,7 @@ describe('Testing Peer', () => {
           })
         peer.fetch(m).then(() => {
           cbs['fetch_all'](undefined, 'fooId3', { path: 'foo', value: 4 })
-          expect(fetchSpy).toBeCalledTimes(1)
+          expect(fetchSpy).toHaveBeenCalledTimes(1)
           done()
         })
       })
@@ -257,7 +269,7 @@ describe('Testing Peer', () => {
       jest.spyOn(JsonRPC, 'default').mockImplementation(() => jsonrpc)
       const peer = new Peer()
       peer.connect().catch((ex) => {
-        expect(connectSpy).toBeCalled()
+        expect(connectSpy).toHaveBeenCalled()
         expect(ex).toBe('could not connect')
         done()
       })
@@ -274,8 +286,8 @@ describe('Testing Peer', () => {
       jest.spyOn(JsonRPC, 'default').mockImplementation(() => jsonrpc)
       const peer = new Peer()
       peer.connect().then(() => {
-        expect(connectSpy).toBeCalled()
-        expect(sendSpy).toBeCalledWith('info', {}, true)
+        expect(connectSpy).toHaveBeenCalled()
+        expect(sendSpy).toHaveBeenCalledWith('info', {}, true)
         expect(peer.isConnected()).toBe(true)
         done()
       })
@@ -289,7 +301,7 @@ describe('Testing Peer', () => {
       jest.spyOn(JsonRPC, 'default').mockImplementation(() => jsonrpc)
       const peer = new Peer()
       peer.add(new State<ValueType>('My path', 3)).catch((ex) => {
-        expect(sendSpy).toBeCalledWith(
+        expect(sendSpy).toHaveBeenCalledWith(
           'add',
           { path: 'My path', value: 3 },
           true
@@ -305,13 +317,13 @@ describe('Testing Peer', () => {
       const peer = new Peer()
       const myState = new State<ValueType>('My path', 4)
       peer.add(myState).then(() => {
-        expect(sendSpy).toBeCalledWith(
+        expect(sendSpy).toHaveBeenCalledWith(
           'add',
           { path: 'My path', value: 4 },
           true
         )
         myState.value(6)
-        expect(sendSpy).toBeCalledWith(
+        expect(sendSpy).toHaveBeenCalledWith(
           'change',
           { path: 'My path', value: 6 },
           true
@@ -325,7 +337,7 @@ describe('Testing Peer', () => {
       jest.spyOn(JsonRPC, 'default').mockImplementation(() => jsonrpc)
       const peer = new Peer()
       peer.add(new Method('My path')).then(() => {
-        expect(sendSpy).toBeCalledWith('add', { path: 'My path' }, true)
+        expect(sendSpy).toHaveBeenCalledWith('add', { path: 'My path' }, true)
         done()
       })
     })
@@ -335,7 +347,7 @@ describe('Testing Peer', () => {
       jest.spyOn(JsonRPC, 'default').mockImplementation(() => jsonrpc)
       const peer = new Peer()
       peer.add(new Method('My path')).then(() => {
-        expect(sendSpy).toBeCalledWith('add', { path: 'My path' }, true)
+        expect(sendSpy).toHaveBeenCalledWith('add', { path: 'My path' }, true)
         done()
       })
     })
@@ -370,7 +382,7 @@ describe('Testing Peer', () => {
       jest.spyOn(JsonRPC, 'default').mockImplementation(() => jsonrpc)
       const peer = new Peer()
       peer.configure({}).then(() => {
-        expect(sendSpy).toBeCalledWith('config', {}, true)
+        expect(sendSpy).toHaveBeenCalledWith('config', {}, true)
         done()
       })
     })
@@ -382,7 +394,11 @@ describe('Testing Peer', () => {
       jest.spyOn(JsonRPC, 'default').mockImplementation(() => jsonrpc)
       const peer = new Peer()
       peer.remove(new State<ValueType>('My path', 5)).catch((ex) => {
-        expect(sendSpy).toBeCalledWith('remove', { path: 'My path' }, true)
+        expect(sendSpy).toHaveBeenCalledWith(
+          'remove',
+          { path: 'My path' },
+          true
+        )
         expect(ex).toBe('invalid path')
         done()
       })
@@ -393,7 +409,11 @@ describe('Testing Peer', () => {
       jest.spyOn(JsonRPC, 'default').mockImplementation(() => jsonrpc)
       const peer = new Peer()
       peer.remove(new State<ValueType>('My path', 5)).then(() => {
-        expect(sendSpy).toBeCalledWith('remove', { path: 'My path' }, true)
+        expect(sendSpy).toHaveBeenCalledWith(
+          'remove',
+          { path: 'My path' },
+          true
+        )
         done()
       })
     })
@@ -404,7 +424,7 @@ describe('Testing Peer', () => {
     jest.spyOn(JsonRPC, 'default').mockImplementation(() => jsonrpc)
     const peer = new Peer()
     peer.addUser('Admin', 'admin', ['test']).then(() => {
-      expect(sendSpy).toBeCalledWith(
+      expect(sendSpy).toHaveBeenCalledWith(
         'addUser',
         {
           password: 'admin',
@@ -422,7 +442,7 @@ describe('Testing Peer', () => {
     jest.spyOn(JsonRPC, 'default').mockImplementation(() => jsonrpc)
     const peer = new Peer()
     peer.authenticate('Admin', 'admin').then(() => {
-      expect(sendSpy).toBeCalledWith(
+      expect(sendSpy).toHaveBeenCalledWith(
         'authenticate',
         {
           password: 'admin',
@@ -440,7 +460,7 @@ describe('Testing Peer', () => {
       jest.spyOn(JsonRPC, 'default').mockImplementation(() => jsonrpc)
       const peer = new Peer()
       peer.get({ path: { startsWith: 'a' } }).catch((ex) => {
-        expect(sendSpy).toBeCalledWith(
+        expect(sendSpy).toHaveBeenCalledWith(
           'get',
           { path: { startsWith: 'a' } },
           true
@@ -455,7 +475,7 @@ describe('Testing Peer', () => {
       jest.spyOn(JsonRPC, 'default').mockImplementation(() => jsonrpc)
       const peer = new Peer()
       peer.get({ path: { startsWith: 'a' } }).then((res) => {
-        expect(sendSpy).toBeCalledWith(
+        expect(sendSpy).toHaveBeenCalledWith(
           'get',
           { path: { startsWith: 'a' } },
           true
@@ -473,7 +493,7 @@ describe('Testing Peer', () => {
       jest.spyOn(JsonRPC, 'default').mockImplementation(() => jsonrpc)
       const peer = new Peer()
       peer.set('Foo', 5).catch((ex) => {
-        expect(sendSpy).toBeCalledWith(
+        expect(sendSpy).toHaveBeenCalledWith(
           'set',
           {
             path: 'Foo',
@@ -491,7 +511,11 @@ describe('Testing Peer', () => {
       jest.spyOn(JsonRPC, 'default').mockImplementation(() => jsonrpc)
       const peer = new Peer()
       peer.set('Foo', 5).then((res) => {
-        expect(sendSpy).toBeCalledWith('set', { path: 'Foo', value: 5 }, true)
+        expect(sendSpy).toHaveBeenCalledWith(
+          'set',
+          { path: 'Foo', value: 5 },
+          true
+        )
         expect(res).toBe(5)
         done()
       })
@@ -504,7 +528,7 @@ describe('Testing Peer', () => {
       jest.spyOn(JsonRPC, 'default').mockImplementation(() => jsonrpc)
       const peer = new Peer()
       peer.call('Foo', [5]).catch((ex) => {
-        expect(sendSpy).toBeCalledWith(
+        expect(sendSpy).toHaveBeenCalledWith(
           'call',
           {
             path: 'Foo',
@@ -522,7 +546,7 @@ describe('Testing Peer', () => {
       jest.spyOn(JsonRPC, 'default').mockImplementation(() => jsonrpc)
       const peer = new Peer()
       peer.call('Foo', { abc: 4 }).then((res) => {
-        expect(sendSpy).toBeCalledWith(
+        expect(sendSpy).toHaveBeenCalledWith(
           'call',
           {
             path: 'Foo',
@@ -542,7 +566,7 @@ describe('Testing Peer', () => {
       jest.spyOn(JsonRPC, 'default').mockImplementation(() => jsonrpc)
       const peer = new Peer()
       peer.call('Foo', [5]).catch((ex) => {
-        expect(sendSpy).toBeCalledWith(
+        expect(sendSpy).toHaveBeenCalledWith(
           'call',
           {
             path: 'Foo',
@@ -560,7 +584,7 @@ describe('Testing Peer', () => {
       jest.spyOn(JsonRPC, 'default').mockImplementation(() => jsonrpc)
       const peer = new Peer()
       peer.call('Foo', { abc: 4 }).then((res) => {
-        expect(sendSpy).toBeCalledWith(
+        expect(sendSpy).toHaveBeenCalledWith(
           'call',
           {
             path: 'Foo',
@@ -580,7 +604,7 @@ describe('Testing Peer', () => {
       jest.spyOn(JsonRPC, 'default').mockImplementation(() => jsonrpc)
       const peer = new Peer()
       peer.fetch(new Fetcher()).catch((ex) => {
-        expect(sendSpy).toBeCalledWith(
+        expect(sendSpy).toHaveBeenCalledWith(
           'fetch',
           expect.objectContaining({}),
           true
@@ -604,7 +628,7 @@ describe('Testing Peer', () => {
         .connect()
         .then(() => peer.fetch(new Fetcher().path('startsWith', 'a')))
         .then(() => {
-          expect(sendSpy).toBeCalledWith(
+          expect(sendSpy).toHaveBeenCalledWith(
             'fetch',
             expect.objectContaining({
               path: { startsWith: 'a' }
@@ -614,7 +638,7 @@ describe('Testing Peer', () => {
         })
         .then(() => peer.fetch(new Fetcher().path('equals', 'b')))
         .then(() => {
-          expect(sendSpy).toBeCalledWith(
+          expect(sendSpy).toHaveBeenCalledWith(
             'fetch',
             expect.objectContaining({
               path: { equals: 'b' }
@@ -647,7 +671,7 @@ describe('Testing Peer', () => {
         )
         .then(() => peer.fetch(new Fetcher().path('startsWith', 'f')))
         .then(() => {
-          expect(mockPeer.sendRequest).toBeCalledWith(
+          expect(mockPeer.sendRequest).toHaveBeenCalledWith(
             'fetch',
             {
               id: 'fetch_all',
@@ -658,7 +682,7 @@ describe('Testing Peer', () => {
         })
         .then(() => peer.fetch(new Fetcher().path('equals', 'b')))
         .then(() => {
-          expect(mockPeer.sendRequest).toBeCalledTimes(2)
+          expect(mockPeer.sendRequest).toHaveBeenCalledTimes(2)
           done()
         })
     })
@@ -691,7 +715,11 @@ describe('Testing Peer', () => {
         .then(() => peer.fetch(fetcher))
         .then(() => peer.unfetch(fetcher))
         .then(() => {
-          expect(sendSpy).toBeCalledWith('unfetch', expect.anything(), true)
+          expect(sendSpy).toHaveBeenCalledWith(
+            'unfetch',
+            expect.anything(),
+            true
+          )
           done()
         })
     })
@@ -712,18 +740,22 @@ describe('Testing Peer', () => {
       const f2 = new Fetcher()
       peer
         .connect()
-        .then(() => expect(sendSpy).toBeCalledTimes(1))
+        .then(() => expect(sendSpy).toHaveBeenCalledTimes(1))
         .then(() => peer.fetch(fetcher))
-        .then(() => expect(sendSpy).toBeCalledTimes(2))
+        .then(() => expect(sendSpy).toHaveBeenCalledTimes(2))
         .then(() => peer.fetch(f2))
-        .then(() => expect(sendSpy).toBeCalledTimes(2))
+        .then(() => expect(sendSpy).toHaveBeenCalledTimes(2))
         .then(() => peer.unfetch(fetcher))
-        .then(() => expect(sendSpy).toBeCalledTimes(2))
+        .then(() => expect(sendSpy).toHaveBeenCalledTimes(2))
         .then(() => peer.unfetch(f2))
         .then(() => {
           //Only send unfetch event when no fetchers are registered anymore
-          expect(sendSpy).toBeCalledTimes(3)
-          expect(sendSpy).toBeCalledWith('unfetch', { id: 'fetch_all' }, true)
+          expect(sendSpy).toHaveBeenCalledTimes(3)
+          expect(sendSpy).toHaveBeenCalledWith(
+            'unfetch',
+            { id: 'fetch_all' },
+            true
+          )
           done()
         })
     })

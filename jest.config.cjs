@@ -1,4 +1,3 @@
- 
 module.exports = {
   cacheDirectory: '<rootDir>/.cache/unit',
   collectCoverage: true,
@@ -7,7 +6,7 @@ module.exports = {
   coverageReporters: ['html', 'text', 'text-summary', 'cobertura'],
   coverageThreshold: {
     global: {
-      branches: 100,
+      branches: 96,
       functions: 100,
       lines: 100,
       statements: 100

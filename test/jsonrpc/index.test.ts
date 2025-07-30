@@ -148,7 +148,9 @@ describe('Testing JsonRpc', () => {
         jsonrpc.send()
       })
 
-      .then(() => waitForExpect(() => expect(sock.send).toBeCalledTimes(1)))
+      .then(() =>
+        waitForExpect(() => expect(sock.send).toHaveBeenCalledTimes(1))
+      )
       .then(done())
     sock.emit('open')
   })
@@ -173,7 +175,9 @@ describe('Testing JsonRpc', () => {
         jsonrpc.queue({ event: 'Add', path: 'foo', value: 1 } as any, '_f')
       })
 
-      .then(() => waitForExpect(() => expect(sock.send).toBeCalledTimes(1)))
+      .then(() =>
+        waitForExpect(() => expect(sock.send).toHaveBeenCalledTimes(1))
+      )
       .then(done())
     sock.emit('open')
   })
@@ -194,7 +198,9 @@ describe('Testing JsonRpc', () => {
         })
       })
 
-      .then(() => waitForExpect(() => expect(sock.send).toBeCalledTimes(1)))
+      .then(() =>
+        waitForExpect(() => expect(sock.send).toHaveBeenCalledTimes(1))
+      )
       .then(() => done())
     sock.emit('open')
   })
@@ -313,7 +319,7 @@ describe('Testing JsonRpc', () => {
 
         sock.emit('message', { data: JSON.stringify(messages) })
       })
-      // .then(() => waitForExpect(() => expect(msgMock).toBeCalledTimes(3)))
+      // .then(() => waitForExpect(() => expect(msgMock).toHaveBeenCalledTimes(3)))
       .then(() => done())
     sock.emit('open')
   })
