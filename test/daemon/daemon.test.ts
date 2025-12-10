@@ -302,7 +302,7 @@ describe('Testing Daemon 2 (Notifications)', () => {
         mockServer.message(peer, fetchRequest({ startsWith: 'bar' }, '__f__1'))
       )
       .then((res) => {
-        expect(peer.queue).toBeCalledTimes(3)
+        expect(peer.queue).toHaveBeenCalledTimes(3)
         expect(res.message).toEqual({})
         expect(res.success).toEqual(true)
       })
@@ -335,7 +335,7 @@ describe('Testing Daemon 2 (Notifications)', () => {
         mockServer.message(peer2, fetchRequest({ startsWith: 'bar' }, '__f__2'))
       )
       .then((res) => {
-        expect(peer.queue).toBeCalledTimes(1)
+        expect(peer.queue).toHaveBeenCalledTimes(1)
         expect(res.message).toEqual({})
         expect(res.success).toEqual(true)
       })

@@ -27,7 +27,7 @@ export class Logger {
    */
   constructor(settings: logger = { logName: 'None' }) {
     this.logName = settings.logName
-    this.logLevel = settings.logLevel || LogLevel['none']
+    this.logLevel = settings.logLevel || LogLevel.none
     this.callBacks = settings.logCallbacks
   }
   /**
@@ -54,7 +54,9 @@ export class Logger {
     }
     const logMessage = this.stringBuilder(msg, level)
     if (this.callBacks) {
-      this.callBacks.every((cb) => cb(logMessage))
+      this.callBacks.every((cb) => {
+        cb(logMessage)
+      })
     }
   }
   /**

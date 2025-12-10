@@ -1,10 +1,10 @@
 'use strict'
 
-import JsonRPC from '../../2_jsonrpc/index.js'
-import { FetchParams, MethodParams } from '../messages.js'
-import { ValueType } from '../types.js'
+import type JsonRPC from '../../2_jsonrpc/index.js'
+import type { FetchParams, MethodParams } from '../messages.js'
+import type { ValueType } from '../types.js'
 import { createPathMatcher } from './path_matcher.js'
-import { Route } from './route.js'
+import type { Route } from './route.js'
 import { create as createValueMatcher } from './value_matcher.js'
 
 /** A subscription corresponds to a fetch request.
@@ -30,9 +30,12 @@ export class Subscription {
     })
   }
 
-  handleChange = (path: string, value: ValueType) =>
-    this.enqueue({ path: path, event: 'Change', value })
-  handleRemove = (path: string) => this.enqueue({ path: path, event: 'Remove' })
+  handleChange = (path: string, value: ValueType) => {
+    this.enqueue({ path, event: 'Change', value })
+  }
+  handleRemove = (path: string) => {
+    this.enqueue({ path, event: 'Remove' })
+  }
   addRoute = (route: Route) => {
     this.routes.push(route)
     if (this.valueMatcher(route.value)) {
@@ -47,7 +50,9 @@ export class Subscription {
     route.addListener('Remove', this.handleRemove)
   }
   setRoutes = (routes: Route[]) => {
-    routes.forEach((route) => this.addRoute(route))
+    routes.forEach((route) => {
+      this.addRoute(route)
+    })
   }
   matchesPath = (path: string) => this.pathMatcher(path)
   matchesValue = (value: ValueType | undefined) => this.valueMatcher(value)
@@ -57,7 +62,9 @@ export class Subscription {
   }
 
   send = () => {
-    this.messages.forEach((msg) => this.owner?.queue(msg, this.id))
+    this.messages.forEach(async (msg) => {
+      await this.owner?.queue(msg, this.id)
+    })
     this.owner?.send()
     this.messages = []
   }

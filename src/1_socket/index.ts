@@ -1,6 +1,6 @@
 /* istanbul ignore file */
 import { WebSocket as ws } from 'ws'
-import { EventEmitter as ee } from 'events'
+import { EventEmitter as ee } from 'node:events'
 export const isNodeJs = typeof window === 'undefined'
 export const isBrowser = typeof window !== 'undefined'
 

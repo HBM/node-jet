@@ -1,5 +1,5 @@
 import { InvalidArgument } from '../errors.js'
-import { ValueRule, ValueType } from '../types.js'
+import type { ValueRule, ValueType } from '../types.js'
 import { getValue } from '../utils.js'
 
 type compareFunction = (x: ValueType) => boolean
@@ -40,7 +40,7 @@ export const create = (options: { value?: Record<string, ValueRule> }) => {
     const predicates = createValuePredicates(options.value)
     return (value: ValueType | undefined) => {
       if (value === undefined) return false
-      // eslint-disable-line consistent-return
+
       for (let i = 0; i < predicates.length; ++i) {
         if (!predicates[i](value)) {
           return false
