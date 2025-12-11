@@ -1,7 +1,7 @@
 /* istanbul ignore file */
 import { EventEmitter, WebSocketImpl } from './index.js'
 import { type WebSocket, WebSocketServer as WsServer } from 'ws'
-import type { Server as HTTPServer } from 'node:http'
+import type { Server as HTTPServer } from 'http'
 import { Socket } from './socket.js'
 
 export interface WebServerConfig {
