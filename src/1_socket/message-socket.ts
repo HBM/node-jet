@@ -1,5 +1,5 @@
 /* istanbul ignore file */
-import { Socket, connect } from 'node:net'
+import { Socket, connect } from 'net'
 import { EventEmitter } from './index.js'
 
 /**
