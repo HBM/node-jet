@@ -108,8 +108,9 @@ export class JsonRPC extends EventEmitter {
       this.createDisconnectPromise()
       if (this.abortController.signal.aborted) {
         this.logger.warn('user requested abort')
-        this.close()
-        this.rejectConnect('user requested abort')
+        this.close().then(() => {
+          this.rejectConnect('user requested abort')
+        })
       } else {
         this.resolveConnect()
       }
