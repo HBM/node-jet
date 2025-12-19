@@ -109,7 +109,7 @@ export class JsonRPC extends EventEmitter {
       if (this.abortController.signal.aborted) {
         this.logger.warn('user requested abort')
         this.close()
-        this.rejectConnect()
+        this.rejectConnect('user requested abort')
       } else {
         this.resolveConnect()
       }
@@ -134,8 +134,8 @@ export class JsonRPC extends EventEmitter {
     this.abortController = controller
     const { config } = this
     this.sock = new Socket()
-    this.sock.connect(config.url, config.ip, config.port || 11122)
     this.subscribeToSocketEvents()
+    this.sock.connect(config.url, config.ip, config.port || 11122)
     await this.connectPromise
   }
 
