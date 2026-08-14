@@ -24,8 +24,7 @@ const encode = JSON.stringify
 const decode = JSON.parse
 
 export type resultCallback =
-  | ((_success: boolean, _result?: object) => void)
-  | undefined
+  ((_success: boolean, _result?: object) => void) | undefined
 
 const isResultMessage = (msg: Message): msg is ResultMessage => 'result' in msg
 const isErrorMessage = (msg: Message): msg is ErrorMessage => 'error' in msg

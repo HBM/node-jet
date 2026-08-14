@@ -6,8 +6,8 @@ import { ValueType } from '../../src/3_jet/types'
 import { Fetcher, invalidMethod, NotFound } from '../../src/jet'
 import { fullFetcherPeer, simpleFecherPeer } from '../mocks/peer'
 import { fetchSimpleId } from '../../src/3_jet/types'
-import waitForExpect from 'wait-for-expect'
 import { InvalidParamError } from '../../src/jet'
+import { waitFor } from '@testing-library/dom'
 describe('Testing Peer', () => {
   describe('Should handle daemon messages', () => {
     describe('Should send different messages full fetch', () => {
@@ -50,7 +50,7 @@ describe('Testing Peer', () => {
           .add(m)
           .then(() => cbs['get'](undefined, 'fooId', { path: 'foo' }))
           .then(() =>
-            waitForExpect(() =>
+            waitFor(() =>
               expect(jsonRpc.respond).toHaveBeenCalledWith(
                 'fooId',
                 new invalidMethod(),
@@ -157,7 +157,7 @@ describe('Testing Peer', () => {
           .add(m)
           .then(() => cbs['set'](undefined, 'fooId', { path: 'foo' }))
           .then(() =>
-            waitForExpect(() =>
+            waitFor(() =>
               expect(jsonRpc.respond).toHaveBeenCalledWith(
                 'fooId',
                 new invalidMethod(),
@@ -195,7 +195,7 @@ describe('Testing Peer', () => {
           .add(m)
           .then(() => cbs['call'](undefined, 'fooId', { path: 'foo' }))
           .then(() =>
-            waitForExpect(() =>
+            waitFor(() =>
               expect(jsonRpc.respond).toHaveBeenCalledWith(
                 'fooId',
                 new invalidMethod(),

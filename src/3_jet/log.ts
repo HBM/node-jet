@@ -1,10 +1,10 @@
 export enum LogLevel {
-  'socket' = 1,
-  'debug',
-  'info',
-  'warn',
-  'error',
-  'none'
+  socket = 1,
+  debug,
+  info,
+  warn,
+  error,
+  none
 }
 
 type LogFunction = (...args: string[]) => void

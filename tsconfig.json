@@ -6,6 +6,7 @@
     "checkJs": true,
     "jsx": "react",
     "declaration": true,
+    "rootDir": ".",
     "outDir": "lib",
     "noEmit": false,
     "strict": true,
@@ -13,7 +14,7 @@
 
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true
   },
