@@ -1,5 +1,5 @@
 /* istanbul ignore file */
-import { WebSocket as ws } from 'ws'
+
 import MessageSocket from './message-socket.js'
 import { isBrowser, isNodeJs } from './index.js'
 
@@ -9,10 +9,10 @@ import { isBrowser, isNodeJs } from './index.js'
  */
 export class Socket {
   id = ''
-  sock?: WebSocket | MessageSocket | ws
+  sock?: WebSocket | MessageSocket
   type = ''
 
-  constructor(socket?: WebSocket | MessageSocket | ws) {
+  constructor(socket?: WebSocket | MessageSocket) {
     if (socket) {
       this.sock = socket
       this.type = socket.constructor.name === 'MessageSocket' ? 'ms' : 'ws'
@@ -29,14 +29,11 @@ export class Socket {
     ip: string | undefined = undefined,
     port: number | undefined = undefined
   ) => {
-    if (isBrowser) {
+    if (isBrowser || (isNodeJs && url)) {
       this.sock = new WebSocket(
         url || `ws://${window.location.host}:${port || 2315}`,
         'jet'
       )
-      this.type = 'ws'
-    } else if (isNodeJs && url) {
-      this.sock = new ws(url, 'jet')
       this.type = 'ws'
     } else {
       this.sock = new MessageSocket(port || 11122, ip)
@@ -67,7 +64,7 @@ export class Socket {
     if ((this.type === 'ws' && isBrowser) || this.type === 'ms') {
       ;(this.sock as WebSocket).addEventListener(event, cb)
     } else if (this.type === 'ws' && isNodeJs) {
-      ;(this.sock as ws).addEventListener(event as any, cb as any)
+      ;(this.sock as WebSocket).addEventListener(event as any, cb as any)
     } else {
       throw Error('Could not detect socket type')
     }

@@ -1,6 +1,6 @@
 /* istanbul ignore file */
-import { EventEmitter, WebSocketImpl } from './index.js'
-import { type WebSocket, WebSocketServer as WsServer } from 'ws'
+import { EventEmitter } from './index.js'
+import { WebSocketServer as WsServer } from 'ws'
 import type { Server as HTTPServer } from 'http'
 import { Socket } from './socket.js'
 
@@ -43,20 +43,10 @@ export class WebsocketServer extends EventEmitter {
       const sock = new Socket(ws)
       sock.id = `ws_${this.connectionId}`
       this.connectionId++
-      const pingMs = this.config.wsPingInterval || 5000
-      let pingInterval: NodeJS.Timeout
-      if (pingMs) {
-        pingInterval = setInterval(() => {
-          if (ws.readyState === WebSocketImpl.OPEN) {
-            ws.ping()
-          }
-        }, pingMs)
-      }
-      ws.addListener('close', () => {
-        clearInterval(pingInterval)
+      ws.addEventListener('close', () => {
         this.emit('disconnect', sock)
       })
-      ws.addListener('disconnect', () => {
+      ws.addEventListener('disconnect', () => {
         this.emit('disconnect', sock)
       })
 

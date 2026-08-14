@@ -3,7 +3,7 @@ import { sockMock } from '../mocks/sock'
 import JsonRPC from '../../src/2_jsonrpc'
 import { Logger } from '../../src/3_jet/log'
 import { LogLevel } from '../../src/'
-import waitForExpect from 'wait-for-expect'
+import { waitFor } from '@testing-library/dom'
 import {
   ConnectionClosed,
   INVALID_PARAMS_CODE,
@@ -148,9 +148,7 @@ describe('Testing JsonRpc', () => {
         jsonrpc.send()
       })
 
-      .then(() =>
-        waitForExpect(() => expect(sock.send).toHaveBeenCalledTimes(1))
-      )
+      .then(() => waitFor(() => expect(sock.send).toHaveBeenCalledTimes(1)))
       .then(done())
     sock.emit('open')
   })
@@ -175,9 +173,7 @@ describe('Testing JsonRpc', () => {
         jsonrpc.queue({ event: 'Add', path: 'foo', value: 1 } as any, '_f')
       })
 
-      .then(() =>
-        waitForExpect(() => expect(sock.send).toHaveBeenCalledTimes(1))
-      )
+      .then(() => waitFor(() => expect(sock.send).toHaveBeenCalledTimes(1)))
       .then(done())
     sock.emit('open')
   })
@@ -198,9 +194,7 @@ describe('Testing JsonRpc', () => {
         })
       })
 
-      .then(() =>
-        waitForExpect(() => expect(sock.send).toHaveBeenCalledTimes(1))
-      )
+      .then(() => waitFor(() => expect(sock.send).toHaveBeenCalledTimes(1)))
       .then(() => done())
     sock.emit('open')
   })
@@ -319,7 +313,7 @@ describe('Testing JsonRpc', () => {
 
         sock.emit('message', { data: JSON.stringify(messages) })
       })
-      // .then(() => waitForExpect(() => expect(msgMock).toHaveBeenCalledTimes(3)))
+      // .then(() => waitFor(() => expect(msgMock).toHaveBeenCalledTimes(3)))
       .then(() => done())
     sock.emit('open')
   })
